@@ -1,0 +1,114 @@
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: cost_buildup_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../backend:/app
+      - /app/node_modules
+    env_file:
+      - ../.env
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+  postgres:
+    image: postgres:16-alpine
+    container_name: cost_buildup_postgres
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cost_buildup_network
+
+  minio:
+    image: minio/minio:latest
+    container_name: cost_buildup_minio
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cost_buildup_network
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: costbuildup_mailpit
+    restart: always
+    env_file:
+      - ../.env
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8025/api/v1/info" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cost_buildup_network
+
+  erp-mock:
+    build:
+      context: ./erp-mock
+      dockerfile: Dockerfile
+    container_name: costbuildup_erp_mock
+    restart: always
+    env_file:
+      - ../.env
+    environment:
+      PORT: 3001
+      FAIL_MODE: ${FAIL_MODE:-false}
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cost_buildup_network
+volumes:
+  pgdata:
+    name: pgdata
+  miniodata:
+    name: miniodata
+
+networks:
+  cost_buildup_network:
+    driver: bridge
