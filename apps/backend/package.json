@@ -18,7 +18,13 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "ts-node src/database/seed/seed.ts",
+    "db:reset": "npm drizzle-kit drop && npm db:generate && npm db:migrate && npm db:seed"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -27,6 +33,7 @@
     "@nestjs/event-emitter": "^12.0.0",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/schedule": "^12.0.1",
+    "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "decimal.js": "^10.6.0",
@@ -43,6 +50,7 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
+    "@types/bcrypt": "^6.0.0",
     "@types/decimal.js": "^0.0.32",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
@@ -86,6 +94,7 @@
     "unrs-resolver@1.12.2": true,
     "esbuild@0.18.20": true,
     "esbuild@0.25.12": true,
-    "esbuild@0.28.2": true
+    "esbuild@0.28.2": true,
+    "bcrypt@6.0.0": true
   }
 }
