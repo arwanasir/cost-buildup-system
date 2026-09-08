@@ -53,9 +53,9 @@ export const poLinesRelations = relations(schema.poLines, ({ one, many }) => ({
 export const lettersOfCreditRelations = relations(
     schema.lettersOfCredit,
     ({ one, many }) => ({
-        po: one(schema.importPurchaseOrders, {
+        po: one(schema.suppliers, {
             fields: [schema.lettersOfCredit.supplierId],
-            references: [schema.importPurchaseOrders.id],
+            references: [schema.suppliers.id],
         }),
         amendments: many(schema.lcAmendments),
         bankCharges: many(schema.lcBankCharges),

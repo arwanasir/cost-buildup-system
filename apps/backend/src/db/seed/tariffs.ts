@@ -1,10 +1,15 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
+import * as dotenv from 'dotenv';
 import { Pool } from 'pg';
 import * as schema from '../schema/schema';
 
+dotenv.config({ path: '../.env' });
+
 const connectionString =
+    process.env.SEED_DATABASE_URL ||
+    process.env.DRIZZLE_DATABASE_URL ||
     process.env.DATABASE_URL ||
-    'postgres://postgres:postgres123@localhost:5432/cost_buildup_db';
+    'postgres://cost_buildup_user:password@localhost:5432/cost_buildup_db';
 
 const pool = new Pool({ connectionString });
 const db = drizzle(pool, { schema });
@@ -171,8 +176,11 @@ const SAMPLE_NBE_EXCHANGE_RATES = [
 
 export async function seedTariffAndFxData(): Promise<void> {
     console.log(' Starting Tariff Rates & NBE Exchange Rates seeding...');
-
     try {
+        const [seedUser] = await db.select().from(schema.users).limit(1);
+        if (!seedUser) {
+            throw new Error('Cannot seed exchange rates because no users exist. Run reference seed data first.');
+        }
 
         console.log('Seeding 10 Tariff Rates...');
         for (const tariff of SAMPLE_TARIFF_RATES) {
@@ -199,7 +207,10 @@ export async function seedTariffAndFxData(): Promise<void> {
                     currency: fxRate.currency,
                     rateDate: fxRate.effectiveDate.toISOString().slice(0, 10),
                     rate: fxRate.middleRateEtb,
-                    enteredBy: 'seed',
+                    enteredBy: seedUser.id,
+                })
+                .onConflictDoNothing({
+                    target: [schema.nbeExchangeRates.currency, schema.nbeExchangeRates.rateDate],
                 });
         }
 

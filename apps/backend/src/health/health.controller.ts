@@ -63,7 +63,7 @@ export class HealthController {
     }
 
     private async checkMinio(): Promise<boolean> {
-        const host = this.configService.get<string>('minio.endPoint');
+        const host = this.configService.get<string>('minio.endpoint');
         const port = this.configService.get<number>('minio.port');
         const useSSL = this.configService.get<boolean>('minio.useSSl');
         const protocol = useSSL ? 'https' : 'http';

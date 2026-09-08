@@ -1,10 +1,17 @@
 import { costCategories, policySettings, users } from '../schema';
 import * as bcrypt from 'bcrypt';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import * as dotenv from 'dotenv';
 import { Pool } from 'pg';
 import * as schema from '../schema/schema';
 
-const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres123@localhost:5432/cost_buildup_db';
+dotenv.config({ path: '../.env' });
+
+const connectionString =
+    process.env.SEED_DATABASE_URL ||
+    process.env.DRIZZLE_DATABASE_URL ||
+    process.env.DATABASE_URL ||
+    'postgres://cost_buildup_user:password@localhost:5432/cost_buildup_db';
 const pool = new Pool({ connectionString });
 const db = drizzle(pool, { schema });
 
@@ -147,7 +154,7 @@ const INITIAL_USERS = [
 ] as const;
 
 export async function seedReferenceData(): Promise<void> {
-    console.log('🌱 Starting reference data seeding...');
+    console.log('Starting reference data seeding...');
 
     try {
 
@@ -188,6 +195,8 @@ export async function seedReferenceData(): Promise<void> {
     } catch (error) {
         console.error(' Error seeding reference data:', error);
         throw error;
+    } finally {
+        await pool.end();
     }
 }
 

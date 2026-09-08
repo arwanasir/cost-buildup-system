@@ -8,7 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
   app.set('trust proxy', true);
-  app.set('api/v1');
+  app.setGlobalPrefix('api/v1');
   app.enableCors({
     origin: [
       configService.get<string>('FRONTEND_URL') || 'http://localhost:5173',

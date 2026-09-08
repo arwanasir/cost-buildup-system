@@ -32,7 +32,7 @@ export const refreshTokens = pgTable('refresh_tokens', {
         mode: 'string',
         withTimezone: true,
     }),
-    createdIp: varchar('created_ip,', { length: 45 }),
+    createdIp: varchar('created_ip', { length: 45 }),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
 },
     (table) => [
@@ -59,7 +59,7 @@ export const suppliers = pgTable('suppliers', {
 });
 
 export const suppliersBankAccounts = pgTable('suppliers_bank_account', {
-    id: uuid('id').notNull().defaultRandom(),
+    id: uuid('id').primaryKey().defaultRandom(),
     supplierId: uuid('supplier_id').notNull().references(() => suppliers.id, { onDelete: 'cascade' }),
     bankName: varchar('bank_name', { length: 255 }).notNull(),
     swift: varchar('swift', { length: 11 }),
@@ -96,7 +96,7 @@ export const importPurchaseOrders = pgTable('import_purchase_orders', {
     estimatedShipmentDate: date('estimated_shipment_date'),
     estimatedArrivalDate: date('estimated_arrival_date'),
     currency: char('currency', { length: 3 }).notNull().default('USD'),
-    fxRate: rate('tf_rate').notNull(),
+    fxRate: rate('fx_rate').notNull(),
     portOfLoading: varchar('port_of_loading', { length: 100 }),
     portOfDestination: varchar('port_of_destination', { length: 100 }),
     totalValueForeign: money('total_value_foreign').notNull(),
@@ -539,7 +539,7 @@ export const importLandedCostResults = pgTable('import_landed_cost_results', {
     finalisedAt: timestamp('finalised_at', { mode: 'string', withTimezone: true, }),
     postedToInventory: boolean('posted_to_inventory').notNull().default(false),
     postedAt: timestamp('posted_at', { mode: 'string', withTimezone: true, }),
-    inventoryTransactionId: uuid('inventory_transaction_id'),
+    inventoryTransactionId: varchar('inventory_transaction_id', { length: 100 }),
 },
     (table) => [
         uniqueIndex('uq_landed_cost_results_shipment_item').on(table.shipmentId, table.shipmentItemId,),

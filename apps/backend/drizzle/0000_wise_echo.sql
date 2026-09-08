@@ -1,3 +1,30 @@
+CREATE TYPE "public"."allocation_method_enum" AS ENUM('by_value', 'by_weight', 'by_volume', 'by_quantity', 'item_specific', 'equal_split');--> statement-breakpoint
+CREATE TYPE "public"."approval_decision_enum" AS ENUM('approved', 'rejected');--> statement-breakpoint
+CREATE TYPE "public"."audit_action_enum" AS ENUM('create', 'update', 'delete', 'approve', 'reject', 'finalise', 'post', 'reverse', 'login');--> statement-breakpoint
+CREATE TYPE "public"."cost_category_code_enum" AS ENUM('fob', 'freight', 'insurance', 'customs_duty', 'excise_tax', 'vat', 'sur_tax', 'withholding_tax', 'port_handling', 'demurrage', 'transportation', 'transit_insurance', 'bank_charges', 'agent_commission', 'inspection_fee', 'miscellaneous');--> statement-breakpoint
+CREATE TYPE "public"."cost_entry_source_enum" AS ENUM('manual', 'lc_bank_charge', 'customs', 'commercial_invoice', 'po_estimate');--> statement-breakpoint
+CREATE TYPE "public"."customs_declaration_status_enum" AS ENUM('draft', 'assessed', 'paid', 'released');--> statement-breakpoint
+CREATE TYPE "public"."duty_structure_enum" AS ENUM('ad_valorem', 'specific');--> statement-breakpoint
+CREATE TYPE "public"."erp_sync_entity_type_enum" AS ENUM('inventory_posting', 'journal_entry');--> statement-breakpoint
+CREATE TYPE "public"."erp_sync_status_enum" AS ENUM('pending', 'success', 'failed');--> statement-breakpoint
+CREATE TYPE "public"."grn_status_enum" AS ENUM('draft', 'confirmed', 'posting_failed', 'posted', 'flagged_for_adjustment');--> statement-breakpoint
+CREATE TYPE "public"."inspection_result_enum" AS ENUM('pending', 'accepted', 'rejected', 'accepted_with_conditions');--> statement-breakpoint
+CREATE TYPE "public"."journal_source_type_enum" AS ENUM('grn', 'lc_charge', 'duty_payment');--> statement-breakpoint
+CREATE TYPE "public"."lc_charge_type_enum" AS ENUM('opening_fee', 'amendment_fee', 'advising_confirmation_fee', 'acceptance_commission', 'swift');--> statement-breakpoint
+CREATE TYPE "public"."lc_document_type_enum" AS ENUM('bl', 'ci', 'packing_list', 'coo', 'inspection_cert', 'phytosanitary', 'insurance_cert', 'other');--> statement-breakpoint
+CREATE TYPE "public"."lc_status_enum" AS ENUM('applied', 'opened', 'advised', 'amended', 'docs_submitted', 'docs_received', 'docs_checked', 'discrepancies_found', 'accepted', 'payment_authorised', 'settled');--> statement-breakpoint
+CREATE TYPE "public"."lc_type_enum" AS ENUM('sight', 'usance', 'deferred_payment', 'revolving', 'standby');--> statement-breakpoint
+CREATE TYPE "public"."notification_channel_enum" AS ENUM('in_app', 'email', 'webhook', 'telegram');--> statement-breakpoint
+CREATE TYPE "public"."notification_type_enum" AS ENUM('lc_expiry', 'lc_last_shipment', 'lc_presentation', 'variance', 'approval_request', 'posting_failed', 'price_variance');--> statement-breakpoint
+CREATE TYPE "public"."po_status_enum" AS ENUM('draft', 'pending_approval', 'approved', 'lc_applied', 'shipped', 'partially_received', 'fully_received', 'closed', 'rejected');--> statement-breakpoint
+CREATE TYPE "public"."preferred_language_enum" AS ENUM('en', 'am');--> statement-breakpoint
+CREATE TYPE "public"."rejected_claim_status_enum" AS ENUM('open', 'closed');--> statement-breakpoint
+CREATE TYPE "public"."rejected_claim_type_enum" AS ENUM('supplier_claim', 'write_off');--> statement-breakpoint
+CREATE TYPE "public"."role_enum" AS ENUM('procurement_officer', 'procurement_manager', 'finance_officer', 'finance_manager', 'customs_officer', 'warehouse_manager', 'general_manager', 'system_admin');--> statement-breakpoint
+CREATE TYPE "public"."shipment_document_type_enum" AS ENUM('bl', 'ci', 'packing_list', 'coo', 'customs_declaration', 'release_note', 'insurance_certificate', 'inspection_report', 'other');--> statement-breakpoint
+CREATE TYPE "public"."shipment_status_enum" AS ENUM('ordered', 'shipped', 'at_customs', 'cleared', 'partially_received', 'received');--> statement-breakpoint
+CREATE TYPE "public"."variance_status_enum" AS ENUM('auto_approved', 'pending_approval', 'approved', 'rejected');--> statement-breakpoint
+CREATE TYPE "public"."variance_type_enum" AS ENUM('price', 'exchange_rate', 'freight', 'duty', 'other');--> statement-breakpoint
 CREATE TABLE "audit_ledger" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"entity_type" varchar(100) NOT NULL,
@@ -30,7 +57,6 @@ CREATE TABLE "cost_allocations" (
 	"cost_entry_id" uuid NOT NULL,
 	"shipment_item_id" uuid NOT NULL,
 	"allocation_method" "allocation_method_enum" NOT NULL,
-	"basis_value" numeric(18, 4) NOT NULL,
 	"allocated_etb" numeric(18, 4) NOT NULL,
 	"is_residual_holder" boolean DEFAULT false NOT NULL
 );
@@ -53,7 +79,7 @@ CREATE TABLE "cost_variances" (
 	"estimated_etb" numeric(18, 4) DEFAULT '0.0000' NOT NULL,
 	"actual_etb" numeric(18, 4) DEFAULT '0.0000' NOT NULL,
 	"variance_etb" numeric(18, 4) DEFAULT '0.0000' NOT NULL,
-	"variance_pct" numeric(8, 4) DEFAULT '0.0000' NOT NULL,
+	"variance_pct" numeric(18, 6) DEFAULT '0.0000' NOT NULL,
 	"status" "variance_status_enum" DEFAULT 'pending_approval' NOT NULL,
 	"approver_id" uuid,
 	"decided_at" timestamp with time zone,
@@ -66,15 +92,15 @@ CREATE TABLE "customs_declaration_items" (
 	"shipment_item_id" uuid NOT NULL,
 	"hs_code" varchar(20) NOT NULL,
 	"duty_structure" "duty_structure_enum" DEFAULT 'ad_valorem' NOT NULL,
-	"duty_rate" numeric(8, 4) DEFAULT '0.0000',
+	"duty_rate" numeric(18, 6) DEFAULT '0.0000',
 	"specific_duty_per_unit" numeric(18, 4) DEFAULT '0.0000',
 	"cif_value_etb" numeric(18, 4) NOT NULL,
 	"duty_etb" numeric(18, 4) DEFAULT '0.0000' NOT NULL,
-	"vat_rate" numeric(8, 4) DEFAULT '15.0000' NOT NULL,
+	"vat_rate" numeric(18, 6) DEFAULT '15.0000' NOT NULL,
 	"vat_etb" numeric(18, 4) DEFAULT '0.0000' NOT NULL,
-	"excise_rate" numeric(8, 4) DEFAULT '0.0000',
+	"excise_rate" numeric(18, 6) DEFAULT '0.0000',
 	"excise_etb" numeric(18, 4) DEFAULT '0.0000' NOT NULL,
-	"withholding_rate" numeric(8, 4) DEFAULT '0.0000',
+	"withholding_rate" numeric(18, 6) DEFAULT '0.0000',
 	"withholding_etb" numeric(18, 4) DEFAULT '0.0000' NOT NULL
 );
 --> statement-breakpoint
@@ -209,7 +235,7 @@ CREATE TABLE "import_landed_cost_results" (
 	"finalised_at" timestamp with time zone,
 	"posted_to_inventory" boolean DEFAULT false NOT NULL,
 	"posted_at" timestamp with time zone,
-	"inventory_transaction_id" uuid
+	"inventory_transaction_id" varchar(100)
 );
 --> statement-breakpoint
 CREATE TABLE "import_purchase_orders" (
@@ -222,7 +248,7 @@ CREATE TABLE "import_purchase_orders" (
 	"estimated_shipment_date" date,
 	"estimated_arrival_date" date,
 	"currency" char(3) DEFAULT 'USD' NOT NULL,
-	"tf_rate" numeric(18, 6) NOT NULL,
+	"fx_rate" numeric(18, 6) NOT NULL,
 	"port_of_loading" varchar(100),
 	"port_of_destination" varchar(100),
 	"total_value_foreign" numeric(18, 4) NOT NULL,
@@ -405,7 +431,7 @@ CREATE TABLE "po_lines" (
 	"unit_price" numeric(18, 6) NOT NULL,
 	"total_line_value" numeric(18, 4) NOT NULL,
 	"hs_code" varchar(20),
-	"estimated_duty_rate" numeric(8, 4) DEFAULT '0.0000',
+	"estimated_duty_rate" numeric(18, 6) DEFAULT '0.0000',
 	"shipped_quantity" numeric(18, 4) DEFAULT '0.0000',
 	"received_quantity" numeric(18, 4) DEFAULT '0.0000'
 );
@@ -427,7 +453,7 @@ CREATE TABLE "refresh_tokens" (
 	"token_hash" varchar(255) NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
 	"revoked_at" timestamp with time zone,
-	"created_ip," varchar(45),
+	"created_ip" varchar(45),
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -493,7 +519,7 @@ CREATE TABLE "suppliers" (
 );
 --> statement-breakpoint
 CREATE TABLE "suppliers_bank_account" (
-	"id" uuid DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"supplier_id" uuid NOT NULL,
 	"bank_name" varchar(255) NOT NULL,
 	"swift" varchar(11),
@@ -507,10 +533,10 @@ CREATE TABLE "tariff_rates" (
 	"hs_code" varchar(20) NOT NULL,
 	"description" text NOT NULL,
 	"duty_structure" "duty_structure_enum" DEFAULT 'ad_valorem' NOT NULL,
-	"duty_rate" numeric(8, 4) DEFAULT '0.0000' NOT NULL,
+	"duty_rate" numeric(18, 6) DEFAULT '0.0000' NOT NULL,
 	"specific_duty_per_unit" numeric(18, 4) DEFAULT '0.0000',
-	"excise_rate" numeric(8, 4) DEFAULT '0.0000' NOT NULL,
-	"withholding_rate" numeric(8, 4) DEFAULT '3.0000' NOT NULL,
+	"excise_rate" numeric(18, 6) DEFAULT '0.0000' NOT NULL,
+	"withholding_rate" numeric(18, 6) DEFAULT '3.0000' NOT NULL,
 	"effective_from" date NOT NULL,
 	CONSTRAINT "tariff_rates_hs_code_unique" UNIQUE("hs_code")
 );
