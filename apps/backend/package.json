@@ -11,7 +11,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/src/main.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
@@ -23,8 +23,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "ts-node src/database/seed/seed.ts",
-    "db:reset": "npm drizzle-kit drop && npm db:generate && npm db:migrate && npm db:seed"
+    "db:seed": "ts-node src/db/seed/seed.ts",
+    "db:reset": "npx drizzle-kit drop && npm run db:generate && npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

@@ -1,5 +1,5 @@
 {
-  "id": "add42031-5451-4c3f-bbdb-b54d5e71109f",
+  "id": "b111759b-3378-490c-9206-0fe8520b1d63",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -345,12 +345,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "basis_value": {
-          "name": "basis_value",
-          "type": "numeric(18, 4)",
-          "primaryKey": false,
-          "notNull": true
-        },
         "allocated_etb": {
           "name": "allocated_etb",
           "type": "numeric(18, 4)",
@@ -599,7 +593,7 @@
         },
         "variance_pct": {
           "name": "variance_pct",
-          "type": "numeric(8, 4)",
+          "type": "numeric(18, 6)",
           "primaryKey": false,
           "notNull": true,
           "default": "'0.0000'"
@@ -751,7 +745,7 @@
         },
         "duty_rate": {
           "name": "duty_rate",
-          "type": "numeric(8, 4)",
+          "type": "numeric(18, 6)",
           "primaryKey": false,
           "notNull": false,
           "default": "'0.0000'"
@@ -778,7 +772,7 @@
         },
         "vat_rate": {
           "name": "vat_rate",
-          "type": "numeric(8, 4)",
+          "type": "numeric(18, 6)",
           "primaryKey": false,
           "notNull": true,
           "default": "'15.0000'"
@@ -792,7 +786,7 @@
         },
         "excise_rate": {
           "name": "excise_rate",
-          "type": "numeric(8, 4)",
+          "type": "numeric(18, 6)",
           "primaryKey": false,
           "notNull": false,
           "default": "'0.0000'"
@@ -806,7 +800,7 @@
         },
         "withholding_rate": {
           "name": "withholding_rate",
-          "type": "numeric(8, 4)",
+          "type": "numeric(18, 6)",
           "primaryKey": false,
           "notNull": false,
           "default": "'0.0000'"
@@ -2200,7 +2194,7 @@
         },
         "inventory_transaction_id": {
           "name": "inventory_transaction_id",
-          "type": "uuid",
+          "type": "varchar(100)",
           "primaryKey": false,
           "notNull": false
         }
@@ -2421,8 +2415,8 @@
           "notNull": true,
           "default": "'USD'"
         },
-        "tf_rate": {
-          "name": "tf_rate",
+        "fx_rate": {
+          "name": "fx_rate",
           "type": "numeric(18, 6)",
           "primaryKey": false,
           "notNull": true
@@ -4217,7 +4211,7 @@
         },
         "estimated_duty_rate": {
           "name": "estimated_duty_rate",
-          "type": "numeric(8, 4)",
+          "type": "numeric(18, 6)",
           "primaryKey": false,
           "notNull": false,
           "default": "'0.0000'"
@@ -4454,8 +4448,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "created_ip,": {
-          "name": "created_ip,",
+        "created_ip": {
+          "name": "created_ip",
           "type": "varchar(45)",
           "primaryKey": false,
           "notNull": false
@@ -5096,7 +5090,7 @@
         "id": {
           "name": "id",
           "type": "uuid",
-          "primaryKey": false,
+          "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
         },
@@ -5210,7 +5204,7 @@
         },
         "duty_rate": {
           "name": "duty_rate",
-          "type": "numeric(8, 4)",
+          "type": "numeric(18, 6)",
           "primaryKey": false,
           "notNull": true,
           "default": "'0.0000'"
@@ -5224,14 +5218,14 @@
         },
         "excise_rate": {
           "name": "excise_rate",
-          "type": "numeric(8, 4)",
+          "type": "numeric(18, 6)",
           "primaryKey": false,
           "notNull": true,
           "default": "'0.0000'"
         },
         "withholding_rate": {
           "name": "withholding_rate",
-          "type": "numeric(8, 4)",
+          "type": "numeric(18, 6)",
           "primaryKey": false,
           "notNull": true,
           "default": "'3.0000'"
@@ -5405,7 +5399,318 @@
       "isRLSEnabled": false
     }
   },
-  "enums": {},
+  "enums": {
+    "public.allocation_method_enum": {
+      "name": "allocation_method_enum",
+      "schema": "public",
+      "values": [
+        "by_value",
+        "by_weight",
+        "by_volume",
+        "by_quantity",
+        "item_specific",
+        "equal_split"
+      ]
+    },
+    "public.approval_decision_enum": {
+      "name": "approval_decision_enum",
+      "schema": "public",
+      "values": [
+        "approved",
+        "rejected"
+      ]
+    },
+    "public.audit_action_enum": {
+      "name": "audit_action_enum",
+      "schema": "public",
+      "values": [
+        "create",
+        "update",
+        "delete",
+        "approve",
+        "reject",
+        "finalise",
+        "post",
+        "reverse",
+        "login"
+      ]
+    },
+    "public.cost_category_code_enum": {
+      "name": "cost_category_code_enum",
+      "schema": "public",
+      "values": [
+        "fob",
+        "freight",
+        "insurance",
+        "customs_duty",
+        "excise_tax",
+        "vat",
+        "sur_tax",
+        "withholding_tax",
+        "port_handling",
+        "demurrage",
+        "transportation",
+        "transit_insurance",
+        "bank_charges",
+        "agent_commission",
+        "inspection_fee",
+        "miscellaneous"
+      ]
+    },
+    "public.cost_entry_source_enum": {
+      "name": "cost_entry_source_enum",
+      "schema": "public",
+      "values": [
+        "manual",
+        "lc_bank_charge",
+        "customs",
+        "commercial_invoice",
+        "po_estimate"
+      ]
+    },
+    "public.customs_declaration_status_enum": {
+      "name": "customs_declaration_status_enum",
+      "schema": "public",
+      "values": [
+        "draft",
+        "assessed",
+        "paid",
+        "released"
+      ]
+    },
+    "public.duty_structure_enum": {
+      "name": "duty_structure_enum",
+      "schema": "public",
+      "values": [
+        "ad_valorem",
+        "specific"
+      ]
+    },
+    "public.erp_sync_entity_type_enum": {
+      "name": "erp_sync_entity_type_enum",
+      "schema": "public",
+      "values": [
+        "inventory_posting",
+        "journal_entry"
+      ]
+    },
+    "public.erp_sync_status_enum": {
+      "name": "erp_sync_status_enum",
+      "schema": "public",
+      "values": [
+        "pending",
+        "success",
+        "failed"
+      ]
+    },
+    "public.grn_status_enum": {
+      "name": "grn_status_enum",
+      "schema": "public",
+      "values": [
+        "draft",
+        "confirmed",
+        "posting_failed",
+        "posted",
+        "flagged_for_adjustment"
+      ]
+    },
+    "public.inspection_result_enum": {
+      "name": "inspection_result_enum",
+      "schema": "public",
+      "values": [
+        "pending",
+        "accepted",
+        "rejected",
+        "accepted_with_conditions"
+      ]
+    },
+    "public.journal_source_type_enum": {
+      "name": "journal_source_type_enum",
+      "schema": "public",
+      "values": [
+        "grn",
+        "lc_charge",
+        "duty_payment"
+      ]
+    },
+    "public.lc_charge_type_enum": {
+      "name": "lc_charge_type_enum",
+      "schema": "public",
+      "values": [
+        "opening_fee",
+        "amendment_fee",
+        "advising_confirmation_fee",
+        "acceptance_commission",
+        "swift"
+      ]
+    },
+    "public.lc_document_type_enum": {
+      "name": "lc_document_type_enum",
+      "schema": "public",
+      "values": [
+        "bl",
+        "ci",
+        "packing_list",
+        "coo",
+        "inspection_cert",
+        "phytosanitary",
+        "insurance_cert",
+        "other"
+      ]
+    },
+    "public.lc_status_enum": {
+      "name": "lc_status_enum",
+      "schema": "public",
+      "values": [
+        "applied",
+        "opened",
+        "advised",
+        "amended",
+        "docs_submitted",
+        "docs_received",
+        "docs_checked",
+        "discrepancies_found",
+        "accepted",
+        "payment_authorised",
+        "settled"
+      ]
+    },
+    "public.lc_type_enum": {
+      "name": "lc_type_enum",
+      "schema": "public",
+      "values": [
+        "sight",
+        "usance",
+        "deferred_payment",
+        "revolving",
+        "standby"
+      ]
+    },
+    "public.notification_channel_enum": {
+      "name": "notification_channel_enum",
+      "schema": "public",
+      "values": [
+        "in_app",
+        "email",
+        "webhook",
+        "telegram"
+      ]
+    },
+    "public.notification_type_enum": {
+      "name": "notification_type_enum",
+      "schema": "public",
+      "values": [
+        "lc_expiry",
+        "lc_last_shipment",
+        "lc_presentation",
+        "variance",
+        "approval_request",
+        "posting_failed",
+        "price_variance"
+      ]
+    },
+    "public.po_status_enum": {
+      "name": "po_status_enum",
+      "schema": "public",
+      "values": [
+        "draft",
+        "pending_approval",
+        "approved",
+        "lc_applied",
+        "shipped",
+        "partially_received",
+        "fully_received",
+        "closed",
+        "rejected"
+      ]
+    },
+    "public.preferred_language_enum": {
+      "name": "preferred_language_enum",
+      "schema": "public",
+      "values": [
+        "en",
+        "am"
+      ]
+    },
+    "public.rejected_claim_status_enum": {
+      "name": "rejected_claim_status_enum",
+      "schema": "public",
+      "values": [
+        "open",
+        "closed"
+      ]
+    },
+    "public.rejected_claim_type_enum": {
+      "name": "rejected_claim_type_enum",
+      "schema": "public",
+      "values": [
+        "supplier_claim",
+        "write_off"
+      ]
+    },
+    "public.role_enum": {
+      "name": "role_enum",
+      "schema": "public",
+      "values": [
+        "procurement_officer",
+        "procurement_manager",
+        "finance_officer",
+        "finance_manager",
+        "customs_officer",
+        "warehouse_manager",
+        "general_manager",
+        "system_admin"
+      ]
+    },
+    "public.shipment_document_type_enum": {
+      "name": "shipment_document_type_enum",
+      "schema": "public",
+      "values": [
+        "bl",
+        "ci",
+        "packing_list",
+        "coo",
+        "customs_declaration",
+        "release_note",
+        "insurance_certificate",
+        "inspection_report",
+        "other"
+      ]
+    },
+    "public.shipment_status_enum": {
+      "name": "shipment_status_enum",
+      "schema": "public",
+      "values": [
+        "ordered",
+        "shipped",
+        "at_customs",
+        "cleared",
+        "partially_received",
+        "received"
+      ]
+    },
+    "public.variance_status_enum": {
+      "name": "variance_status_enum",
+      "schema": "public",
+      "values": [
+        "auto_approved",
+        "pending_approval",
+        "approved",
+        "rejected"
+      ]
+    },
+    "public.variance_type_enum": {
+      "name": "variance_type_enum",
+      "schema": "public",
+      "values": [
+        "price",
+        "exchange_rate",
+        "freight",
+        "duty",
+        "other"
+      ]
+    }
+  },
   "schemas": {},
   "sequences": {},
   "roles": {},

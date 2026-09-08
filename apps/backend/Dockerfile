@@ -1,12 +1,13 @@
 FROM node:20-alpine AS base
 ENV NPM_HOME = "/npm"
 ENV PATH = "$NPM_HOME:$PATH"
-RUN 
+RUN corepack enable
 
 FROM base AS deps
 WORKDIR /app
 
-COPY package.json npm-lock.yaml* ./
+COPY package.json package-lock.json* ./
+RUN npm ci || npm install
 
 RUN npm install --frozen-lockfile || npm install
 
@@ -39,4 +40,4 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
