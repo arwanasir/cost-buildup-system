@@ -13,3 +13,7 @@ coverage/
 
 # File uploads
 uploads/
+
+../postman/
+
+postman/
