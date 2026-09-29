@@ -1,0 +1,18 @@
+{
+  "lc_expiry_title": "LC Expiring Soon",
+  "lc_expiry_body": "LC {{lcNumber}} is expiring on {{expiryDate}}.",
+  "lc_last_shipment_title": "Last Shipment Date Approaching",
+  "lc_last_shipment_body": "The last shipment date for LC {{lcNumber}} is {{lastShipmentDate}}.",
+  "lc_presentation_title": "LC Presentation Due",
+  "lc_presentation_body": "Documents for LC {{lcNumber}} must be presented by {{presentationDate}}.",
+  "variance_title": "Cost Variance Detected",
+  "variance_body": "A variance of {{amount}} was detected for {{entityName}}.",
+  "approval_request_title": "Approval Required",
+  "approval_request_body": "Your approval is required for {{entityName}}.",
+  "posting_failed_title": "ERP Posting Failed",
+  "posting_failed_body": "Failed to post {{entityName}} to ERP. Reason: {{reason}}.",
+  "price_variance_title": "Price Variance Exceeded",
+  "price_variance_body": "Price variance of {{amount}} for {{entityName}} requires attention.",
+  "flagged_for_adjustment_title": "Flagged for Adjustment",
+  "flagged_for_adjustment_body": "{{entityName}} has been flagged for adjustment. Reason: {{reason}}."
+}

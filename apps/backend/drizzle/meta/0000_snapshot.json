@@ -1,5 +1,5 @@
 {
-  "id": "fb860b58-fe85-4795-b657-7bfa790cf3a9",
+  "id": "04b36fba-4392-41f8-9477-334055eada54",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -5351,6 +5351,18 @@
         },
         "locked_until": {
           "name": "locked_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reset_token_hash": {
+          "name": "reset_token_hash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reset_token_expires": {
+          "name": "reset_token_expires",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

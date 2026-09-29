@@ -1,5 +1,5 @@
 {
-  "compilerOptions": {
+  "compilerOptions": { "resolveJsonModule": true,
     "module": "commonjs",
     // "moduleResolution": "nodenext",
     // "resolvePackageJsonExports": true,

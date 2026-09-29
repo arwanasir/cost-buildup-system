@@ -1,0 +1,112 @@
+const fs = require('fs');
+
+const insomniaExport = {
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": new Date().toISOString(),
+  "__export_source": "insomnia.desktop.app:v8.0.0",
+  "resources": [
+    {
+      "_id": "wrk_cost_buildup",
+      "_type": "workspace",
+      "name": "Cost Buildup System API",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_cost_buildup",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://127.0.0.1:3000/api/v1",
+        "token": ""
+      }
+    },
+    // FOLDERS
+    { "_id": "fld_health", "_type": "request_group", "parentId": "wrk_cost_buildup", "name": "1. Health" },
+    { "_id": "fld_auth", "_type": "request_group", "parentId": "wrk_cost_buildup", "name": "2. Auth" },
+    { "_id": "fld_users", "_type": "request_group", "parentId": "wrk_cost_buildup", "name": "3. Users" },
+    { "_id": "fld_settings", "_type": "request_group", "parentId": "wrk_cost_buildup", "name": "4. Settings" },
+    
+    // HEALTH
+    {
+      "_id": "req_health", "_type": "request", "parentId": "fld_health", "name": "Check Health",
+      "method": "GET", "url": "{{ _.base_url }}/health"
+    },
+    
+    // AUTH
+    {
+      "_id": "req_login", "_type": "request", "parentId": "fld_auth", "name": "Login",
+      "method": "POST", "url": "{{ _.base_url }}/auth/login",
+      "body": { "mimeType": "application/json", "text": "{\n  \"email\": \"admin@company.com\",\n  \"password\": \"Password123!\"\n}" },
+      "headers": [{"name": "Content-Type", "value": "application/json"}]
+    },
+    {
+      "_id": "req_auth_me", "_type": "request", "parentId": "fld_auth", "name": "Get Current User (Me)",
+      "method": "GET", "url": "{{ _.base_url }}/auth/me",
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_auth_refresh", "_type": "request", "parentId": "fld_auth", "name": "Refresh Token",
+      "method": "POST", "url": "{{ _.base_url }}/auth/refresh",
+      "body": { "mimeType": "application/json", "text": "{\n  \"refreshToken\": \"YOUR_REFRESH_TOKEN_HERE\"\n}" },
+      "headers": [{"name": "Content-Type", "value": "application/json"}]
+    },
+    {
+      "_id": "req_auth_logout", "_type": "request", "parentId": "fld_auth", "name": "Logout",
+      "method": "POST", "url": "{{ _.base_url }}/auth/logout",
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_auth_change_pw", "_type": "request", "parentId": "fld_auth", "name": "Change Password",
+      "method": "POST", "url": "{{ _.base_url }}/auth/change-password",
+      "body": { "mimeType": "application/json", "text": "{\n  \"oldPassword\": \"Password123!\",\n  \"newPassword\": \"NewStrongPassword123!\"\n}" },
+      "headers": [{"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+
+    // USERS
+    {
+      "_id": "req_users_list", "_type": "request", "parentId": "fld_users", "name": "List Users",
+      "method": "GET", "url": "{{ _.base_url }}/users",
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_users_create", "_type": "request", "parentId": "fld_users", "name": "Create User",
+      "method": "POST", "url": "{{ _.base_url }}/users",
+      "body": { "mimeType": "application/json", "text": "{\n  \"email\": \"finance.mgr@company.com\",\n  \"fullName\": \"Finance Manager\",\n  \"role\": \"finance_manager\",\n  \"department\": \"Finance\",\n  \"temporaryPassword\": \"TempPass123!\"\n}" },
+      "headers": [{"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_users_update", "_type": "request", "parentId": "fld_users", "name": "Update User",
+      "method": "PATCH", "url": "{{ _.base_url }}/users/INSERT_USER_ID_HERE",
+      "body": { "mimeType": "application/json", "text": "{\n  \"department\": \"Logistics\"\n}" },
+      "headers": [{"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_users_deactivate", "_type": "request", "parentId": "fld_users", "name": "Deactivate User",
+      "method": "POST", "url": "{{ _.base_url }}/users/INSERT_USER_ID_HERE/deactivate",
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_users_reset", "_type": "request", "parentId": "fld_users", "name": "Reset User Password",
+      "method": "POST", "url": "{{ _.base_url }}/users/INSERT_USER_ID_HERE/reset-password",
+      "body": { "mimeType": "application/json", "text": "{\n  \"newPassword\": \"ForceNewPassword!1\"\n}" },
+      "headers": [{"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+
+    // SETTINGS
+    {
+      "_id": "req_settings_list", "_type": "request", "parentId": "fld_settings", "name": "Get All Settings",
+      "method": "GET", "url": "{{ _.base_url }}/settings",
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_settings_update", "_type": "request", "parentId": "fld_settings", "name": "Update Setting",
+      "method": "PATCH", "url": "{{ _.base_url }}/settings/variance_threshold_pct",
+      "body": { "mimeType": "application/json", "text": "{\n  \"valueNumeric\": 7.5\n}" },
+      "headers": [{"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    }
+  ]
+};
+
+fs.writeFileSync('Insomnia_Export.json', JSON.stringify(insomniaExport, null, 2), 'utf8');

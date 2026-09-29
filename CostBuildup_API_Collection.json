@@ -1,0 +1,108 @@
+﻿{
+  "info": {
+    "name": "Cost Buildup System API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Health",
+      "item": [
+        {
+          "name": "Check Health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "http://127.0.0.1:3000/api/v1/health", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "3000", "path": ["api", "v1", "health"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@company.com\",\n  \"password\": \"Password123!\"\n}" },
+            "url": { "raw": "http://127.0.0.1:3000/api/v1/auth/login", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "3000", "path": ["api", "v1", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer YOUR_ACCESS_TOKEN_HERE" }],
+            "url": { "raw": "http://127.0.0.1:3000/api/v1/auth/me", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "3000", "path": ["api", "v1", "auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer YOUR_ACCESS_TOKEN_HERE" }],
+            "url": { "raw": "http://127.0.0.1:3000/api/v1/users", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "3000", "path": ["api", "v1", "users"] }
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer YOUR_ACCESS_TOKEN_HERE" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"finance@company.com\",\n  \"fullName\": \"Finance Officer\",\n  \"role\": \"finance_officer\",\n  \"temporaryPassword\": \"TempPass123!\"\n}" },
+            "url": { "raw": "http://127.0.0.1:3000/api/v1/users", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "3000", "path": ["api", "v1", "users"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Cost Categories",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer YOUR_ACCESS_TOKEN_HERE" }],
+            "url": { "raw": "http://127.0.0.1:3000/api/v1/cost-categories", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "3000", "path": ["api", "v1", "cost-categories"] }
+          }
+        },
+        {
+          "name": "Create Cost Category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer YOUR_ACCESS_TOKEN_HERE" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"FUMIGATION\",\n  \"name\": \"Fumigation Fee\",\n  \"defaultAllocationMethod\": \"by_quantity\",\n  \"isItemSpecific\": false,\n  \"isActive\": true\n}" },
+            "url": { "raw": "http://127.0.0.1:3000/api/v1/cost-categories", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "3000", "path": ["api", "v1", "cost-categories"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Exchange Rates",
+      "item": [
+        {
+          "name": "Create Exchange Rate",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer YOUR_ACCESS_TOKEN_HERE" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"currency\": \"USD\",\n  \"rateDate\": \"2026-09-17\",\n  \"rate\": 48.55\n}" },
+            "url": { "raw": "http://127.0.0.1:3000/api/v1/nbe-rates", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "3000", "path": ["api", "v1", "nbe-rates"] }
+          }
+        },
+        {
+          "name": "Get Latest Rate",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer YOUR_ACCESS_TOKEN_HERE" }],
+            "url": { "raw": "http://127.0.0.1:3000/api/v1/nbe-rates/latest?currency=USD", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "3000", "path": ["api", "v1", "nbe-rates", "latest"], "query": [{ "key": "currency", "value": "USD" }] }
+          }
+        }
+      ]
+    }
+  ]
+}
