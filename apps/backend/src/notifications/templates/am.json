@@ -1,0 +1,18 @@
+{
+  "lc_expiry_title": "የብድር ሰነድ (LC) ጊዜው ሊያበቃ ነው",
+  "lc_expiry_body": "የብድር ሰነድ {{lcNumber}} ጊዜው በ {{expiryDate}} ያበቃል።",
+  "lc_last_shipment_title": "የመጨረሻ ጭነት ቀን እየተቃረበ ነው",
+  "lc_last_shipment_body": "የብድር ሰነድ {{lcNumber}} የመጨረሻው የጭነት ቀን በ {{lastShipmentDate}} ነው።",
+  "lc_presentation_title": "የLC ሰነድ ማቅረቢያ ደርሷል",
+  "lc_presentation_body": "ለLC {{lcNumber}} ሰነዶች በ {{presentationDate}} መቅረብ አለባቸው።",
+  "variance_title": "የወጪ ልዩነት ታይቷል",
+  "variance_body": "በ {{entityName}} ላይ የ {{amount}} ልዩነት ታይቷል።",
+  "approval_request_title": "ማጽደቅ ያስፈልጋል",
+  "approval_request_body": "ለ {{entityName}} ማጽደቅዎ ያስፈልጋል።",
+  "posting_failed_title": "የERP ማስተላለፍ አልተሳካም",
+  "posting_failed_body": "ለ {{entityName}} ወደ ERP ማስተላለፍ አልተሳካም። ምክንያት፦ {{reason}}።",
+  "price_variance_title": "የዋጋ ልዩነት አልፏል",
+  "price_variance_body": "ለ {{entityName}} የዋጋ ልዩነት {{amount}} ማስተካከያ ይፈልጋል።",
+  "flagged_for_adjustment_title": "ለማስተካከያ ታይቷል",
+  "flagged_for_adjustment_body": "{{entityName}} ለማስተካከያ ታይቷል። ምክንያት፦ {{reason}}።"
+}

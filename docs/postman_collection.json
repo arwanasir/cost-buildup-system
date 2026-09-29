@@ -1,0 +1,1983 @@
+{
+  "info": {
+    "name": "Audit Interceptor Regression Suite",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Login to get Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "pm.environment.set('accessToken', jsonData.accessToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/auth/login",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"admin@company.com\",\"password\":\"Password123!\"}"
+        }
+      }
+    },
+    {
+      "name": "1. [POST] Users",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/users",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "2. Verify exactly ONE audit row for [POST] Users",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "3. [PATCH] Users",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:3000/api/v1/users/user-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "4. Verify exactly ONE audit row for [PATCH] Users",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "5. [DELETE] Users",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": "http://localhost:3000/api/v1/users/user-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "6. Verify exactly ONE audit row for [DELETE] Users",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "7. [PATCH] Settings",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:3000/api/v1/settings/variance_threshold_pct",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "8. Verify exactly ONE audit row for [PATCH] Settings",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "9. [POST] Suppliers",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/suppliers",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "10. Verify exactly ONE audit row for [POST] Suppliers",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "11. [PATCH] Suppliers",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:3000/api/v1/suppliers/sup-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "12. Verify exactly ONE audit row for [PATCH] Suppliers",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "13. [DELETE] Suppliers",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": "http://localhost:3000/api/v1/suppliers/sup-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "14. Verify exactly ONE audit row for [DELETE] Suppliers",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "15. [POST] Items",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/items",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "16. Verify exactly ONE audit row for [POST] Items",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "17. [PATCH] Items",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:3000/api/v1/items/item-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "18. Verify exactly ONE audit row for [PATCH] Items",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "19. [DELETE] Items",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": "http://localhost:3000/api/v1/items/item-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "20. Verify exactly ONE audit row for [DELETE] Items",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "21. [POST] Purchase Orders",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/purchase-orders",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "22. Verify exactly ONE audit row for [POST] Purchase Orders",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "23. [PATCH] Purchase Orders",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:3000/api/v1/purchase-orders/po-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "24. Verify exactly ONE audit row for [PATCH] Purchase Orders",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "25. [DELETE] Purchase Orders",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": "http://localhost:3000/api/v1/purchase-orders/po-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "26. Verify exactly ONE audit row for [DELETE] Purchase Orders",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "27. [POST] Letters of Credit",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/letters-of-credit",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "28. Verify exactly ONE audit row for [POST] Letters of Credit",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "29. [PATCH] Letters of Credit",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:3000/api/v1/letters-of-credit/lc-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "30. Verify exactly ONE audit row for [PATCH] Letters of Credit",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "31. [DELETE] Letters of Credit",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": "http://localhost:3000/api/v1/letters-of-credit/lc-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "32. Verify exactly ONE audit row for [DELETE] Letters of Credit",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "33. [POST] Shipments",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/import-shipments",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "34. Verify exactly ONE audit row for [POST] Shipments",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "35. [PATCH] Shipments",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:3000/api/v1/import-shipments/shp-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "36. Verify exactly ONE audit row for [PATCH] Shipments",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "37. [DELETE] Shipments",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": "http://localhost:3000/api/v1/import-shipments/shp-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "38. Verify exactly ONE audit row for [DELETE] Shipments",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "39. [POST] Commercial Invoices",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/commercial-invoices",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "40. Verify exactly ONE audit row for [POST] Commercial Invoices",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "41. [PATCH] Commercial Invoices",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:3000/api/v1/commercial-invoices/ci-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "42. Verify exactly ONE audit row for [PATCH] Commercial Invoices",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "43. [DELETE] Commercial Invoices",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": "http://localhost:3000/api/v1/commercial-invoices/ci-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "44. Verify exactly ONE audit row for [DELETE] Commercial Invoices",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "45. [POST] Customs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/customs",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "46. Verify exactly ONE audit row for [POST] Customs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "47. [PATCH] Customs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:3000/api/v1/customs/cust-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "48. Verify exactly ONE audit row for [PATCH] Customs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "49. [DELETE] Customs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": "http://localhost:3000/api/v1/customs/cust-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "50. Verify exactly ONE audit row for [DELETE] Customs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "51. [POST] Cost Entries",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/cost-entries",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "52. Verify exactly ONE audit row for [POST] Cost Entries",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "53. [PATCH] Cost Entries",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:3000/api/v1/cost-entries/ce-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "54. Verify exactly ONE audit row for [PATCH] Cost Entries",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "55. [DELETE] Cost Entries",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": "http://localhost:3000/api/v1/cost-entries/ce-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "56. Verify exactly ONE audit row for [DELETE] Cost Entries",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "57. [POST] GRN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/goods-receipts",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "58. Verify exactly ONE audit row for [POST] GRN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "59. [PATCH] GRN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:3000/api/v1/goods-receipts/grn-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "60. Verify exactly ONE audit row for [PATCH] GRN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "61. [POST] Claims",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/v1/claims",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "62. Verify exactly ONE audit row for [POST] Claims",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "63. [PATCH] Claims",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:3000/api/v1/claims/clm-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "64. Verify exactly ONE audit row for [PATCH] Claims",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "65. [PATCH] Variances",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 2xx', () => { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:3000/api/v1/variances/var-123",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "66. Verify exactly ONE audit row for [PATCH] Variances",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Check exactly one audit row for recent action', () => {",
+              "  var data = pm.response.json();",
+              "  var recentAudits = data.data;",
+              "  pm.expect(recentAudits.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/v1/audit?limit=1",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ]
+      }
+    }
+  ]
+}

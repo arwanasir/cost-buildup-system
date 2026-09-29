@@ -552,6 +552,8 @@ CREATE TABLE "users" (
 	"is_active" boolean DEFAULT true NOT NULL,
 	"failed_login_count" integer DEFAULT 0 NOT NULL,
 	"locked_until" timestamp with time zone,
+	"reset_token_hash" varchar(64),
+	"reset_token_expires" timestamp with time zone,
 	"created_by" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_by" uuid,
