@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { DRIZZLE, DrizzleDB } from '@/db';
 import * as schema from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import Decimal from 'decimal.js';
 
 @Injectable()

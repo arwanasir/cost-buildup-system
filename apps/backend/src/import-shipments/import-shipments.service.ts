@@ -12,7 +12,6 @@ import { eq, inArray, and, gte, lte } from 'drizzle-orm';
 import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { CreateClearingInvoiceDto } from './dto/create-clearing-invoice.dto';
 import { CreateShipmentChargeDto } from './dto/create-shipment-charge.dto';
-import { UpdateShipmentDto } from './dto/update-shipment.dto';
 import { NumberingService } from '@/core/numbering/numbering.service';
 import Decimal from 'decimal.js';
 import { EventEmitter2 } from '@nestjs/event-emitter';

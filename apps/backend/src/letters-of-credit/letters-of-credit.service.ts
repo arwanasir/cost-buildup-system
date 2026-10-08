@@ -8,7 +8,6 @@ import { DRIZZLE } from '@/db';
 import { DrizzleDB } from '@/db';
 import { CreateLcDto } from './dto/create-lc.dto';
 import { AmendLcDto } from './dto/amend-lc.dto';
-import { AddBankChargeDto } from './dto/add-bank-charge.dto';
 import * as schema from '@/db/schema';
 import { inArray, eq, and, lte } from 'drizzle-orm';
 import { EventEmitter2 } from '@nestjs/event-emitter';

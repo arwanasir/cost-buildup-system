@@ -1,4 +1,3 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateItemDto } from './create-item.dto';
 

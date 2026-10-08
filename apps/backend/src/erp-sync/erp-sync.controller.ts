@@ -14,7 +14,7 @@ import { RequiredPermission } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/permissions';
 import { DRIZZLE } from '@/db';
 import * as schema from '@/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { InventoryPostingService } from './inventory-posting.service';
 import { FinancePostingService } from './finance-posting.service';
 

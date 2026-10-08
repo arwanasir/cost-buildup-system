@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { ReportExportService } from './report-export.service';
-import { Permission, Role } from '../auth/permissions';
+import { Role } from '../auth/permissions';
 import { DRIZZLE } from '../db/db.module';
 
 describe('ReportsController', () => {

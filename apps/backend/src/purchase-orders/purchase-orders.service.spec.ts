@@ -6,7 +6,6 @@ import { PoCalculationService } from './po-calculation.service';
 import { NumberingService } from '@/core/numbering/numbering.service';
 import { DRIZZLE } from '@/db';
 import { BadRequestException } from '@nestjs/common';
-import Decimal from 'decimal.js';
 
 describe('Purchase Orders Workflow', () => {
   let poService: PurchaseOrdersService;

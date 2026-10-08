@@ -6,7 +6,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Permission, Role } from '../permissions';
+import { Permission } from '../permissions';
 import { permissions_key } from '../decorators/permissions.decorator';
 import { DRIZZLE, DrizzleDB } from '../../db/db.module';
 import { rolePermissions } from '../../db/schema/schema';

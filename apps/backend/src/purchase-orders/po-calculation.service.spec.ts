@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PoCalculationService } from './po-calculation.service';
-import Decimal from 'decimal.js';
 
 describe('PoCalculationService', () => {
   let service: PoCalculationService;

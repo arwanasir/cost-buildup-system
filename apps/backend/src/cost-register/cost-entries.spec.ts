@@ -6,7 +6,6 @@ import { DRIZZLE } from '@/db';
 import { StorageService } from '@/storage/storage.service';
 import { BadRequestException } from '@nestjs/common';
 import * as schema from '@/db/schema';
-import Decimal from 'decimal.js';
 
 import { EventEmitter2 } from '@nestjs/event-emitter';
 

@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { VariancesService } from './variances.service';
-import { NotificationsModule } from '../notifications/notifications.module';
 import {
   VariancesController,
   ShipmentVariancesController,
