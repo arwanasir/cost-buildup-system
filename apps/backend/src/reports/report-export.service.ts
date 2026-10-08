@@ -1,42 +1,40 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
-import * as pdfMake from 'pdfmake/build/pdfmake';
-const pdfFonts = require('pdfmake/build/vfs_fonts');
-
-(pdfMake as any).vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
+import * as path from 'path';
 
 const bilingualDictionary: Record<string, string> = {
-  shipmentId: 'Shipment ID / የጭነት መለያ',
-  shipmentNumber: 'Shipment No / የጭነት ቁጥር',
-  supplierName: 'Supplier Name / የአቅራቢ ስም',
-  period: 'Period / ጊዜ',
-  estimatedEtb: 'Estimated (ETB) / የተገመተ (ETB)',
-  actualEtb: 'Actual (ETB) / ትክክለኛ (ETB)',
-  varianceEtb: 'Variance (ETB) / ልዩነት (ETB)',
-  status: 'Status / ሁኔታ',
-  eta: 'ETA / የሚጠበቅበት ጊዜ',
-  totalLandedCostEtb: 'Total Landed Cost / ጠቅላላ የወረደ ዋጋ',
-  perUnitLandedCostEtb: 'Per Unit Landed Cost / የአንድ ዕቃ ዋጋ',
-  itemCode: 'Item Code / የዕቃ ኮድ',
-  itemName: 'Item Name / የዕቃ ስም',
-  category: 'Category / ምድብ',
-  totalImportValue: 'Total Import Value / ጠቅላላ አስመጣ ዋጋ',
-  totalCharges: 'Total Charges / ጠቅላላ ወጪዎች',
-  averageMarkupPercent: 'Avg Markup % / አማካይ የትርፍ %',
-  amountForeign: 'Amount (Foreign) / የውጭ ገንዘብ መጠን',
-  currency: 'Currency / ምንዛሬ',
-  openingDate: 'Opening Date / የተከፈተበት ቀን',
-  expiryDate: 'Expiry Date / ማብቂያ ቀን',
-  expiringSoon: 'Expiring Soon / በቅርቡ ያበቃል',
-  assessedDuty: 'Assessed Duty / የተገመተ ቀረጥ',
-  paidDuty: 'Paid Duty / የተከፈለ ቀረጥ',
-  actualArrivalDate: 'Actual Arrival / ትክክለኛ መድረሻ',
-  isOverdue: 'Is Overdue / ዘግይቷል',
-  daysOverdue: 'Days Overdue / የዘገየባቸው ቀናት',
-  documentCompletenessAvgScore: 'Doc Completeness Score / የሰነድ ሙሉነት ነጥብ',
-  ciPriceVarianceEtb: 'CI Price Variance / CI የዋጋ ልዩነት',
-  qualityRejectionRatePct: 'Quality Rejection % / የጥራት ውድቅ %',
-  leadTime: 'Lead Time / የመላኪያ ጊዜ',
+  shipmentId: 'Shipment ID / á‹¨áŒ­áŠ á‰µ áˆ˜áˆˆá‹«',
+  shipmentNumber: 'Shipment No / á‹¨áŒ­áŠ á‰µ á‰ áŒ¥áˆ­',
+  supplierName: 'Supplier Name / á‹¨áŠ á‰…áˆ«á‰¢ áˆµáˆ ',
+  period: 'Period / áŒŠá‹œ',
+  estimatedEtb: 'Estimated (ETB) / á‹¨á‰°áŒˆáˆ˜á‰° (ETB)',
+  actualEtb: 'Actual (ETB) / á‰µáŠ­áŠ­áˆˆáŠ› (ETB)',
+  varianceEtb: 'Variance (ETB) / áˆ á‹©áŠ á‰µ (ETB)',
+  status: 'Status / áˆ áŠ”á‰³',
+  eta: 'ETA / á‹¨áˆšáŒ á‰ á‰…á‰ á‰µ áŒŠá‹œ',
+  totalLandedCostEtb: 'Total Landed Cost / áŒ á‰…áˆ‹áˆ‹ á‹¨á‹ˆáˆ¨á‹° á‹‹áŒ‹',
+  perUnitLandedCostEtb: 'Per Unit Landed Cost / á‹¨áŠ áŠ•á‹µ á‹•á‰ƒ á‹‹áŒ‹',
+  itemCode: 'Item Code / á‹¨á‹•á‰ƒ áŠ®á‹µ',
+  itemName: 'Item Name / á‹¨á‹•á‰ƒ áˆµáˆ ',
+  category: 'Category / áˆ á‹µá‰¥',
+  totalImportValue: 'Total Import Value / áŒ á‰…áˆ‹áˆ‹ áŠ áˆµáˆ˜áŒ£ á‹‹áŒ‹',
+  totalCharges: 'Total Charges / áŒ á‰…áˆ‹áˆ‹ á‹ˆáŒªá‹Žá‰½',
+  averageMarkupPercent: 'Avg Markup % / áŠ áˆ›áŠ«á‹­ á‹¨á‰µáˆ­á   %',
+  amountForeign: 'Amount (Foreign) / á‹¨á‹ áŒ­ áŒˆáŠ•á‹˜á‰¥ áˆ˜áŒ áŠ•',
+  currency: 'Currency / áˆ áŠ•á‹›áˆ¬',
+  openingDate: 'Opening Date / á‹¨á‰°áŠ¨á ˆá‰°á‰ á‰µ á‰€áŠ•',
+  expiryDate: 'Expiry Date / áˆ›á‰¥á‰‚á‹« á‰€áŠ•',
+  expiringSoon: 'Expiring Soon / á‰ á‰…áˆ­á‰¡ á‹«á‰ á‰ƒáˆ ',
+  assessedDuty: 'Assessed Duty / á‹¨á‰°áŒˆáˆ˜á‰° á‰€áˆ¨áŒ¥',
+  paidDuty: 'Paid Duty / á‹¨á‰°áŠ¨á ˆáˆˆ á‰€áˆ¨áŒ¥',
+  actualArrivalDate: 'Actual Arrival / á‰µáŠ­áŠ­áˆˆáŠ› áˆ˜á‹µáˆ¨áˆ»',
+  isOverdue: 'Is Overdue / á‹˜áŒ á‹­á‰·áˆ ',
+  daysOverdue: 'Days Overdue / á‹¨á‹˜áŒˆá‹¨á‰£á‰¸á‹  á‰€áŠ“á‰µ',
+  documentCompletenessAvgScore:
+    'Doc Completeness Score / á‹¨áˆ°áŠ á‹µ áˆ™áˆ‰áŠ á‰µ áŠ áŒ¥á‰¥',
+  ciPriceVarianceEtb: 'CI Price Variance / CI á‹¨á‹‹áŒ‹ áˆ á‹©áŠ á‰µ',
+  qualityRejectionRatePct: 'Quality Rejection % / á‹¨áŒ¥áˆ«á‰µ á‹ á‹µá‰… %',
+  leadTime: 'Lead Time / á‹¨áˆ˜áˆ‹áŠªá‹« áŒŠá‹œ',
 };
 
 function formatHeader(key: string): string {
@@ -44,7 +42,7 @@ function formatHeader(key: string): string {
   const formatted = key
     .replace(/([A-Z])/g, ' $1')
     .replace(/^./, (str) => str.toUpperCase());
-  return ` / `;
+  return formatted + ' / ' + formatted;
 }
 
 @Injectable()
@@ -110,7 +108,10 @@ export class ReportExportService {
 
     const docDefinition = {
       content: [
-        { text: 'Report Export / የሪፖርት ውፅዓት', style: 'header' },
+        {
+          text: 'Report Export / á‹¨áˆªá –áˆ­á‰µ á‹ á …á‹“á‰µ',
+          style: 'header',
+        },
         {
           style: 'tableExample',
           table: {
@@ -130,10 +131,32 @@ export class ReportExportService {
 
     return new Promise((resolve, reject) => {
       try {
-        const pdfDocGenerator = pdfMake.createPdf(docDefinition as any);
-        (pdfDocGenerator as any).getBuffer((buffer: any) => {
-          resolve(buffer);
-        });
+        const pdfMake = require('pdfmake');
+        pdfMake.fonts = {
+          Roboto: {
+            normal: path.join(
+              __dirname,
+              '../../node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf',
+            ),
+            bold: path.join(
+              __dirname,
+              '../../node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf',
+            ),
+            italics: path.join(
+              __dirname,
+              '../../node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf',
+            ),
+            bolditalics: path.join(
+              __dirname,
+              '../../node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf',
+            ),
+          },
+        };
+        const doc = pdfMake.createPdf(docDefinition as any);
+        doc
+          .getBuffer()
+          .then((buffer: any) => resolve(buffer))
+          .catch(reject);
       } catch (e) {
         reject(e);
       }

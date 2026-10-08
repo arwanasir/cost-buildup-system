@@ -3,6 +3,7 @@ import { LettersOfCreditController } from './letters-of-credit.controller';
 import { LettersOfCreditService } from './letters-of-credit.service';
 import { LcStatusService } from './lc-status.service';
 import { LcAlertScheduler } from './lc-alert.scheduler';
+import { DRIZZLE } from '../db/db.module';
 
 describe('LettersOfCreditController', () => {
   let controller: LettersOfCreditController;
@@ -11,6 +12,14 @@ describe('LettersOfCreditController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [LettersOfCreditController],
       providers: [
+        {
+          provide: DRIZZLE,
+          useValue: {
+            select: jest.fn().mockReturnThis(),
+            from: jest.fn().mockReturnThis(),
+            where: jest.fn().mockResolvedValue([]),
+          },
+        },
         { provide: LettersOfCreditService, useValue: {} },
         { provide: LcStatusService, useValue: {} },
         { provide: LcAlertScheduler, useValue: {} },

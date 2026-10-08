@@ -279,7 +279,7 @@ export class ImportShipmentsService {
   async findOne(id: string) {
     const shipment = await this.db.query.importShipments.findFirst({
       where: eq(schema.importShipments.id, id),
-      with: { items: true, costEntries: true },
+      with: { items: true, costEntries: true, commercialInvoices: true },
     });
 
     if (!shipment) {
@@ -297,8 +297,20 @@ export class ImportShipmentsService {
     etaEnd?: string;
   }) {
     const conditions = [];
-    if (filters.status)
-      conditions.push(eq(schema.importShipments.status, filters.status as any));
+    if (filters.status) {
+      if (filters.status.includes(',')) {
+        conditions.push(
+          inArray(
+            schema.importShipments.status,
+            filters.status.split(',') as any,
+          ),
+        );
+      } else {
+        conditions.push(
+          eq(schema.importShipments.status, filters.status as any),
+        );
+      }
+    }
     if (filters.poId)
       conditions.push(eq(schema.importShipments.poId, filters.poId));
     if (filters.supplierId)

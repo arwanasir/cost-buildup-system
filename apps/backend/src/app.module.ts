@@ -36,6 +36,7 @@ import { GoodsReceiptsModule } from './goods-receipts/goods-receipts.module';
 import { ErpSyncModule } from './erp-sync/erp-sync.module';
 import { VariancesModule } from './variances/variances.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     ErpSyncModule,
     VariancesModule,
     NotificationsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [

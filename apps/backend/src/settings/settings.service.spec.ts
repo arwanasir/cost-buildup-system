@@ -65,6 +65,7 @@ describe('SettingsService', () => {
 
   describe('update', () => {
     it('should throw BadRequestException if valueNumeric is not a number', async () => {
+      db.query.policySettings.findFirst.mockResolvedValue({ id: '1', key: 'test_key', valueNumeric: '10' });
       await expect(
         service.update(
           'test_key',

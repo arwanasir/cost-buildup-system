@@ -476,7 +476,7 @@ export async function seedDemoData() {
     {
       id: 'aaa9273d-36dc-4063-a949-613978a18634',
       shipmentId: '0fd7fe53-62a7-4bbd-9cc1-7d93b248e745',
-      costCategoryId: getCatId('CLEARANCE'),
+      costCategoryId: getCatId('CLEARING'),
       amountForeign: '500',
       amountEtb: '500',
       currency: 'ETB',
@@ -500,7 +500,7 @@ export async function seedDemoData() {
     {
       id: '1683042b-5d8f-489d-b6a3-c03037421ea4',
       shipmentId: '0fd7fe53-62a7-4bbd-9cc1-7d93b248e745',
-      costCategoryId: getCatId('TRANSPORT'),
+      costCategoryId: getCatId('INLAND_TRANSPORT'),
       amountForeign: '800',
       amountEtb: '800',
       currency: 'ETB',
@@ -512,7 +512,7 @@ export async function seedDemoData() {
     {
       id: 'bd350f83-d90f-4737-8c86-90ed26de9ee5',
       shipmentId: '0fd7fe53-62a7-4bbd-9cc1-7d93b248e745',
-      costCategoryId: getCatId('WAREHOUSING'),
+      costCategoryId: getCatId('PORT_HANDLING'),
       amountForeign: '300',
       amountEtb: '300',
       currency: 'ETB',
@@ -524,7 +524,7 @@ export async function seedDemoData() {
     {
       id: '53a84711-0867-4d6c-a85d-cc0100530a99',
       shipmentId: '4ec520e5-85be-4f90-991d-0f39863b6d07',
-      costCategoryId: getCatId('OTHER'),
+      costCategoryId: getCatId('VAT'),
       amountForeign: '150',
       amountEtb: '150',
       currency: 'ETB',

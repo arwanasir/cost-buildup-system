@@ -26,10 +26,14 @@ export class ExchangeRatesController {
   @Post()
   @RequiredPermission(Permission.RATES_WRITE)
   create(@Body() createDto: CreateExchangeRateDto, @Req() req: any) {
-    // Note: Passport JWT strategy generally attaches user payload directly to req.user
-    // Usually contains req.user.userId or req.user.sub. We'll use sub per our token payload.
     const userId = req.user.sub || req.user.userId;
     return this.exchangeRatesService.create(createDto, userId);
+  }
+
+  @Get()
+  @RequiredPermission(Permission.RATES_READ)
+  findAll() {
+    return this.exchangeRatesService.findAll();
   }
 
   @Get('latest')

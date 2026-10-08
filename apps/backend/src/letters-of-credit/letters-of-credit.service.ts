@@ -301,6 +301,39 @@ export class LettersOfCreditService {
     });
   }
 
+  async addCharge(
+    lcId: string,
+    dto: import('./dto/add-bank-charge.dto').AddBankChargeDto,
+    userId: string,
+  ) {
+    return this.db.transaction(async (tx) => {
+      const lc = await tx.query.lettersOfCredit.findFirst({
+        where: eq(schema.lettersOfCredit.id, lcId),
+      });
+      if (!lc) throw new NotFoundException('LC not found');
+      const [charge] = await tx
+        .insert(schema.lcBankCharges)
+        .values({
+          lcId,
+          chargeType: dto.chargeType,
+          amountEtb: dto.amountEtb.toString(),
+          chargeDate: dto.chargeDate,
+          bankReference: dto.bankReference,
+          createdBy: userId,
+          updatedBy: userId,
+        })
+        .returning();
+      this.eventEmitter.emit('lc.charge.recorded', {
+        lcId,
+        chargeId: charge.id,
+        chargeType: charge.chargeType,
+        amountEtb: charge.amountEtb,
+        issuingBank: lc.issuingBank,
+      });
+      return charge;
+    });
+  }
+
   async markDocumentReceived(lcId: string, docId: string, isReceived: boolean) {
     const [updated] = await this.db
       .update(schema.lcRequiredDocuments)

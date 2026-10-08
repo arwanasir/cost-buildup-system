@@ -3,6 +3,7 @@ import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { ReportExportService } from './report-export.service';
 import { Permission, Role } from '../auth/permissions';
+import { DRIZZLE } from '../db/db.module';
 
 describe('ReportsController', () => {
   let controller: ReportsController;
@@ -12,6 +13,18 @@ describe('ReportsController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ReportsController],
       providers: [
+        {
+          provide: DRIZZLE,
+          useValue: {
+            query: {
+              rolePermissions: {
+                findMany: jest
+                  .fn()
+                  .mockResolvedValue([{ permissionCode: 'admin:all' }]),
+              },
+            },
+          },
+        },
         {
           provide: ReportsService,
           useValue: {

@@ -22,10 +22,6 @@ export class SettingsService {
     updateSettingDto: UpdateSettingDto,
     userId: string,
   ) {
-    if (typeof updateSettingDto.valueNumeric !== 'number') {
-      throw new BadRequestException('Numeric value is required');
-    }
-
     const setting = await this.db.query.policySettings.findFirst({
       where: eq(schema.policySettings.key, key),
     });
@@ -34,19 +30,39 @@ export class SettingsService {
       throw new NotFoundException('Setting not found');
     }
 
-    const beforeValue = { valueNumeric: setting.valueNumeric };
-    const afterValue = {
-      valueNumeric: updateSettingDto.valueNumeric.toString(),
+    const beforeValue = {
+      valueNumeric: setting.valueNumeric,
+      valueText: setting.valueText,
     };
+
+    const updatePayload: any = {
+      updatedBy: userId,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const afterValue: any = {};
+
+    if (updateSettingDto.valueNumeric !== undefined) {
+      if (isNaN(Number(updateSettingDto.valueNumeric))) {
+        throw new BadRequestException('valueNumeric must be a number');
+      }
+      updatePayload.valueNumeric = updateSettingDto.valueNumeric.toString();
+      afterValue.valueNumeric = updatePayload.valueNumeric;
+    }
+
+    if (updateSettingDto.valueText !== undefined) {
+      updatePayload.valueText = updateSettingDto.valueText;
+      afterValue.valueText = updatePayload.valueText;
+    }
+
+    if (Object.keys(afterValue).length === 0) {
+      throw new BadRequestException('Nothing to update');
+    }
 
     return this.db.transaction(async (tx) => {
       const [updatedSetting] = await tx
         .update(schema.policySettings)
-        .set({
-          valueNumeric: updateSettingDto.valueNumeric.toString(),
-          updatedBy: userId,
-          updatedAt: new Date().toISOString(),
-        })
+        .set(updatePayload)
         .where(eq(schema.policySettings.key, key))
         .returning();
 

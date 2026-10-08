@@ -37,6 +37,11 @@ const mockDb = {
   query: {
     users: { findFirst: jest.fn<() => Promise<any>>() },
     refreshTokens: { findFirst: jest.fn<() => Promise<any>>() },
+    rolePermissions: {
+      findMany: jest
+        .fn<() => Promise<any>>()
+        .mockResolvedValue([{ permissionCode: 'admin:all' }]),
+    },
   },
   update: jest.fn(() => mockQueryBuilder),
   insert: jest.fn(() => mockQueryBuilder),
@@ -65,7 +70,10 @@ describe('AuthService', () => {
         { provide: DRIZZLE, useValue: mockDb },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
-        { provide: AuditService, useValue: { log: jest.fn() } },
+        {
+          provide: AuditService,
+          useValue: { record: jest.fn(), log: jest.fn() },
+        },
       ],
     }).compile();
 

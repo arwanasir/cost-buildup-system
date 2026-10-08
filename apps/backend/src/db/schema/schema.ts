@@ -46,6 +46,35 @@ import {
   varianceTypeEnum,
 } from './enums';
 
+export const roles = pgTable('roles', {
+  code: varchar('code', { length: 50 }).primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+});
+
+export const permissions = pgTable('permissions', {
+  code: varchar('code', { length: 100 }).primaryKey(),
+  description: text('description'),
+});
+
+export const rolePermissions = pgTable(
+  'role_permissions',
+  {
+    roleCode: varchar('role_code', { length: 50 })
+      .notNull()
+      .references(() => roles.code, { onDelete: 'cascade' }),
+    permissionCode: varchar('permission_code', { length: 100 })
+      .notNull()
+      .references(() => permissions.code, { onDelete: 'cascade' }),
+  },
+  (table) => ({
+    pk: uniqueIndex('uq_role_permission').on(
+      table.roleCode,
+      table.permissionCode,
+    ),
+  }),
+);
+
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 255 }).notNull().unique(),

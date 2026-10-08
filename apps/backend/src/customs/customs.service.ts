@@ -10,7 +10,7 @@ import {
 
 import { DRIZZLE } from '@/db';
 import * as schema from '@/db/schema';
-import { eq, inArray, and } from 'drizzle-orm';
+import { eq, inArray, and, desc } from 'drizzle-orm';
 import { CreateDeclarationDto } from './dto/create-declaration.dto';
 import { DutyCalculatorService } from './duty-calculator.service';
 import Decimal from 'decimal.js';
@@ -195,8 +195,22 @@ export class CustomsService {
     });
   }
 
-  async findAll() {
-    return this.db.select().from(schema.customsDeclarations);
+  async findAll(query?: { status?: string; shipmentId?: string }) {
+    const conditions: any[] = [];
+    if (query?.status)
+      conditions.push(
+        eq(schema.customsDeclarations.status, query.status as any),
+      );
+    if (query?.shipmentId)
+      conditions.push(
+        eq(schema.customsDeclarations.shipmentId, query.shipmentId),
+      );
+
+    return this.db.query.customsDeclarations.findMany({
+      where: conditions.length > 0 ? (and as any)(...conditions) : undefined,
+      with: { shipment: true },
+      orderBy: (desc as any)(schema.customsDeclarations.createdAt),
+    });
   }
 
   async findOne(id: string) {

@@ -73,7 +73,10 @@ export const importPurchaseOrdersRelations = relations(
     }),
     poLines: many(schema.poLines),
     poApprovals: many(schema.poApprovals),
-    lettersOfCredit: many(schema.lettersOfCredit),
+    lc: one(schema.lettersOfCredit, {
+      fields: [schema.importPurchaseOrders.lcId],
+      references: [schema.lettersOfCredit.id],
+    }),
     shipments: many(schema.importShipments),
     goodsreceipts: many(schema.goodsReceipts),
   }),
@@ -95,7 +98,7 @@ export const poLinesRelations = relations(schema.poLines, ({ one, many }) => ({
 export const lettersOfCreditRelations = relations(
   schema.lettersOfCredit,
   ({ one, many }) => ({
-    po: one(schema.suppliers, {
+    supplier: one(schema.suppliers, {
       fields: [schema.lettersOfCredit.supplierId],
       references: [schema.suppliers.id],
     }),
@@ -233,10 +236,36 @@ export const commercialInvoicesRelations = relations(
 
 export const customsDeclarationsRelations = relations(
   schema.customsDeclarations,
-  ({ one }) => ({
+  ({ one, many }) => ({
     shipment: one(schema.importShipments, {
       fields: [schema.customsDeclarations.shipmentId],
       references: [schema.importShipments.id],
+    }),
+    items: many(schema.customsDeclarationItems),
+    payments: many(schema.dutyPayments),
+  }),
+);
+
+export const customsDeclarationItemsRelations = relations(
+  schema.customsDeclarationItems,
+  ({ one }) => ({
+    customsDeclaration: one(schema.customsDeclarations, {
+      fields: [schema.customsDeclarationItems.declarationId],
+      references: [schema.customsDeclarations.id],
+    }),
+    shipmentItem: one(schema.shipmentItems, {
+      fields: [schema.customsDeclarationItems.shipmentItemId],
+      references: [schema.shipmentItems.id],
+    }),
+  }),
+);
+
+export const dutyPaymentsRelations = relations(
+  schema.dutyPayments,
+  ({ one }) => ({
+    customsDeclaration: one(schema.customsDeclarations, {
+      fields: [schema.dutyPayments.declarationId],
+      references: [schema.customsDeclarations.id],
     }),
   }),
 );

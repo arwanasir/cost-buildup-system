@@ -92,6 +92,16 @@ export class LettersOfCreditController {
     return this.lettersOfCreditService.getCharges(id);
   }
 
+  @Post(':id/charges')
+  @RequiredPermission(Permission.LC_WRITE)
+  async addCharge(
+    @Param('id') id: string,
+    @Body() dto: AddBankChargeDto,
+    @Req() req: any,
+  ) {
+    return this.lettersOfCreditService.addCharge(id, dto, req.user.id);
+  }
+
   @Patch(':id/documents/:docId')
   @RequiredPermission(Permission.LC_WRITE)
   async markDocumentReceived(

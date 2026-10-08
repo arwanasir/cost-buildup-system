@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DRIZZLE } from '@/db';
@@ -201,6 +202,13 @@ export class CostEntriesService {
         .from(schema.importCostEntries)
         .where(eq(schema.importCostEntries.id, id));
       if (!entry) throw new NotFoundException('Cost entry not found');
+
+      // Maker-Checker Rule (AC10)
+      if (entry.createdBy === userId) {
+        throw new ForbiddenException(
+          'Maker-Checker rule: you cannot mark your own cost entry as actual.',
+        );
+      }
 
       if (!entry.isEstimated) {
         throw new BadRequestException('Cost entry is already marked as actual');

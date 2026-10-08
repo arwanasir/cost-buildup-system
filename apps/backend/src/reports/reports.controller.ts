@@ -8,9 +8,10 @@ import {
   Res,
   Req,
   ForbiddenException,
+  Inject,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
-import { RolePermission, Role } from '../auth/permissions';
+import { Role } from '../auth/permissions';
 import { ReportExportService } from './report-export.service';
 import { ReportsService } from './reports.service';
 import { ReportFilterDto } from './dto/report-filter.dto';
@@ -19,6 +20,9 @@ import { PermissionGuard } from '../auth/guards/permissions.guards';
 import { RequiredPermission } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/permissions';
 import { Audited } from '../audit/audited.decorator';
+import { DRIZZLE, DrizzleDB } from '../db';
+import * as schema from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 @Audited('reports')
 @ApiTags('Reports')
@@ -29,6 +33,7 @@ export class ReportsController {
   constructor(
     private readonly reportsService: ReportsService,
     private readonly reportExportService: ReportExportService,
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
   ) {}
 
   private formatResponse(data: any) {
@@ -126,7 +131,15 @@ export class ReportsController {
   ) {
     const userRole = req.user?.role;
     if (!userRole) throw new ForbiddenException('User role not found');
-    const permissions = RolePermission[userRole] || [];
+    let permissions: Permission[] = [];
+    if (userRole === Role.SYSTEM_ADMIN) {
+      permissions = [Permission.ADMIN_ALL];
+    } else {
+      const rolePerms = await this.db.query.rolePermissions.findMany({
+        where: eq(schema.rolePermissions.roleCode, userRole),
+      });
+      permissions = rolePerms.map((rp) => rp.permissionCode as Permission);
+    }
 
     const keyMap: Record<string, { perm: Permission; method: string }> = {
       'landed-cost-by-shipment': {
