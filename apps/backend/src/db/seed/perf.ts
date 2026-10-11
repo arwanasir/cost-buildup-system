@@ -26,28 +26,34 @@ export async function seedPerfData() {
 
   // 1. Create a perf supplier
   const supplierId = crypto.randomUUID();
-  await db.insert(schema.suppliers).values([
-    {
-      id: supplierId,
-      supplierCode: 'SUP-PERF',
-      name: 'Perf Global Suppliers Ltd',
-      country: 'CN',
-    },
-  ]);
+  await db
+    .insert(schema.suppliers)
+    .values([
+      {
+        id: supplierId,
+        supplierCode: 'SUP-PERF',
+        name: 'Perf Global Suppliers Ltd',
+        country: 'CN',
+      },
+    ])
+    .onConflictDoNothing();
 
   // 2. Create a perf item
   const itemId = crypto.randomUUID();
-  await db.insert(schema.items).values([
-    {
-      id: itemId,
-      itemCode: 'ITM-PERF',
-      name: 'Perf Item',
-      description: 'A perf item for reporting',
-      defaultHsCode: '8517.12.00',
-      unitOfMeasure: 'PCS',
-      isActive: true,
-    },
-  ]);
+  await db
+    .insert(schema.items)
+    .values([
+      {
+        id: itemId,
+        itemCode: 'ITM-PERF',
+        name: 'Perf Item',
+        description: 'A perf item for reporting',
+        defaultHsCode: '8517.12.00',
+        unitOfMeasure: 'PCS',
+        isActive: true,
+      },
+    ])
+    .onConflictDoNothing();
 
   const BATCH_SIZE = 1000;
   const TOTAL = 10000;
