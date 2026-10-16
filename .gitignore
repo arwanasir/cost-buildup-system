@@ -51,6 +51,8 @@ apps/frontend/generate_ui_components.cjs
 /update_dtos.js
 /SRS_CostBuildup_ImportedItems.txt
 /docs/postman_collection.json
+/docs/project-walkthrough.md
+/docs/acceptance-matrix.md
 /apps/backend/README.md
 /apps/backend/fix.js
 /apps/backend/generate-postman.js
