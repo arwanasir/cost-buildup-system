@@ -37,6 +37,27 @@ apps/backend/scratch*.js
 apps/backend/scratch*.txt
 apps/frontend/generate_ui_components.cjs
 
+# Local copies and one-off files excluded from the submission
+/.postman/
+/postman/
+/scratch/
+/node_modules/
+/package.json
+/package-lock.json
+/CostBuildup_API_Collection.json
+/Insomnia_Export.json
+/generate_insomnia.js
+/update_controllers.js
+/update_dtos.js
+/SRS_CostBuildup_ImportedItems.txt
+/docs/postman_collection.json
+/apps/backend/README.md
+/apps/backend/fix.js
+/apps/backend/generate-postman.js
+/apps/backend/test-seq.js
+/apps/backend/update-report2.js
+/apps/backend/update-report3.js
+
 # OS/editor files
 .DS_Store
 Thumbs.db
