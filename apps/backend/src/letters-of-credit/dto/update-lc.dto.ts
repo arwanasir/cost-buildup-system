@@ -3,11 +3,9 @@ import {
   IsOptional,
   IsString,
   IsBoolean,
-  IsDateString,
   IsNumber,
   IsPositive,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 export class UpdateLcDto {
   @IsString()

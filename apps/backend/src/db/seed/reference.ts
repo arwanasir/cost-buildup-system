@@ -149,6 +149,16 @@ const INITIAL_USERS = [
     fullName: 'System Automation Service',
     role: 'system_admin',
   },
+  {
+    email: 'procurement.mgr@company.com',
+    fullName: 'Procurement Manager',
+    role: 'procurement_manager',
+  },
+  {
+    email: 'customs@company.com',
+    fullName: 'Customs Officer',
+    role: 'customs_officer',
+  },
 ] as const;
 
 export async function seedReferenceData(): Promise<void> {

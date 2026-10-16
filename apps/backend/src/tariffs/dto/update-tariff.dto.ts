@@ -1,4 +1,3 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateTariffDto } from './create-tariff.dto';
 

@@ -2,6 +2,7 @@ import {
   Injectable,
   Inject,
   NotFoundException,
+  BadRequestException,
   ConflictException,
 } from '@nestjs/common';
 import { DRIZZLE, DrizzleDB } from '@/db';
@@ -92,6 +93,19 @@ export class UsersService {
       .where(eq(schema.users.id, id))
       .returning();
 
+    const { passwordHash: _, ...result } = updatedUser;
+    return result;
+  }
+
+  async updateLanguage(id: string, language: string) {
+    if (language !== 'en' && language !== 'am') {
+      throw new BadRequestException('Invalid language');
+    }
+    const [updatedUser] = await this.db
+      .update(schema.users)
+      .set({ preferredLanguage: language })
+      .where(eq(schema.users.id, id))
+      .returning();
     const { passwordHash: _, ...result } = updatedUser;
     return result;
   }

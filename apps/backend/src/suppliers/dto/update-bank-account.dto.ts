@@ -1,4 +1,3 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateBankAccountDto } from './create-bank-account.dto';
 

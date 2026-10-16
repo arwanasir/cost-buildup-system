@@ -2,8 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, HttpStatus } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
-import * as path from 'path';
-import * as fs from 'fs';
 
 describe('Shipment, CI & Customs (e2e)', () => {
   let app: INestApplication;

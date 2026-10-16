@@ -1,8 +1,7 @@
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuditInterceptor } from './audit/audit.interceptor';
 import { AuditModule } from './audit/audit.module';
-import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ConfigModule } from '@nestjs/config';
@@ -36,6 +35,7 @@ import { GoodsReceiptsModule } from './goods-receipts/goods-receipts.module';
 import { ErpSyncModule } from './erp-sync/erp-sync.module';
 import { VariancesModule } from './variances/variances.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -79,6 +79,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     ErpSyncModule,
     VariancesModule,
     NotificationsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [

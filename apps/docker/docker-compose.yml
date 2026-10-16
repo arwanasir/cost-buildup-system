@@ -16,6 +16,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
+      - DATABASE_URL=postgresql://cost_buildup_user:password@postgres:5432/cost_buildup_db
     depends_on:
       postgres:
         condition: service_healthy
@@ -102,6 +103,25 @@ services:
       retries: 5
     networks:
       - cost_buildup_network
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: cost_buildup_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:3000/api/v1
+    depends_on:
+      - backend
+    networks:
+      - cost_buildup_network
+
 volumes:
   pgdata:
     name: pgdata

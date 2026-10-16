@@ -1,5 +1,5 @@
 {
-  "id": "04b36fba-4392-41f8-9477-334055eada54",
+  "id": "e85ca66d-1efe-41f0-96ea-818ef234b714",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -484,6 +484,25 @@
           "notNull": true,
           "default": false
         },
+        "has_fx_warning": {
+          "name": "has_fx_warning",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "fx_warning_message": {
+          "name": "fx_warning_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "previous_estimate_etb": {
+          "name": "previous_estimate_etb",
+          "type": "numeric(18, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "is_active": {
           "name": "is_active",
           "type": "boolean",
@@ -811,6 +830,19 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'0.0000'"
+        },
+        "is_rate_overridden": {
+          "name": "is_rate_overridden",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "override_reason": {
+          "name": "override_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -961,6 +993,24 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'draft'"
+        },
+        "release_date": {
+          "name": "release_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "release_reference": {
+          "name": "release_reference",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customs_officer": {
+          "name": "customs_officer",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -1806,6 +1856,25 @@
           "notNull": true,
           "default": false
         },
+        "has_fx_warning": {
+          "name": "has_fx_warning",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "fx_warning_message": {
+          "name": "fx_warning_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "previous_estimate_etb": {
+          "name": "previous_estimate_etb",
+          "type": "numeric(18, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "shipment_item_id": {
           "name": "shipment_item_id",
           "type": "uuid",
@@ -1852,6 +1921,12 @@
         },
         "estimate_justification": {
           "name": "estimate_justification",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reversal_reason": {
+          "name": "reversal_reason",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -3440,6 +3515,13 @@
           "notNull": true,
           "default": true
         },
+        "is_received": {
+          "name": "is_received",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "notes": {
           "name": "notes",
           "type": "text",
@@ -4022,6 +4104,31 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.permissions": {
+      "name": "permissions",
+      "schema": "",
+      "columns": {
+        "code": {
+          "name": "code",
+          "type": "varchar(100)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -4660,6 +4767,111 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.role_permissions": {
+      "name": "role_permissions",
+      "schema": "",
+      "columns": {
+        "role_code": {
+          "name": "role_code",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "permission_code": {
+          "name": "permission_code",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "uq_role_permission": {
+          "name": "uq_role_permission",
+          "columns": [
+            {
+              "expression": "role_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "permission_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "role_permissions_role_code_roles_code_fk": {
+          "name": "role_permissions_role_code_roles_code_fk",
+          "tableFrom": "role_permissions",
+          "tableTo": "roles",
+          "columnsFrom": [
+            "role_code"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "role_permissions_permission_code_permissions_code_fk": {
+          "name": "role_permissions_permission_code_permissions_code_fk",
+          "tableFrom": "role_permissions",
+          "tableTo": "permissions",
+          "columnsFrom": [
+            "permission_code"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.roles": {
+      "name": "roles",
+      "schema": "",
+      "columns": {
+        "code": {
+          "name": "code",
+          "type": "varchar(50)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.shipment_documents": {
       "name": "shipment_documents",
       "schema": "",
@@ -4862,6 +5074,12 @@
         "volume_cbm": {
           "name": "volume_cbm",
           "type": "numeric(18, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quantity_flag": {
+          "name": "quantity_flag",
+          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": false
         }
@@ -5618,7 +5836,8 @@
         "variance",
         "approval_request",
         "posting_failed",
-        "price_variance"
+        "price_variance",
+        "flagged_for_adjustment"
       ]
     },
     "public.po_status_enum": {

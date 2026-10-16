@@ -4,7 +4,6 @@ import {
   ClaimsController,
 } from './goods-receipts.controller';
 import { GoodsReceiptsService } from './goods-receipts.service';
-import { NotificationsModule } from '../notifications/notifications.module';
 import { QuantityDiscrepancyService } from './quantity-discrepancy.service';
 import { LandedCostModule } from '@/landed-cost/landed-cost.module';
 import { ErpSyncModule } from '@/erp-sync/erp-sync.module';

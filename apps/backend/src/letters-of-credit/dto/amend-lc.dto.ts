@@ -6,7 +6,6 @@ import {
   IsPositive,
   IsDateString,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 export class AmendLcDto {
   @IsNumber()

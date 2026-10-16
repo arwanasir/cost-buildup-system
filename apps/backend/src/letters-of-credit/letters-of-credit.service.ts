@@ -8,7 +8,6 @@ import { DRIZZLE } from '@/db';
 import { DrizzleDB } from '@/db';
 import { CreateLcDto } from './dto/create-lc.dto';
 import { AmendLcDto } from './dto/amend-lc.dto';
-import { AddBankChargeDto } from './dto/add-bank-charge.dto';
 import * as schema from '@/db/schema';
 import { inArray, eq, and, lte } from 'drizzle-orm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -298,6 +297,39 @@ export class LettersOfCreditService {
   async getCharges(lcId: string) {
     return this.db.query.lcBankCharges.findMany({
       where: eq(schema.lcBankCharges.lcId, lcId),
+    });
+  }
+
+  async addCharge(
+    lcId: string,
+    dto: import('./dto/add-bank-charge.dto').AddBankChargeDto,
+    userId: string,
+  ) {
+    return this.db.transaction(async (tx) => {
+      const lc = await tx.query.lettersOfCredit.findFirst({
+        where: eq(schema.lettersOfCredit.id, lcId),
+      });
+      if (!lc) throw new NotFoundException('LC not found');
+      const [charge] = await tx
+        .insert(schema.lcBankCharges)
+        .values({
+          lcId,
+          chargeType: dto.chargeType,
+          amountEtb: dto.amountEtb.toString(),
+          chargeDate: dto.chargeDate,
+          bankReference: dto.bankReference,
+          createdBy: userId,
+          updatedBy: userId,
+        })
+        .returning();
+      this.eventEmitter.emit('lc.charge.recorded', {
+        lcId,
+        chargeId: charge.id,
+        chargeType: charge.chargeType,
+        amountEtb: charge.amountEtb,
+        issuingBank: lc.issuingBank,
+      });
+      return charge;
     });
   }
 

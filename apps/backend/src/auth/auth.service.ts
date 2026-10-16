@@ -20,7 +20,7 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { AuditService } from '@/audit/audit.service';
-import { RolePermission, Role } from './permissions';
+// import { RolePermission, Role } from './permissions';
 
 // TODO
 
@@ -136,10 +136,13 @@ export class AuthService {
       user.role,
       clientIp,
     );
-    return {
-      ...tokens, //
-      user,
-    };
+
+    const rolePerms = await this.db.query.rolePermissions.findMany({
+      where: eq(schema.rolePermissions.roleCode, user.role),
+    });
+    const permissions = rolePerms.map((rp) => rp.permissionCode);
+    const userWithPermissions = { ...user, permissions };
+
     await this.auditService.record({
       entityType: 'users',
       entityId: user.id,
@@ -148,7 +151,7 @@ export class AuthService {
       ip: clientIp,
       after: { success: true },
     });
-    return { ...tokens, user };
+    return { ...tokens, user: userWithPermissions };
   }
 
   async refreshTokens(refreshDto: RefreshDto, clientIp?: string) {
@@ -251,7 +254,10 @@ export class AuthService {
       throw new UnauthorizedException('User not found or inactive');
     }
 
-    const permissions = RolePermission[user.role as Role] || [];
+    const rolePerms = await this.db.query.rolePermissions.findMany({
+      where: eq(schema.rolePermissions.roleCode, user.role),
+    });
+    const permissions = rolePerms.map((rp) => rp.permissionCode);
 
     return {
       id: user.id,

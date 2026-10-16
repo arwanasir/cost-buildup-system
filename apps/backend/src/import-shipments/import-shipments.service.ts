@@ -12,7 +12,6 @@ import { eq, inArray, and, gte, lte } from 'drizzle-orm';
 import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { CreateClearingInvoiceDto } from './dto/create-clearing-invoice.dto';
 import { CreateShipmentChargeDto } from './dto/create-shipment-charge.dto';
-import { UpdateShipmentDto } from './dto/update-shipment.dto';
 import { NumberingService } from '@/core/numbering/numbering.service';
 import Decimal from 'decimal.js';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -279,7 +278,7 @@ export class ImportShipmentsService {
   async findOne(id: string) {
     const shipment = await this.db.query.importShipments.findFirst({
       where: eq(schema.importShipments.id, id),
-      with: { items: true, costEntries: true },
+      with: { items: true, costEntries: true, commercialInvoices: true },
     });
 
     if (!shipment) {
@@ -297,8 +296,20 @@ export class ImportShipmentsService {
     etaEnd?: string;
   }) {
     const conditions = [];
-    if (filters.status)
-      conditions.push(eq(schema.importShipments.status, filters.status as any));
+    if (filters.status) {
+      if (filters.status.includes(',')) {
+        conditions.push(
+          inArray(
+            schema.importShipments.status,
+            filters.status.split(',') as any,
+          ),
+        );
+      } else {
+        conditions.push(
+          eq(schema.importShipments.status, filters.status as any),
+        );
+      }
+    }
     if (filters.poId)
       conditions.push(eq(schema.importShipments.poId, filters.poId));
     if (filters.supplierId)

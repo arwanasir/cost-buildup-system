@@ -6,9 +6,6 @@ import { InventoryPostingService } from '@/erp-sync/inventory-posting.service';
 import { FinancePostingService } from '@/erp-sync/finance-posting.service';
 import { DRIZZLE } from '@/db';
 import { BadRequestException } from '@nestjs/common';
-import * as schema from '@/db/schema';
-import { CreateGrnDto } from './dto/create-grn.dto';
-import Decimal from 'decimal.js';
 
 describe('Goods Receipts & Discrepancies (BR01A, FR-09.1, FR-09.2)', () => {
   let grnService: GoodsReceiptsService;

@@ -10,6 +10,7 @@ import {
   Body,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { CustomsService } from './customs.service';
 import { DutyPaymentsService } from './duty-payments.service';
@@ -74,8 +75,11 @@ export class CustomsController {
 
   @Get()
   @RequiredPermission(Permission.SHIPMENT_READ)
-  async findAll() {
-    return this.customsService.findAll();
+  async findAll(
+    @Query('status') status?: string,
+    @Query('shipmentId') shipmentId?: string,
+  ) {
+    return this.customsService.findAll({ status, shipmentId });
   }
 
   @Get('tariff/:hsCode')

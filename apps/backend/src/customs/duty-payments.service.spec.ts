@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DutyPaymentsService } from './duty-payments.service';
 import { DRIZZLE } from '@/db';
 import * as schema from '@/db/schema';
-import { BadRequestException } from '@nestjs/common';
 
 describe('DutyPaymentsService', () => {
   let service: DutyPaymentsService;

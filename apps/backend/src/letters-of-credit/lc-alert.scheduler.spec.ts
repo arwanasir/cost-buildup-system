@@ -3,7 +3,6 @@ import { LcAlertScheduler } from './lc-alert.scheduler';
 import { DRIZZLE } from '@/db';
 import { Logger } from '@nestjs/common';
 import * as schema from '@/db/schema';
-import { eq, or, and, sql } from 'drizzle-orm';
 import { NotificationsService } from '@/notifications/notifications.service';
 
 jest.mock('drizzle-orm', () => {

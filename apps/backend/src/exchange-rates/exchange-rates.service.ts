@@ -32,11 +32,18 @@ export class ExchangeRatesService {
     });
 
     if (!rate) {
-      throw new NotFoundException(
-        `No exchange rate found for currency: ${currency}`,
-      );
+      throw new NotFoundException('No exchange rate found for currency');
     }
 
     return rate;
+  }
+
+  async findAll() {
+    return this.db.query.nbeExchangeRates.findMany({
+      orderBy: [
+        desc(nbeExchangeRates.rateDate),
+        desc(nbeExchangeRates.createdAt),
+      ],
+    });
   }
 }

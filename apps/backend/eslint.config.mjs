@@ -4,6 +4,8 @@ import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+import unusedImports from 'eslint-plugin-unused-imports';
+
 export default tseslint.config(
   {
     ignores: ['eslint.config.mjs'],
@@ -25,6 +27,9 @@ export default tseslint.config(
     },
   },
   {
+    plugins: {
+      'unused-imports': unusedImports,
+    },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
@@ -36,6 +41,12 @@ export default tseslint.config(
       '@typescript-eslint/unbound-method': 'off',
       '@typescript-eslint/require-await': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      'no-unused-vars': 'off',
+      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-vars': [
+        'warn',
+        { 'vars': 'all', 'varsIgnorePattern': '^_', 'args': 'after-used', 'argsIgnorePattern': '^_' }
+      ],
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/restrict-template-expressions': 'off',
       '@typescript-eslint/prefer-promise-reject-errors': 'off',

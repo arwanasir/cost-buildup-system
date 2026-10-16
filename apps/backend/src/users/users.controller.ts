@@ -1,4 +1,4 @@
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+﻿import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Audited } from '@/audit/audited.decorator';
 import {
   Controller,
@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -19,6 +20,7 @@ import { PermissionGuard } from '@/auth/guards/permissions.guards';
 import { RequiredPermission } from '@/auth/decorators/permissions.decorator';
 import { Permission } from '@/auth/permissions';
 import { ResetPasswordAdminDto } from './dto/reset-password-admin.dto';
+import { Request } from 'express';
 
 @Audited('users')
 @ApiTags('Users')
@@ -28,6 +30,15 @@ import { ResetPasswordAdminDto } from './dto/reset-password-admin.dto';
 @RequiredPermission(Permission.ADMIN_ALL)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Patch('me/language')
+  @RequiredPermission() // Empty array means no specific permissions required beyond being logged in
+  updateLanguage(
+    @Req() req: Request & { user: { userId: string } },
+    @Body('language') language: string,
+  ) {
+    return this.usersService.updateLanguage(req.user.userId, language);
+  }
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
