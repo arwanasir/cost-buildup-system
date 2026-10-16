@@ -1,0 +1,152 @@
+﻿@import 'tailwindcss';
+
+@theme {
+  /* Breakpoints */
+  --breakpoint-md: 768px; /* Tablet for warehouse and logistics users */
+
+  /* Status Colors */
+  --color-status-success: #10b981;
+  --color-status-warning: #f59e0b;
+  --color-status-error: #ef4444;
+  --color-status-info: #3b82f6;
+  --color-status-pending: #6b7280;
+  --color-status-draft: #9ca3af;
+}
+
+body {
+  margin: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+[data-theme='dark'] body {
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+[data-theme='dark'] .bg-white {
+  background-color: #111827 !important;
+}
+
+[data-theme='dark'] .bg-gray-50,
+[data-theme='dark'] .bg-gray-100 {
+  background-color: #0f172a !important;
+}
+
+[data-theme='dark'] .bg-gray-200 {
+  background-color: #334155 !important;
+}
+
+[data-theme='dark'] .bg-blue-50,
+[data-theme='dark'] .bg-primary-50 {
+  background-color: #172554 !important;
+}
+
+[data-theme='dark'] .bg-red-50 {
+  background-color: #450a0a !important;
+}
+
+[data-theme='dark'] .bg-yellow-50 {
+  background-color: #422006 !important;
+}
+
+[data-theme='dark'] .text-gray-900,
+[data-theme='dark'] .text-gray-800,
+[data-theme='dark'] .text-gray-700 {
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .text-gray-600,
+[data-theme='dark'] .text-gray-500 {
+  color: #cbd5e1 !important;
+}
+
+[data-theme='dark'] .text-gray-400 {
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .text-blue-600,
+[data-theme='dark'] .text-primary-700 {
+  color: #93c5fd !important;
+}
+
+[data-theme='dark'] .text-red-600,
+[data-theme='dark'] .text-red-700,
+[data-theme='dark'] .text-red-800 {
+  color: #fca5a5 !important;
+}
+
+[data-theme='dark'] .text-yellow-600,
+[data-theme='dark'] .text-yellow-700 {
+  color: #fcd34d !important;
+}
+
+[data-theme='dark'] .border-gray-100,
+[data-theme='dark'] .border-gray-200,
+[data-theme='dark'] .border-gray-300 {
+  border-color: #334155 !important;
+}
+
+[data-theme='dark'] .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #334155 !important;
+}
+
+[data-theme='dark'] .shadow,
+[data-theme='dark'] .shadow-sm,
+[data-theme='dark'] .shadow-lg,
+[data-theme='dark'] .shadow-xl {
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.28) !important;
+}
+
+[data-theme='dark'] input,
+[data-theme='dark'] select,
+[data-theme='dark'] textarea {
+  background-color: #0f172a;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] input::placeholder,
+[data-theme='dark'] textarea::placeholder {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] table,
+[data-theme='dark'] thead,
+[data-theme='dark'] tbody,
+[data-theme='dark'] tr {
+  background-color: #111827;
+}
+
+[data-theme='dark'] .hover\:bg-gray-50:hover,
+[data-theme='dark'] .hover\:bg-gray-100:hover,
+[data-theme='dark'] .hover\:bg-gray-200:hover {
+  background-color: #1e293b !important;
+}
+
+[data-theme='dark'] .theme-toggle {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme='dark'] .theme-toggle:hover {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+code {
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}

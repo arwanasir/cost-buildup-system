@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Local package-manager and tool caches
+.npm/
+.turbo/
+
+# Build output
+dist/
+build/
+coverage/
+.vite/
+.next/
+*.tsbuildinfo
+
+# Test and browser artifacts
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# Logs
+*.log
+logs/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!apps/.env.example
+!apps/frontend/.env.example
+
+# Local scratch/generated helper files
+scratch/
+apps/backend/scratch*.js
+apps/backend/scratch*.txt
+apps/frontend/generate_ui_components.cjs
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
