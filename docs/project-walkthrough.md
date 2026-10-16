@@ -52,17 +52,14 @@ Infrastructure:
 
 Top level:
 
-- `README.md`: project overview and local run notes, but it is partly stale and includes pasted SQL/migration fragments.
-- `SRS_CostBuildup_ImportedItems.md` and `.txt`: requirements/specification source for the domain.
-- `complete_api_walkthrough.md`: API walkthrough/reference material.
-- `CostBuildup_API_Collection.json`, `Insomnia_Export.json`, `.postman/`, `postman/`, `docs/postman_collection.json`: API client collections.
-- `package.json`: root package metadata only. The real apps are inside `apps/backend` and `apps/frontend`.
+- `README.md`: project overview, setup, verification commands, and manual acceptance checklist.
+- `SRS_CostBuildup_ImportedItems.md`: canonical requirements/specification source for the domain.
+- `docs/`: project walkthrough and SRS acceptance matrix.
+- `apps/backend/package.json` and `apps/frontend/package.json`: app-specific dependencies and scripts.
 - `apps/`: main application code.
 - `docs/`: project documentation and acceptance matrix.
-- `scratch/`: helper scripts and one-off repair/generation files. This is not core app code.
-- `scripts/`: standalone test/helper scripts.
-- `logs/`: runtime logs.
-- `node_modules/` and `.pnpm-store/`: local dependency artifacts. These should normally not be committed.
+- One-off repair/generation scripts, API client exports, duplicate plain-text SRS extraction, local logs, and root dependency artifacts are excluded from the submission.
+- `node_modules/` and `.pnpm-store/` are local dependency artifacts and must not be committed.
 
 Main app folders:
 
@@ -432,13 +429,12 @@ High priority:
 
 Medium priority:
 
-6. Root README is stale/noisy.
-   - It contains pasted SQL and migration journal fragments.
-   - Replace with clean setup, architecture, and run instructions.
+6. Root README cleanup.
+   - The README has been replaced with project architecture, setup, verification, and UAT guidance.
 
-7. Repo hygiene needs cleanup before submission.
-   - `node_modules`, `.pnpm-store`, generated Playwright reports, scratch scripts, logs, and multiple lockfiles are present/untracked.
-   - Decide what is source vs generated output and update `.gitignore`.
+7. Repository hygiene cleanup.
+   - Root dependency artifacts, one-off scripts, API client exports, and duplicate SRS text extraction are removed from version control; ignore rules keep local copies out of future commits.
+   - App-specific lockfiles and required project documentation remain tracked.
 
 8. Permission mismatch risk.
    - Sidebar guards customs link with `customs:read`, while router protects customs pages with `shipment:read`.

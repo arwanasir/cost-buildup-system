@@ -8,7 +8,7 @@ An ERP-style application for managing imported goods from supplier and item setu
 - `apps/frontend`: React, TypeScript, and Vite web application.
 - `apps/docker`: Docker Compose configuration and the ERP mock service.
 - `docs`: project walkthrough and SRS acceptance mapping.
-- `postman`, `CostBuildup_API_Collection.json`, `Insomnia_Export.json`: API request collections for manual testing.
+- `SRS_CostBuildup_ImportedItems.md`: canonical requirements reference. API inspection is available through Swagger at `/api/docs` when the backend is running.
 
 Backend modules are organized by business domain under `apps/backend/src` (including auth/users, master data, purchase orders, letters of credit, shipments, customs, cost register/allocation/landed cost, goods receipts, ERP sync, reports, audit, notifications, storage, and database schema/migrations). Frontend code under `apps/frontend/src/features` follows the same domain areas; shared routing, layout, UI, API client, state, and tests live in `app`, `components`, `lib`, `store`, and `test`.
 
