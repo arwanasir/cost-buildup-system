@@ -1,21 +1,34 @@
-﻿import React from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { api } from '@/lib/api-client';
+import { useUiText } from '@/lib/ui-text';
 
 export function NotificationBell() {
+  const localize = useUiText();
   const { data } = useQuery({
     queryKey: ['notifications', 'unread-count'],
     queryFn: async () => {
       const res = await api.get('/notifications/unread-count');
-      return res.data.unreadCount;
+      const count = Number(res.data?.count ?? res.data?.unreadCount);
+      if (!Number.isFinite(count) || count < 0) {
+        throw new Error('Notification count response is invalid');
+      }
+      return count;
     },
     refetchInterval: 60000,
   });
 
   const count = data || 0;
+  const label = localize('Notifications');
 
   return (
-    <button className="relative p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full">
+    <Link
+      to="/notifications"
+      aria-label={label}
+      title={label}
+      className="relative p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
+    >
       <svg
         className="w-6 h-6"
         fill="none"
@@ -34,6 +47,6 @@ export function NotificationBell() {
           {count > 99 ? '99+' : count}
         </span>
       )}
-    </button>
+    </Link>
   );
 }

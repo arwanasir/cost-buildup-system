@@ -1,5 +1,5 @@
 import { Injectable, Inject, OnModuleInit, Logger } from '@nestjs/common';
-import { DRIZZLE, DrizzleDB } from '../db';
+import { DRIZZLE, DrizzleDB } from '../db/db.token';
 import * as schema from '../db/schema/schema';
 import i18next from 'i18next';
 import * as enTranslation from './templates/en.json';

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LcChargeSyncListener } from './lc-charge-sync.listener';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import { Logger } from '@nestjs/common';
 
 describe('LcChargeSyncListener', () => {

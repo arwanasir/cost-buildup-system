@@ -7,8 +7,11 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Permission } from '../permissions';
-import { permissions_key } from '../decorators/permissions.decorator';
-import { DRIZZLE, DrizzleDB } from '../../db/db.module';
+import {
+  any_permissions_key,
+  permissions_key,
+} from '../decorators/permissions.decorator';
+import { DRIZZLE, DrizzleDB } from '../../db/db.token';
 import { rolePermissions } from '../../db/schema/schema';
 import { eq } from 'drizzle-orm';
 
@@ -26,8 +29,15 @@ export class PermissionGuard implements CanActivate {
       permissions_key,
       [context.getHandler(), context.getClass()],
     );
+    const requiredAnyPermissions = this.reflector.getAllAndOverride<Permission[]>(
+      any_permissions_key,
+      [context.getHandler(), context.getClass()],
+    );
 
-    if (!requiredPermissions || requiredPermissions.length === 0) {
+    if (
+      (!requiredPermissions || requiredPermissions.length === 0) &&
+      (!requiredAnyPermissions || requiredAnyPermissions.length === 0)
+    ) {
       return true;
     }
     const request = context
@@ -53,12 +63,21 @@ export class PermissionGuard implements CanActivate {
     if (userPermissions.includes(Permission.ADMIN_ALL)) {
       return true;
     }
-    const hasPermission = requiredPermissions.every((permission) =>
-      userPermissions.includes(permission),
+    const missingRequiredPermission = (requiredPermissions || []).some(
+      (permission) => !userPermissions.includes(permission),
     );
-    if (!hasPermission) {
+    const missingAnyPermission =
+      !!requiredAnyPermissions?.length &&
+      !requiredAnyPermissions.some((permission) =>
+        userPermissions.includes(permission),
+      );
+    if (missingRequiredPermission || missingAnyPermission) {
+      const required = [
+        ...(requiredPermissions || []),
+        ...(requiredAnyPermissions || []),
+      ];
       throw new ForbiddenException(
-        `Access denied.Missing required permissions: ${requiredPermissions.join(', ')}`,
+        `Access denied. Required permission: ${required.join(' or ')}`,
       );
     }
     return true;

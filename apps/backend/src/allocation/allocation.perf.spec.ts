@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AllocationService } from './allocation.service';
 import { AllocationBasisService } from './allocation-basis.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 
 describe('Allocation Performance (AC13, SRS 5.1)', () => {
   let allocationService: AllocationService;

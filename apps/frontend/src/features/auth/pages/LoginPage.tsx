@@ -1,3 +1,4 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -5,11 +6,8 @@ import { z } from 'zod';
 import { AxiosError } from 'axios';
 import { api } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-// Using hardcoded strings primarily since we haven't mapped these to i18n yet,
-// but using t() wrapper for structural readiness.
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -19,7 +17,6 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const [globalError, setGlobalError] = useState<string | null>(null);
@@ -77,10 +74,12 @@ export function LoginPage() {
       </div>
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Sign in to your account
+          <LocalizedText
+            text={'\n          Sign in to your account\n        '}
+          />
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Cost Buildup System
+          <LocalizedText text={'\n          Cost Buildup System\n        '} />
         </p>
       </div>
 
@@ -104,7 +103,9 @@ export function LoginPage() {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700"
               >
-                Email address
+                <LocalizedText
+                  text={'\n                Email address\n              '}
+                />
               </label>
               <div className="mt-1">
                 <input
@@ -129,7 +130,9 @@ export function LoginPage() {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700"
               >
-                Password
+                <LocalizedText
+                  text={'\n                Password\n              '}
+                />
               </label>
               <div className="mt-1">
                 <input
@@ -177,7 +180,11 @@ export function LoginPage() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                    Signing in...
+                    <LocalizedText
+                      text={
+                        '\n                    Signing in...\n                  '
+                      }
+                    />
                   </>
                 ) : (
                   'Sign in'

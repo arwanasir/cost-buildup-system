@@ -79,4 +79,59 @@ describe('AuditInterceptor', () => {
       after: { id: 'po-123', status: 'ordered' },
     });
   });
+
+  it('awaits audit persistence and resolves created IDs from wrapped responses', async () => {
+    reflectorMock.get.mockReturnValue('items');
+    const mockRequest = {
+      method: 'POST',
+      path: '/items',
+      params: {},
+      user: { id: 'user-1' },
+      ip: '127.0.0.1',
+    };
+    const mockContext = {
+      getHandler: jest.fn(),
+      getClass: jest.fn(),
+      switchToHttp: jest.fn().mockReturnValue({
+        getRequest: jest.fn().mockReturnValue(mockRequest),
+      }),
+    } as unknown as ExecutionContext;
+
+    let finishRecord!: () => void;
+    auditServiceMock.record.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishRecord = resolve;
+      }),
+    );
+    const mockCallHandler: CallHandler = {
+      handle: jest.fn().mockReturnValue(of({ data: { id: 'item-123' } })),
+    };
+    const observable = await interceptor.intercept(
+      mockContext,
+      mockCallHandler,
+    );
+    let emitted = false;
+    const completion = new Promise<void>((resolve, reject) => {
+      observable.subscribe({
+        next: () => {
+          emitted = true;
+        },
+        error: reject,
+        complete: resolve,
+      });
+    });
+
+    expect(auditServiceMock.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityType: 'items',
+        entityId: 'item-123',
+        actorId: 'user-1',
+        ip: '127.0.0.1',
+      }),
+    );
+    expect(emitted).toBe(false);
+    finishRecord();
+    await completion;
+    expect(emitted).toBe(true);
+  });
 });

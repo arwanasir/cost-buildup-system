@@ -1,15 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { VariancesService } from './variances.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 
 describe('VariancesService - Evaluate', () => {
   let service: VariancesService;
   let insertedRows: any;
   let insertedNotifications: any;
+  let existingVarianceRows: any[];
 
   beforeEach(async () => {
     insertedRows = null;
     insertedNotifications = null;
+    existingVarianceRows = [];
 
     class MockDb {
       transaction(cb: any) {
@@ -56,10 +58,12 @@ describe('VariancesService - Evaluate', () => {
                   ]);
                 if (t === 'cost_categories')
                   return resolve([
-                    { id: 'cat-f', code: 'freight' },
-                    { id: 'cat-d', code: 'duty' },
-                    { id: 'cat-o', code: 'other' },
+                    { id: 'cat-f', code: 'FREIGHT' },
+                    { id: 'cat-d', code: 'CUSTOMS_DUTY' },
+                    { id: 'cat-o', code: 'OTHER' },
                   ]);
+                if (t === 'cost_variances')
+                  return resolve(existingVarianceRows);
                 if (t === 'import_cost_entries')
                   return resolve([
                     {
@@ -173,5 +177,32 @@ describe('VariancesService - Evaluate', () => {
     expect(insertedNotifications).toHaveLength(1); // 1 finance manager
     expect(insertedNotifications[0].bodyEn).toContain('exceeding the 2');
     expect(insertedNotifications[0].bodyEn).toContain('freight');
+  });
+
+  it('preserves an existing approval when recalculated amounts are unchanged', async () => {
+    existingVarianceRows = [
+      {
+        id: 'variance-freight',
+        varianceType: 'freight',
+        estimatedEtb: '20000.0000',
+        actualEtb: '22500.0000',
+        status: 'approved',
+        approverId: 'fm-1',
+        decidedAt: '2026-10-30T12:00:00.000Z',
+        comment: 'Reviewed against carrier invoice',
+      },
+    ];
+
+    await service.evaluate('ship-1');
+
+    const freightVariance = insertedRows.find(
+      (row: any) => row.varianceType === 'freight',
+    );
+    expect(freightVariance).toMatchObject({
+      id: 'variance-freight',
+      status: 'approved',
+      approverId: 'fm-1',
+      comment: 'Reviewed against carrier invoice',
+    });
   });
 });

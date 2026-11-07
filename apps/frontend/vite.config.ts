@@ -19,14 +19,12 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
-    hmr: {
-      clientPort: 5173,
-    }
   },
   test: {
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',
+    maxWorkers: 2,
     exclude: ['e2e/**', 'node_modules/**'],
   }
 })

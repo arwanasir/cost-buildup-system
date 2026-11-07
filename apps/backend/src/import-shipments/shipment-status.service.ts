@@ -4,7 +4,7 @@ import {
   Inject,
   NotFoundException,
 } from '@nestjs/common';
-import { DRIZZLE, DrizzleDB } from '@/db';
+import { DRIZZLE, DrizzleDB } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { UpdateShipmentStatusDto } from './dto/update-shipment-status.dto';

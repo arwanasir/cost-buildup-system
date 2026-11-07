@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { formatMoney, formatUnitCost, formatFx } from './money';
+import { formatAmount4, formatMoney, formatUnitCost, formatFx } from './money';
 
 describe('money formatting utilities', () => {
+  it('formats monetary amounts to exactly four decimal places', () => {
+    expect(formatAmount4('1200')).toBe('1,200.0000');
+    expect(formatAmount4('1.23456')).toBe('1.2346');
+  });
+
   describe('formatMoney', () => {
     it('formats a number to 4 decimal places with ETB by default', () => {
       expect(formatMoney(1234.56)).toBe('ETB 1,234.5600');
@@ -17,12 +22,12 @@ describe('money formatting utilities', () => {
   });
 
   describe('formatUnitCost', () => {
-    it('formats a number to 6 decimal places with ETB by default', () => {
-      expect(formatUnitCost(1.2345678)).toBe('ETB 1.234568');
+    it('formats a unit cost to 4 decimal places with ETB by default', () => {
+      expect(formatUnitCost(1.2345678)).toBe('ETB 1.2346');
     });
 
     it('formats with a custom currency', () => {
-      expect(formatUnitCost('0.5', 'EUR')).toBe('EUR 0.500000');
+      expect(formatUnitCost('0.5', 'EUR')).toBe('EUR 0.5000');
     });
   });
 

@@ -1,9 +1,12 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Modal, Input, Button } from '@/components/ui';
 import { useReverseCostEntry, type CostEntry } from '../api';
+import { formatAmount4 } from '@/lib/money';
 
 const formSchema = z.object({
   reason: z
@@ -25,6 +28,7 @@ export function ReverseEntryModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const localize = useUiText();
   const reverseMutation = useReverseCostEntry();
 
   const form = useForm<FormData>({
@@ -54,20 +58,33 @@ export function ReverseEntryModal({
   if (!entry) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Reverse Cost Entry">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={localize('Reverse Cost Entry')}
+    >
       <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
         <strong className="block mb-1">
-          WARNING: Secure Financial Reversal
+          <LocalizedText
+            text={'\n          WARNING: Secure Financial Reversal\n        '}
+          />
         </strong>
-        You are about to cryptographically reverse an actualized ledger entry
-        (ETB {parseFloat(entry.amountEtb).toLocaleString()}). This will create a
-        negative offset entry and flag the original entry as reversed. This
-        action is permanently audited.
+        <LocalizedText
+          text={
+            '\n        You are about to cryptographically reverse an actualized ledger entry\n        (ETB '
+          }
+        />
+        {formatAmount4(entry.amountEtb)}
+        <LocalizedText
+          text={
+            '). This will create a\n        negative offset entry and flag the original entry as reversed. This\n        action is permanently audited.\n      '
+          }
+        />
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <Input
-          label="Reversal Reason (Audit Trail) *"
+          label={localize('Reversal Reason (Audit Trail) *')}
           {...form.register('reason')}
           error={form.formState.errors.reason?.message}
         />
@@ -79,14 +96,16 @@ export function ReverseEntryModal({
             onClick={onClose}
             disabled={reverseMutation.isPending}
           >
-            Cancel
+            <LocalizedText text={'\n            Cancel\n          '} />
           </Button>
           <Button
             type="submit"
             variant="danger"
             isLoading={reverseMutation.isPending}
           >
-            Execute Reversal
+            <LocalizedText
+              text={'\n            Execute Reversal\n          '}
+            />
           </Button>
         </div>
       </form>

@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LetterOfCreditForm } from '../LetterOfCreditForm';
 import { BrowserRouter } from 'react-router-dom';
+import { usePurchaseOrders } from '@/features/purchase-orders/api';
 
 // Mock dependencies
 vi.mock('react-router-dom', async () => {
@@ -73,6 +74,39 @@ vi.mock('../../api', () => ({
 describe('LetterOfCreditForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(usePurchaseOrders).mockImplementation((params) => {
+      if (params.supplierId === 'sup-1') {
+        return {
+          data: {
+            data: [
+              {
+                id: 'po-1',
+                poNumber: 'PO-001',
+                totalAmount: '1000',
+                currency: 'USD',
+                lcId: null,
+              },
+              {
+                id: 'po-2',
+                poNumber: 'PO-002',
+                totalAmount: '2000',
+                currency: 'USD',
+                lcId: null,
+              },
+              {
+                id: 'po-3',
+                poNumber: 'PO-003',
+                totalAmount: '3000',
+                currency: 'USD',
+                lcId: 'existing-lc-123',
+              },
+            ],
+          },
+          isLoading: false,
+        } as any;
+      }
+      return { data: { data: [] }, isLoading: false } as any;
+    });
   });
 
   const renderForm = () => {
@@ -177,5 +211,42 @@ describe('LetterOfCreditForm', () => {
     await waitFor(() => {
       expect(amountInput).toHaveValue(3000); // 1000 + 2000
     });
+  });
+
+  it('keeps a single selected PO as an array and calculates its amount', async () => {
+    vi.mocked(usePurchaseOrders).mockImplementation(
+      () =>
+        ({
+          data: {
+            data: [
+              {
+                id: 'po-only',
+                poNumber: 'PO-ONLY',
+                totalAmount: '80000',
+                currency: 'USD',
+                lcId: null,
+              },
+            ],
+          },
+          isLoading: false,
+        }) as any,
+    );
+
+    renderForm();
+    selectSupplier();
+
+    await screen.findByText('PO-ONLY');
+    const poCheckbox = screen.getAllByRole('checkbox')[0];
+    fireEvent.click(poCheckbox);
+
+    await waitFor(() => {
+      expect(poCheckbox).toBeChecked();
+      expect(
+        screen.getByLabelText(/Total LC Amount \(Foreign\)/i),
+      ).toHaveValue(80000);
+    });
+    expect(
+      screen.queryByText(/Unexpected Application Error/i),
+    ).not.toBeInTheDocument();
   });
 });

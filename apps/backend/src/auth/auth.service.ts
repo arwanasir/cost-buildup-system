@@ -1,4 +1,4 @@
-import { DRIZZLE, DrizzleDB } from '@/db';
+import { DRIZZLE, DrizzleDB } from '@/db/db.token';
 import {
   HttpException,
   HttpStatus,
@@ -151,7 +151,7 @@ export class AuthService {
       ip: clientIp,
       after: { success: true },
     });
-    return { ...tokens, user: userWithPermissions };
+    return { ...tokens, user: userWithPermissions, permissions };
   }
 
   async refreshTokens(refreshDto: RefreshDto, clientIp?: string) {

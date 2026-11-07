@@ -855,10 +855,11 @@ export const importLandedCostResults = pgTable(
     totalLandedCostEtb: money('total_landed_cost_etb').notNull(),
     perUnitLandedCostEtb: numeric('per_unit_landed_cost_etb', {
       precision: 18,
-      scale: 6,
+      scale: 4,
     }).notNull(),
     isEstimated: boolean('is_estimated').notNull().default(false),
     isFinalised: boolean('is_finalised').notNull().default(false),
+    computedAt: timestamp('computed_at', { mode: 'string', withTimezone: true }),
     finalisedBy: uuid('finalised_by').references(() => users.id, {
       onDelete: 'set null',
     }),

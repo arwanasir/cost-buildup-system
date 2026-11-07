@@ -15,10 +15,12 @@ import { AuthGuard } from '@nestjs/passport';
 import { PermissionGuard } from '@/auth/guards/permissions.guards';
 import { RequiredPermission } from '@/auth/decorators/permissions.decorator';
 import { Permission } from '@/auth/permissions';
+import { Audited } from '@/audit/audited.decorator';
 
 @ApiTags('ExchangeRates')
 @ApiBearerAuth()
 @Controller('nbe-rates')
+@Audited('nbeExchangeRates')
 @UseGuards(AuthGuard('jwt'), PermissionGuard)
 export class ExchangeRatesController {
   constructor(private readonly exchangeRatesService: ExchangeRatesService) {}

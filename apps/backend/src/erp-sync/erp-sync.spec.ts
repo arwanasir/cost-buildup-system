@@ -4,7 +4,8 @@ import { InventoryClient } from './clients/inventory.client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
-import { DRIZZLE } from '@/db';
+import { Logger } from '@nestjs/common';
+import { DRIZZLE } from '@/db/db.token';
 const nock = require('nock');
 
 describe('ERP Sync Integration (Nock)', () => {
@@ -13,6 +14,10 @@ describe('ERP Sync Integration (Nock)', () => {
   let notifySpy: jest.SpyInstance;
 
   beforeAll(async () => {
+    // These tests intentionally return HTTP 500 to cover retry/failure paths.
+    // Keep expected negative-path logs from looking like test-run failures.
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+
     dbMock = {
       select: jest.fn().mockReturnThis(),
       from: jest.fn().mockReturnThis(),
@@ -56,6 +61,10 @@ describe('ERP Sync Integration (Nock)', () => {
   afterEach(() => {
     nock.cleanAll();
     jest.clearAllMocks();
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
   });
 
   it('1. Success on first attempt', async () => {

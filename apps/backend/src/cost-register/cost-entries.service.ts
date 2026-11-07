@@ -6,7 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import Decimal from 'decimal.js';
@@ -31,7 +31,7 @@ export class CostEntriesService {
     userId: string,
     file?: Express.Multer.File,
   ) {
-    return this.db.transaction(async (tx: any) => {
+    const entry = await this.db.transaction(async (tx: any) => {
       // 1. Verify Shipment if provided
       if (dto.shipmentId) {
         const [shipment] = await tx
@@ -52,6 +52,11 @@ export class CostEntriesService {
         .from(schema.costCategories)
         .where(eq(schema.costCategories.id, dto.costCategoryId));
       if (!category) throw new NotFoundException('Cost category not found');
+      if (category.code === 'FOB') {
+        throw new BadRequestException(
+          'Supplier invoice value is already included in the shipment CI value and cannot be added as a separate cost entry.',
+        );
+      }
 
       // 3. Check FX Tolerance
       const fxResult = await this.fxToleranceService.checkTolerance(
@@ -107,10 +112,13 @@ export class CostEntriesService {
 
       return entry;
     });
+    if (entry.shipmentId)
+      this.eventEmitter.emit('cost.changed', { shipmentId: entry.shipmentId });
+    return entry;
   }
 
   async update(id: string, dto: UpdateCostEntryDto) {
-    return this.db.transaction(async (tx: any) => {
+    const entry = await this.db.transaction(async (tx: any) => {
       // 1. Fetch entry
       const [entry] = await tx
         .select()
@@ -192,10 +200,13 @@ export class CostEntriesService {
 
       return updatedEntry;
     });
+    if (entry.shipmentId)
+      this.eventEmitter.emit('cost.changed', { shipmentId: entry.shipmentId });
+    return entry;
   }
 
   async markActual(id: string, dto: MarkActualCostEntryDto, userId: string) {
-    return this.db.transaction(async (tx: any) => {
+    const entry = await this.db.transaction(async (tx: any) => {
       // 1. Fetch entry
       const [entry] = await tx
         .select()
@@ -268,10 +279,13 @@ export class CostEntriesService {
 
       return updatedEntry;
     });
+    if (entry.shipmentId)
+      this.eventEmitter.emit('cost.changed', { shipmentId: entry.shipmentId });
+    return entry;
   }
 
   async reverse(id: string, dto: ReverseCostEntryDto, userId: string) {
-    return this.db.transaction(async (tx: any) => {
+    const entry = await this.db.transaction(async (tx: any) => {
       // 1. Fetch the original entry
       const [entry] = await tx
         .select()
@@ -338,10 +352,13 @@ export class CostEntriesService {
 
       return reversalEntry;
     });
+    if (entry.shipmentId)
+      this.eventEmitter.emit('cost.changed', { shipmentId: entry.shipmentId });
+    return entry;
   }
 
   async delete(id: string) {
-    return this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       // 1. Fetch entry
       const [entry] = await tx
         .select()
@@ -381,8 +398,11 @@ export class CostEntriesService {
         .delete(schema.importCostEntries)
         .where(eq(schema.importCostEntries.id, id));
 
-      return { success: true };
+      return { success: true, shipmentId: entry.shipmentId };
     });
+    if (result.shipmentId)
+      this.eventEmitter.emit('cost.changed', { shipmentId: result.shipmentId });
+    return { success: true };
   }
 
   async acceptEstimates(
@@ -411,6 +431,8 @@ export class CostEntriesService {
         ),
       )
       .returning();
+
+    this.eventEmitter.emit('cost.changed', { shipmentId });
 
     return { acceptedCount: updated.length };
   }

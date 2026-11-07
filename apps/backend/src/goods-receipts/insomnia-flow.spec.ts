@@ -4,7 +4,7 @@ import { FinancePostingService } from '@/erp-sync/finance-posting.service';
 import { InventoryPostingService } from '@/erp-sync/inventory-posting.service';
 import { QuantityDiscrepancyService } from './quantity-discrepancy.service';
 import { LandedCostService } from '@/landed-cost/landed-cost.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import { NotificationsService } from '@/notifications/notifications.service';
 import { FinanceClient } from '@/erp-sync/clients/finance.client';
 import { InventoryClient } from '@/erp-sync/clients/inventory.client';

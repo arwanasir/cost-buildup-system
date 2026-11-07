@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
@@ -6,16 +8,23 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface Notification {
   id: string;
-  title: string;
-  message: string;
+  titleEn: string;
+  titleAm?: string;
+  bodyEn: string;
+  bodyAm?: string;
+  type: string;
   isRead: boolean;
   createdAt: string;
 }
 
 export function NotificationsPage() {
+  const localize = useUiText();
+  const { i18n } = useTranslation();
+  const isAmharic = i18n.resolvedLanguage?.startsWith('am');
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -37,7 +46,7 @@ export function NotificationsPage() {
 
   const markAllAsRead = useMutation({
     mutationFn: async () => {
-      await api.patch('/notifications/mark-all-read');
+      await api.patch('/notifications/read-all');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -54,7 +63,7 @@ export function NotificationsPage() {
   if (isError)
     return (
       <ErrorState
-        message="Failed to load notifications"
+        message={localize('Failed to load notifications')}
         onRetry={() => refetch()}
       />
     );
@@ -65,7 +74,7 @@ export function NotificationsPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-          Notifications
+          <LocalizedText text={'\n          Notifications\n        '} />
         </h2>
         {notifications.some((n) => !n.isRead) && (
           <Button
@@ -73,15 +82,17 @@ export function NotificationsPage() {
             onClick={() => markAllAsRead.mutate()}
             isLoading={markAllAsRead.isPending}
           >
-            Mark all as read
+            <LocalizedText
+              text={'\n            Mark all as read\n          '}
+            />
           </Button>
         )}
       </div>
 
       {notifications.length === 0 ? (
         <EmptyState
-          title="No notifications"
-          description="You're all caught up!"
+          title={localize('No notifications')}
+          description={localize("You're all caught up!")}
         />
       ) : (
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
@@ -95,7 +106,8 @@ export function NotificationsPage() {
                     <p
                       className={`text-sm font-medium truncate ${!notification.isRead ? 'text-blue-600' : 'text-gray-900'}`}
                     >
-                      {notification.title}
+                      {(isAmharic && notification.titleAm) ||
+                        notification.titleEn}
                     </p>
                     <div className="ml-2 flex-shrink-0 flex items-center gap-4">
                       <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-gray-500">
@@ -110,7 +122,11 @@ export function NotificationsPage() {
                           className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                           disabled={markAsRead.isPending}
                         >
-                          Mark read
+                          <LocalizedText
+                            text={
+                              '\n                          Mark read\n                        '
+                            }
+                          />
                         </button>
                       )}
                     </div>
@@ -118,7 +134,8 @@ export function NotificationsPage() {
                   <div className="mt-2 sm:flex sm:justify-between">
                     <div className="sm:flex">
                       <p className="flex items-center text-sm text-gray-500">
-                        {notification.message}
+                        {(isAmharic && notification.bodyAm) ||
+                          notification.bodyEn}
                       </p>
                     </div>
                   </div>

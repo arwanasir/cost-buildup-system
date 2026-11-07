@@ -4,7 +4,7 @@ import { QuantityDiscrepancyService } from './quantity-discrepancy.service';
 import { LandedCostService } from '@/landed-cost/landed-cost.service';
 import { InventoryPostingService } from '@/erp-sync/inventory-posting.service';
 import { FinancePostingService } from '@/erp-sync/finance-posting.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import { BadRequestException } from '@nestjs/common';
 
 describe('Goods Receipts & Discrepancies (BR01A, FR-09.1, FR-09.2)', () => {

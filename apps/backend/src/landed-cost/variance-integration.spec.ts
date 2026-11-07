@@ -4,7 +4,7 @@ import { FinalisationGuardService } from './finalisation-guard.service';
 import { VariancesService } from '@/variances/variances.service';
 import { AllocationService } from '@/allocation/allocation.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import { BadRequestException } from '@nestjs/common';
 
 describe('Integration (TC-VAR-01): Finalise Refused with Pending Variance', () => {
@@ -31,7 +31,7 @@ describe('Integration (TC-VAR-01): Finalise Refused with Pending Variance', () =
         then: (resolve: any) => {
           if (tableName === 'import_shipments')
             return resolve([
-              { id: 'ship-1', status: 'customs_released', isFinalised: false },
+              { id: 'ship-1', status: 'cleared', isFinalised: false },
             ]);
           if (tableName === 'import_cost_entries') return resolve([]); // No estimated costs remaining
           if (tableName === 'cost_variances') {

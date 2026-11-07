@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 
 export type AllocationMethod =
@@ -18,25 +18,30 @@ export class AllocationBasisService {
   ): { itemId: string; basis: any }[] {
     if (!items || items.length === 0) return [];
 
-    // BR12: Prevent by_weight or by_volume if measurements are missing
     if (method === 'by_weight') {
-      const isMissingWeight = items.some(
-        (i) => !i.weightKg || new Decimal(i.weightKg).isZero(),
-      );
-      if (isMissingWeight) {
+      const missingWeight = items.some((item) => {
+        if (item.weightKg === null || item.weightKg === undefined || item.weightKg === '') {
+          return true;
+        }
+        return !new Decimal(item.weightKg).greaterThan(0);
+      });
+      if (missingWeight) {
         throw new BadRequestException(
-          'BR12: One or more shipment items lack weight measurements. Cannot allocate by_weight. Please override the allocation method to by_value.',
+          "Cannot allocate by weight: every shipment item needs a positive weight. Add missing weights or explicitly select 'By Value' for this cost component.",
         );
       }
     }
 
     if (method === 'by_volume') {
-      const isMissingVolume = items.some(
-        (i) => !i.volumeCbm || new Decimal(i.volumeCbm).isZero(),
-      );
-      if (isMissingVolume) {
+      const missingVolume = items.some((item) => {
+        if (item.volumeCbm === null || item.volumeCbm === undefined || item.volumeCbm === '') {
+          return true;
+        }
+        return !new Decimal(item.volumeCbm).greaterThan(0);
+      });
+      if (missingVolume) {
         throw new BadRequestException(
-          'BR12: One or more shipment items lack volume measurements. Cannot allocate by_volume. Please override the allocation method to by_value.',
+          "Cannot allocate by volume: every shipment item needs a positive volume. Add missing volumes or explicitly select 'By Value' for this cost component.",
         );
       }
     }
@@ -65,7 +70,7 @@ export class AllocationBasisService {
           break;
       }
 
-      // Protect against negative basis weights
+      // Protect against negative basis values
       if (basis.isNegative()) {
         basis = new Decimal(0);
       }

@@ -21,8 +21,8 @@ describe('ReportTable', () => {
     expect(screen.getByText('Item B')).toBeInTheDocument();
 
     // Check formatted money
-    expect(screen.getByText('100.00')).toBeInTheDocument();
-    expect(screen.getByText('200.00')).toBeInTheDocument();
+    expect(screen.getByText('100.0000')).toBeInTheDocument();
+    expect(screen.getByText('200.0000')).toBeInTheDocument();
 
     // Should not render tfoot
     expect(screen.queryByText('TOTAL')).not.toBeInTheDocument();
@@ -36,7 +36,7 @@ describe('ReportTable', () => {
     expect(screen.getByText('TOTAL')).toBeInTheDocument();
 
     // Should render the formatted total amount
-    expect(screen.getByText('300.00')).toBeInTheDocument();
+    expect(screen.getByText('300.0000')).toBeInTheDocument();
 
     // Check if tfoot exists
     const tfoot = document.querySelector('tfoot');

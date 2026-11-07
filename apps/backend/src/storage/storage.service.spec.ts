@@ -48,3 +48,35 @@ describe.skip('StorageService (Integration)', () => {
     expect(deletedResponse.status).toBe(404);
   });
 });
+
+describe('StorageService signed URL endpoint', () => {
+  const originalEnv = {
+    MINIO_ENDPOINT: process.env.MINIO_ENDPOINT,
+    MINIO_PUBLIC_ENDPOINT: process.env.MINIO_PUBLIC_ENDPOINT,
+    MINIO_PORT: process.env.MINIO_PORT,
+    MINIO_ROOT_USER: process.env.MINIO_ROOT_USER,
+    MINIO_ROOT_PASSWORD: process.env.MINIO_ROOT_PASSWORD,
+  };
+
+  afterAll(() => {
+    for (const [key, value] of Object.entries(originalEnv)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+
+  it('signs view URLs with the browser-facing endpoint, not the Docker hostname', async () => {
+    process.env.MINIO_ENDPOINT = 'minio';
+    process.env.MINIO_PUBLIC_ENDPOINT = 'http://localhost:9000';
+    process.env.MINIO_PORT = '9000';
+    process.env.MINIO_ROOT_USER = 'minioadmin';
+    process.env.MINIO_ROOT_PASSWORD = 'minioadmin_password';
+
+    const service = new StorageService();
+    const signedUrl = await service.getSignedUrl('shipments/demo/bl/demo.pdf');
+
+    expect(new URL(signedUrl).origin).toBe('http://localhost:9000');
+    expect(signedUrl).toContain('X-Amz-Signature');
+    expect(signedUrl).toContain('shipments/demo/bl/demo.pdf');
+  });
+});

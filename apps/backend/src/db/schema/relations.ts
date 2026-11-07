@@ -41,7 +41,18 @@ export const usersRelations = relations(schema.users, ({ many }) => ({
 
 export const suppliersRelations = relations(schema.suppliers, ({ many }) => ({
   purchaseOrders: many(schema.importPurchaseOrders),
+  bankAccounts: many(schema.suppliersBankAccounts),
 }));
+
+export const suppliersBankAccountsRelations = relations(
+  schema.suppliersBankAccounts,
+  ({ one }) => ({
+    supplier: one(schema.suppliers, {
+      fields: [schema.suppliersBankAccounts.supplierId],
+      references: [schema.suppliers.id],
+    }),
+  }),
+);
 
 // export const hsCodesRelations = relations(schema.hsCodes, ({ many }) => ({
 //     items: many(schema.items)
@@ -104,6 +115,7 @@ export const lettersOfCreditRelations = relations(
     }),
     amendments: many(schema.lcAmendments),
     bankCharges: many(schema.lcBankCharges),
+    pos: many(schema.importPurchaseOrders),
     // marginDeposits: many(schema.lcMarginDeposits),
     // insurancePolicies: many(schema.lcInsurancePolicies),
     // presentationDocuments: many(schema.lcPresentationDocuments),

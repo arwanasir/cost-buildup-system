@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,6 +35,7 @@ function GenericChargeForm({
   costSubcategory,
   title,
 }: BaseChargeFormProps) {
+  const localize = useUiText();
   const { data: categories } = useCostCategories();
   const createMutation = useCreateCostEntry();
 
@@ -93,37 +96,39 @@ function GenericChargeForm({
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
       {!category ? (
         <div className="text-red-500 p-4">
-          Error: Cost category "{categoryCode}" not found in system.
+          <LocalizedText text={'\n          Error: Cost category "'} />
+          {categoryCode}
+          <LocalizedText text={'" not found in system.\n        '} />
         </div>
       ) : (
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <Input
-            label="Provider Name *"
+            label={localize('Provider Name *')}
             {...form.register('providerName')}
             error={form.formState.errors.providerName?.message}
           />
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="Invoice Number *"
+              label={localize('Invoice Number *')}
               {...form.register('invoiceNumber')}
               error={form.formState.errors.invoiceNumber?.message}
             />
             <Input
-              label="Invoice Date *"
+              label={localize('Invoice Date *')}
               type="date"
               {...form.register('invoiceDate')}
               error={form.formState.errors.invoiceDate?.message}
             />
           </div>
           <Input
-            label="Amount (ETB) *"
+            label={localize('Amount (ETB) *')}
             type="number"
             step="0.01"
             {...form.register('amountEtb', { valueAsNumber: true })}
             error={form.formState.errors.amountEtb?.message}
           />
           <Input
-            label="Attachment URL (Optional)"
+            label={localize('Attachment URL (Optional)')}
             {...form.register('attachment')}
             error={form.formState.errors.attachment?.message}
           />
@@ -135,14 +140,16 @@ function GenericChargeForm({
               onClick={onClose}
               disabled={createMutation.isPending}
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
             <Button
               type="submit"
               variant="primary"
               isLoading={createMutation.isPending}
             >
-              Record Entry
+              <LocalizedText
+                text={'\n              Record Entry\n            '}
+              />
             </Button>
           </div>
         </form>

@@ -1,9 +1,13 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import { useTranslation } from 'react-i18next';
 import { useCallback } from 'react';
 import { api } from '@/lib/api-client';
 
 export function LanguageSwitcher() {
   const { i18n } = useTranslation();
+  const selectedLanguage = i18n.resolvedLanguage?.startsWith('am')
+    ? 'am'
+    : 'en';
 
   const handleLanguageChange = useCallback(
     async (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -25,12 +29,14 @@ export function LanguageSwitcher() {
 
   return (
     <select
-      value={i18n.language}
+      value={selectedLanguage}
       onChange={handleLanguageChange}
       className="bg-white border border-gray-300 rounded px-2 py-1 text-sm outline-none focus:border-blue-500"
     >
-      <option value="en">English</option>
-      <option value="am">????</option>
+      <option value="en">
+        <LocalizedText text={'English'} />
+      </option>
+      <option value="am">አማርኛ</option>
     </select>
   );
 }

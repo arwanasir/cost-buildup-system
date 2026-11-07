@@ -1,3 +1,5 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
+import { useUiText } from '@/lib/ui-text';
 import React from 'react';
 import { Table, Badge, Button } from '@/components/ui';
 import { type CostEntry } from '../api';
@@ -21,14 +23,17 @@ function AttachmentLink({
       rel="noopener noreferrer"
       className="text-blue-600 hover:underline"
     >
-      View
+      <LocalizedText text={'\n      View\n    '} />
     </a>
   ) : (
-    <span className="text-gray-400">Loading...</span>
+    <span className="text-gray-400">
+      <LocalizedText text={'Loading...'} />
+    </span>
   );
 }
 
 import { useAuthStore } from '@/store/auth.store';
+import { formatAmount4, formatFx } from '@/lib/money';
 
 export function CostEntriesTable({
   entries,
@@ -43,6 +48,7 @@ export function CostEntriesTable({
   onReverse: (entry: CostEntry) => void;
   isFinalised?: boolean;
 }) {
+  const localize = useUiText();
   // Group entries by Category
   const user = useAuthStore((s) => s.user);
   const grouped = entries.reduce(
@@ -61,28 +67,40 @@ export function CostEntriesTable({
         <thead>
           <tr className="bg-gray-50 border-b">
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              Category / Subcategory
+              <LocalizedText
+                text={'\n              Category / Subcategory\n            '}
+              />
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              Provider & Invoice
+              <LocalizedText
+                text={'\n              Provider & Invoice\n            '}
+              />
             </th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              Foreign Amount
+              <LocalizedText
+                text={'\n              Foreign Amount\n            '}
+              />
             </th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              FX Rate
+              <LocalizedText text={'\n              FX Rate\n            '} />
             </th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              ETB Amount
+              <LocalizedText
+                text={'\n              ETB Amount\n            '}
+              />
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              Allocation Method
+              <LocalizedText
+                text={'\n              Allocation Method\n            '}
+              />
             </th>
             <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              Attachment
+              <LocalizedText
+                text={'\n              Attachment\n            '}
+              />
             </th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              Actions
+              <LocalizedText text={'\n              Actions\n            '} />
             </th>
           </tr>
         </thead>
@@ -113,7 +131,9 @@ export function CostEntriesTable({
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         {entry.isEstimated ? (
-                          <Badge variant="warning">Estimated</Badge>
+                          <Badge variant="warning">
+                            <LocalizedText text={'Estimated'} />
+                          </Badge>
                         ) : (
                           <Badge
                             variant={
@@ -138,17 +158,17 @@ export function CostEntriesTable({
                     </td>
                     <td className="px-4 py-3 text-right align-top">
                       <div className="font-semibold text-gray-700">
-                        {parseFloat(entry.amountForeign).toLocaleString()}
+                        {formatAmount4(entry.amountForeign)}
                       </div>
                       <div className="text-xs text-gray-500">
                         {entry.currency}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right align-top text-gray-600">
-                      {parseFloat(entry.fxRate).toFixed(4)}
+                      {formatFx(entry.fxRate)}
                     </td>
                     <td className="px-4 py-3 text-right align-top font-bold text-gray-900">
-                      {parseFloat(entry.amountEtb).toLocaleString()}
+                      {formatAmount4(entry.amountEtb)}
                     </td>
                     <td className="px-4 py-3 align-top">
                       <Badge variant="default" className="text-xs font-normal">
@@ -171,10 +191,18 @@ export function CostEntriesTable({
                             variant="danger"
                             onClick={() => onReverse(entry)}
                           >
-                            Reverse
+                            <LocalizedText
+                              text={
+                                '\n                            Reverse\n                          '
+                              }
+                            />
                           </Button>
                         ) : (
-                          <span title="Locked (System sourced or Actualized)">
+                          <span
+                            title={localize(
+                              'Locked (System sourced or Actualized)',
+                            )}
+                          >
                             &#128274;
                           </span>
                         )
@@ -185,14 +213,22 @@ export function CostEntriesTable({
                               variant="primary"
                               onClick={() => onMarkActual(entry)}
                             >
-                              Mark Actual
+                              <LocalizedText
+                                text={
+                                  '\n                              Mark Actual\n                            '
+                                }
+                              />
                             </Button>
                           )}
                           <Button
                             variant="outline"
                             onClick={() => onDelete(entry.id)}
                           >
-                            Delete
+                            <LocalizedText
+                              text={
+                                '\n                            Delete\n                          '
+                              }
+                            />
                           </Button>
                         </>
                       )}
@@ -205,7 +241,11 @@ export function CostEntriesTable({
           {entries.length === 0 && (
             <tr>
               <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
-                No cost entries recorded.
+                <LocalizedText
+                  text={
+                    '\n                No cost entries recorded.\n              '
+                  }
+                />
               </td>
             </tr>
           )}

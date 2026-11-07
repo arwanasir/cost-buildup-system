@@ -9,6 +9,27 @@ describe('Reports & Exports (e2e) (TC-RPT-01 to 09)', () => {
   let app: INestApplication;
   let adminToken = '';
   let demoSupplierId = '';
+  let demoItemId = '';
+
+  const readBinary = (
+    response: any,
+    callback: (error: Error | null, body?: Buffer) => void,
+  ) => {
+    const chunks: Buffer[] = [];
+    response.on('data', (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
+    response.on('end', () => callback(null, Buffer.concat(chunks)));
+    response.on('error', callback);
+  };
+
+  const reportFilters = (reportKey: string) => ({
+    date_from: '2020-01-01',
+    date_to: '2030-12-31',
+    supplier_id: demoSupplierId || undefined,
+    item_id:
+      reportKey === 'landed-cost-by-item'
+        ? demoItemId || undefined
+        : undefined,
+  });
 
   const reportKeys = [
     'landed-cost-by-shipment',
@@ -55,15 +76,27 @@ describe('Reports & Exports (e2e) (TC-RPT-01 to 09)', () => {
     // 4. Retrieve the Demo Supplier ID to use in filters
     const supsRes = await request(app.getHttpServer())
       .get('/suppliers')
-      .set('Authorization', `Bearer \${adminToken}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .expect(HttpStatus.OK);
 
-    const demoSup = supsRes.body.find(
+    const suppliers = Array.isArray(supsRes.body)
+      ? supsRes.body
+      : supsRes.body.data || [];
+    const demoSup = suppliers.find(
       (s: any) => s.name === 'Demo Global Suppliers Ltd',
     );
     if (demoSup) {
       demoSupplierId = demoSup.id;
     }
+
+    const itemsRes = await request(app.getHttpServer())
+      .get('/items?limit=500')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(HttpStatus.OK);
+    const items = Array.isArray(itemsRes.body)
+      ? itemsRes.body
+      : itemsRes.body.data || [];
+    demoItemId = items[0]?.id || '';
   });
 
   afterAll(async () => {
@@ -71,16 +104,12 @@ describe('Reports & Exports (e2e) (TC-RPT-01 to 09)', () => {
   });
 
   for (const reportKey of reportKeys) {
-    describe(`Report: \${reportKey}`, () => {
-      it(`should fetch JSON data for \${reportKey} with date & supplier filters`, async () => {
+    describe(`Report: ${reportKey}`, () => {
+      it(`should fetch JSON data for ${reportKey} with date & supplier filters`, async () => {
         const res = await request(app.getHttpServer())
-          .get(`/reports/\${reportKey}`)
-          .set('Authorization', `Bearer \${adminToken}`)
-          .query({
-            date_from: '2020-01-01',
-            date_to: '2030-12-31',
-            supplier_id: demoSupplierId || undefined,
-          });
+          .get(`/reports/${reportKey}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .query(reportFilters(reportKey));
 
         expect(res.status).toBe(HttpStatus.OK);
         expect(res.body).toHaveProperty('columns');
@@ -96,16 +125,13 @@ describe('Reports & Exports (e2e) (TC-RPT-01 to 09)', () => {
         }
       });
 
-      it(`should export \${reportKey} to XLSX successfully`, async () => {
+      it(`should export ${reportKey} to XLSX successfully`, async () => {
         const res = await request(app.getHttpServer())
-          .get(`/reports/\${reportKey}/export`)
-          .set('Authorization', `Bearer \${adminToken}`)
-          .query({
-            format: 'xlsx',
-            date_from: '2020-01-01',
-            date_to: '2030-12-31',
-            supplier_id: demoSupplierId || undefined,
-          });
+          .get(`/reports/${reportKey}/export/xlsx`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .buffer(true)
+          .parse(readBinary)
+          .query(reportFilters(reportKey));
 
         expect(res.status).toBe(HttpStatus.OK);
         expect(res.header['content-type']).toBe(
@@ -114,33 +140,32 @@ describe('Reports & Exports (e2e) (TC-RPT-01 to 09)', () => {
 
         // Assert the attachment filename is correct
         expect(res.header['content-disposition']).toContain(
-          `\${reportKey}.xlsx`,
+          `${reportKey}.xlsx`,
         );
 
         // Assert binary stream payload exists
+        expect(Buffer.isBuffer(res.body)).toBe(true);
         expect(res.body.length).toBeGreaterThan(100);
       });
 
-      it(`should export \${reportKey} to PDF successfully`, async () => {
+      it(`should export ${reportKey} to PDF successfully`, async () => {
         const res = await request(app.getHttpServer())
-          .get(`/reports/\${reportKey}/export`)
-          .set('Authorization', `Bearer \${adminToken}`)
-          .query({
-            format: 'pdf',
-            date_from: '2020-01-01',
-            date_to: '2030-12-31',
-            supplier_id: demoSupplierId || undefined,
-          });
+          .get(`/reports/${reportKey}/export/pdf`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .buffer(true)
+          .parse(readBinary)
+          .query(reportFilters(reportKey));
 
         expect(res.status).toBe(HttpStatus.OK);
         expect(res.header['content-type']).toBe('application/pdf');
 
         // Assert the attachment filename is correct
         expect(res.header['content-disposition']).toContain(
-          `\${reportKey}.pdf`,
+          `${reportKey}.pdf`,
         );
 
         // Assert binary stream payload exists (PDF headers minimum)
+        expect(Buffer.isBuffer(res.body)).toBe(true);
         expect(res.body.length).toBeGreaterThan(100);
       });
     });

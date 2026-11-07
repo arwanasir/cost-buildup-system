@@ -1,3 +1,4 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useMemo } from 'react';
 import { type LandedCostResult } from '../api';
 
@@ -95,9 +96,11 @@ export function CompositionPieChart({ data }: { data: LandedCostResult[] }) {
             <span
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: COLORS.ci }}
-            ></span>{' '}
-            CI Base
-          </span>{' '}
+            ></span>
+            <LocalizedText text={' '} />
+            <LocalizedText text={'\n            CI Base\n          '} />
+          </span>
+          <LocalizedText text={' '} />
           <span>{((totals.ci / totals.grandTotal) * 100).toFixed(1)}%</span>
         </div>
         <div className="flex justify-between text-xs">
@@ -105,9 +108,11 @@ export function CompositionPieChart({ data }: { data: LandedCostResult[] }) {
             <span
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: COLORS.duty }}
-            ></span>{' '}
-            Duty
-          </span>{' '}
+            ></span>
+            <LocalizedText text={' '} />
+            <LocalizedText text={'\n            Duty\n          '} />
+          </span>
+          <LocalizedText text={' '} />
           <span>{((totals.duty / totals.grandTotal) * 100).toFixed(1)}%</span>
         </div>
         <div className="flex justify-between text-xs">
@@ -115,9 +120,11 @@ export function CompositionPieChart({ data }: { data: LandedCostResult[] }) {
             <span
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: COLORS.vat }}
-            ></span>{' '}
-            VAT
-          </span>{' '}
+            ></span>
+            <LocalizedText text={' '} />
+            <LocalizedText text={'\n            VAT\n          '} />
+          </span>
+          <LocalizedText text={' '} />
           <span>{((totals.vat / totals.grandTotal) * 100).toFixed(1)}%</span>
         </div>
         <div className="flex justify-between text-xs">
@@ -125,9 +132,11 @@ export function CompositionPieChart({ data }: { data: LandedCostResult[] }) {
             <span
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: COLORS.freight }}
-            ></span>{' '}
-            Freight
-          </span>{' '}
+            ></span>
+            <LocalizedText text={' '} />
+            <LocalizedText text={'\n            Freight\n          '} />
+          </span>
+          <LocalizedText text={' '} />
           <span>
             {((totals.freight / totals.grandTotal) * 100).toFixed(1)}%
           </span>
@@ -137,9 +146,11 @@ export function CompositionPieChart({ data }: { data: LandedCostResult[] }) {
             <span
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: COLORS.clearing }}
-            ></span>{' '}
-            Clearing & Port
-          </span>{' '}
+            ></span>
+            <LocalizedText text={' '} />
+            <LocalizedText text={'\n            Clearing & Port\n          '} />
+          </span>
+          <LocalizedText text={' '} />
           <span>
             {(
               ((totals.clearing + totals.port) / totals.grandTotal) *

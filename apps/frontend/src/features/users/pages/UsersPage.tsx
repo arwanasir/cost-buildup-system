@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import {
   useUsers,
@@ -55,6 +57,7 @@ const LANGUAGES = [
 
 // --- Main Component ---
 export function UsersPage() {
+  const localize = useUiText();
   const queryClient = useQueryClient();
 
   // Modals state
@@ -135,7 +138,7 @@ export function UsersPage() {
       header: 'Status',
       accessor: (row: User) => (
         <Badge variant={row.isActive ? 'success' : 'danger'}>
-          {row.isActive ? 'Active' : 'Inactive'}
+          <LocalizedText text={row.isActive ? 'Active' : 'Inactive'} />
         </Badge>
       ),
     },
@@ -147,20 +150,22 @@ export function UsersPage() {
             onClick={() => openEdit(row)}
             className="text-blue-600 hover:text-blue-900 font-medium text-sm"
           >
-            Edit
+            <LocalizedText text={'\n            Edit\n          '} />
           </button>
           <button
             onClick={() => setResetUser(row)}
             className="text-gray-600 hover:text-gray-900 font-medium text-sm"
           >
-            Reset PW
+            <LocalizedText text={'\n            Reset PW\n          '} />
           </button>
           {row.isActive && (
             <button
               onClick={() => setDeactivateUser(row)}
               className="text-red-600 hover:text-red-900 font-medium text-sm"
             >
-              Deactivate
+              <LocalizedText
+                text={'\n              Deactivate\n            '}
+              />
             </button>
           )}
         </div>
@@ -171,7 +176,10 @@ export function UsersPage() {
   if (isLoading) return <Skeleton className="h-96 w-full" />;
   if (isError)
     return (
-      <ErrorState message="Failed to load users" onRetry={() => refetch()} />
+      <ErrorState
+        message={localize('Failed to load users')}
+        onRetry={() => refetch()}
+      />
     );
 
   return (
@@ -179,14 +187,22 @@ export function UsersPage() {
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            Users Management
+            <LocalizedText
+              text={'\n            Users Management\n          '}
+            />
           </h1>
           <p className="mt-2 text-sm text-gray-700">
-            Manage system users, roles, and access.
+            <LocalizedText
+              text={
+                '\n            Manage system users, roles, and access.\n          '
+              }
+            />
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
-          <Button onClick={openCreate}>Add User</Button>
+          <Button onClick={openCreate}>
+            <LocalizedText text={'Add User'} />
+          </Button>
         </div>
       </div>
 
@@ -201,29 +217,29 @@ export function UsersPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormError error={createMutation.error || updateMutation.error} />
           <Input
-            label="Full Name"
+            label={localize('Full Name')}
             {...register('fullName')}
             error={errors.fullName?.message}
           />
           <Input
-            label="Email"
+            label={localize('Email')}
             type="email"
             {...register('email')}
             error={errors.email?.message}
           />
           <Select
-            label="Role"
+            label={localize('Role')}
             options={ROLES}
             {...register('role')}
             error={errors.role?.message}
           />
           <Input
-            label="Department"
+            label={localize('Department')}
             {...register('department')}
             error={errors.department?.message}
           />
           <Select
-            label="Preferred Language"
+            label={localize('Preferred Language')}
             options={LANGUAGES}
             {...register('preferredLanguage')}
             error={errors.preferredLanguage?.message}
@@ -231,7 +247,7 @@ export function UsersPage() {
 
           {!editingUser && (
             <Input
-              label="Temporary Password"
+              label={localize('Temporary Password')}
               type="password"
               {...register('temporaryPassword')}
               error={errors.temporaryPassword?.message}
@@ -244,7 +260,9 @@ export function UsersPage() {
               isLoading={createMutation.isPending || updateMutation.isPending}
               className="w-full sm:ml-3 sm:w-auto"
             >
-              {editingUser ? 'Save Changes' : 'Create User'}
+              <LocalizedText
+                text={editingUser ? 'Save Changes' : 'Create User'}
+              />
             </Button>
             <Button
               type="button"
@@ -252,7 +270,7 @@ export function UsersPage() {
               onClick={() => setIsFormOpen(false)}
               className="mt-3 w-full sm:mt-0 sm:w-auto"
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
           </div>
         </form>
@@ -266,7 +284,7 @@ export function UsersPage() {
       >
         <div className="space-y-4">
           <Input
-            label="New Password"
+            label={localize('New Password')}
             type="password"
             value={resetPasswordVal}
             onChange={(e) => setResetPasswordVal(e.target.value)}
@@ -289,14 +307,14 @@ export function UsersPage() {
               disabled={!resetPasswordVal}
               className="w-full sm:ml-3 sm:w-auto"
             >
-              Reset
+              <LocalizedText text={'\n              Reset\n            '} />
             </Button>
             <Button
               variant="secondary"
               onClick={() => setResetUser(null)}
               className="mt-3 w-full sm:mt-0 sm:w-auto"
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
           </div>
         </div>
@@ -305,9 +323,9 @@ export function UsersPage() {
       {/* Deactivate Confirm */}
       <ConfirmDialog
         isOpen={!!deactivateUser}
-        title="Deactivate User"
+        title={localize('Deactivate User')}
         message={`Are you sure you want to deactivate ${deactivateUser?.fullName}? They will immediately lose access to the system.`}
-        confirmText="Deactivate"
+        confirmText={localize('Deactivate')}
         isDestructive
         isLoading={deactivateMutation.isPending}
         onConfirm={() =>

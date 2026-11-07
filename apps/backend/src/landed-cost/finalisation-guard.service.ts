@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, inArray, isNull } from 'drizzle-orm';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -30,10 +30,10 @@ export class FinalisationGuardService {
       ];
     }
 
-    const validFinalizeStatuses = ['customs_released', 'received', 'completed'];
+    const validFinalizeStatuses = ['cleared', 'partially_received', 'received'];
     if (!validFinalizeStatuses.includes(shipment.status)) {
       blockers.push(
-        `Shipment status is '${shipment.status}'. Must be at least 'customs_released' to finalize costs.`,
+        `Shipment status is '${shipment.status}'. Must be at least 'cleared' to finalize costs.`,
       );
     }
 
@@ -45,6 +45,7 @@ export class FinalisationGuardService {
         and(
           eq(schema.importCostEntries.shipmentId, shipmentId),
           eq(schema.importCostEntries.isEstimated, true),
+          isNull(schema.importCostEntries.estimateAcceptedBy),
           isNull(schema.importCostEntries.reversedByEntryId),
         ),
       );
@@ -79,7 +80,12 @@ export class FinalisationGuardService {
       .where(
         and(
           eq(schema.goodsReceipts.shipmentId, shipmentId),
-          eq(schema.goodsReceipts.status, 'confirmed'),
+          inArray(schema.goodsReceipts.status, [
+            'confirmed',
+            'posted',
+            'posting_failed',
+            'flagged_for_adjustment',
+          ]),
         ),
       );
     if (confirmedGrns.length === 0) {

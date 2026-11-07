@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, inArray, and } from 'drizzle-orm';
 import Decimal from 'decimal.js';

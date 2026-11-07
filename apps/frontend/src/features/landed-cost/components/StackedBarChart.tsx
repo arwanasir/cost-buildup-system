@@ -1,3 +1,4 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React from 'react';
 import { type LandedCostResult } from '../api';
 
@@ -28,64 +29,73 @@ export function StackedBarChart({ data }: { data: LandedCostResult[] }) {
           <span
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: COLORS.ci }}
-          ></span>{' '}
-          CI Value
+          ></span>
+          <LocalizedText text={' '} />
+          <LocalizedText text={'\n          CI Value\n        '} />
         </div>
         <div className="flex items-center gap-1">
           <span
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: COLORS.duty }}
-          ></span>{' '}
-          Duty
+          ></span>
+          <LocalizedText text={' '} />
+          <LocalizedText text={'\n          Duty\n        '} />
         </div>
         <div className="flex items-center gap-1">
           <span
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: COLORS.vat }}
-          ></span>{' '}
-          VAT
+          ></span>
+          <LocalizedText text={' '} />
+          <LocalizedText text={'\n          VAT\n        '} />
         </div>
         <div className="flex items-center gap-1">
           <span
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: COLORS.freight }}
-          ></span>{' '}
-          Freight
+          ></span>
+          <LocalizedText text={' '} />
+          <LocalizedText text={'\n          Freight\n        '} />
         </div>
         <div className="flex items-center gap-1">
           <span
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: COLORS.insurance }}
-          ></span>{' '}
-          Insurance
+          ></span>
+          <LocalizedText text={' '} />
+          <LocalizedText text={'\n          Insurance\n        '} />
         </div>
         <div className="flex items-center gap-1">
           <span
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: COLORS.bank }}
-          ></span>{' '}
-          Bank
+          ></span>
+          <LocalizedText text={' '} />
+          <LocalizedText text={'\n          Bank\n        '} />
         </div>
         <div className="flex items-center gap-1">
           <span
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: COLORS.port }}
-          ></span>{' '}
-          Port
+          ></span>
+          <LocalizedText text={' '} />
+          <LocalizedText text={'\n          Port\n        '} />
         </div>
         <div className="flex items-center gap-1">
           <span
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: COLORS.clearing }}
-          ></span>{' '}
-          Clearing
+          ></span>
+          <LocalizedText text={' '} />
+          <LocalizedText text={'\n          Clearing\n        '} />
         </div>
         <div className="flex items-center gap-1">
           <span
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: COLORS.other }}
-          ></span>{' '}
-          Other
+          ></span>
+          <LocalizedText text={' '} />
+          <LocalizedText text={'\n          Other\n        '} />
         </div>
       </div>
 
@@ -117,9 +127,11 @@ export function StackedBarChart({ data }: { data: LandedCostResult[] }) {
                   {item.itemId}
                 </span>
                 <span className="font-bold text-gray-900">
-                  ETB{' '}
+                  <LocalizedText text={'\n                  ETB'} />
+                  <LocalizedText text={' '} />
                   {total.toLocaleString(undefined, {
-                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 4,
+                    maximumFractionDigits: 4,
                   })}
                 </span>
               </div>

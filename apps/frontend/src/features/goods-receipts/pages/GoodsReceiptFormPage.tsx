@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState, useEffect } from 'react';
 import {
   PageHeader,
@@ -14,6 +16,7 @@ import { useCreateGrn } from '../api';
 import { useNavigate } from 'react-router-dom';
 
 export function GoodsReceiptFormPage() {
+  const localize = useUiText();
   const navigate = useNavigate();
   const { data: shipmentsResponse, isLoading: loadingShipments } =
     useShipments();
@@ -134,18 +137,20 @@ export function GoodsReceiptFormPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <PageHeader
-        title="New Goods Receipt (GRN)"
-        description="Record incoming inventory and log discrepancies."
+        title={localize('New Goods Receipt (GRN)')}
+        description={localize(
+          'Record incoming inventory and log discrepancies.',
+        )}
       />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card className="p-6 bg-white shadow-sm border space-y-4">
           <h3 className="text-lg font-bold text-gray-800 border-b pb-2">
-            GRN Metadata
+            <LocalizedText text={'\n            GRN Metadata\n          '} />
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Select
-              label="Select Shipment *"
+              label={localize('Select Shipment *')}
               value={selectedShipmentId}
               onChange={(e) => setSelectedShipmentId(e.target.value)}
               options={[
@@ -158,17 +163,17 @@ export function GoodsReceiptFormPage() {
               required
             />
             <Input
-              label="Receipt Date *"
+              label={localize('Receipt Date *')}
               type="date"
               value={receiptDate}
               onChange={(e) => setReceiptDate(e.target.value)}
               required
             />
             <Input
-              label="Warehouse Location *"
+              label={localize('Warehouse Location *')}
               value={warehouseLocation}
               onChange={(e) => setWarehouseLocation(e.target.value)}
-              placeholder="e.g. Zone A, Rack 12"
+              placeholder={localize('e.g. Zone A, Rack 12')}
               required
             />
           </div>
@@ -181,12 +186,20 @@ export function GoodsReceiptFormPage() {
             </span>
             <div>
               <h4 className="font-bold text-red-800">
-                AC06: Customs Release Required
+                <LocalizedText
+                  text={
+                    '\n                AC06: Customs Release Required\n              '
+                  }
+                />
               </h4>
               <p className="text-sm text-red-700">
-                A GRN cannot be initiated for a shipment unless it has been
-                cleared by customs. This shipment is currently in '
-                {shipment.status}' status.
+                <LocalizedText
+                  text={
+                    "\n                A GRN cannot be initiated for a shipment unless it has been\n                cleared by customs. This shipment is currently in '\n                "
+                  }
+                />
+                {shipment.status}
+                <LocalizedText text={"' status.\n              "} />
               </p>
             </div>
           </div>
@@ -196,11 +209,14 @@ export function GoodsReceiptFormPage() {
           <Card className="p-0 bg-white shadow-sm border overflow-hidden">
             <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
               <h3 className="text-lg font-bold text-gray-800">
-                Received Line Items
+                <LocalizedText
+                  text={'\n                Received Line Items\n              '}
+                />
               </h3>
               {po && (
                 <span className="text-sm text-gray-600 font-medium">
-                  Linked PO: {po.poNumber}
+                  <LocalizedText text={'\n                  Linked PO: '} />
+                  {po.poNumber}
                 </span>
               )}
             </div>
@@ -235,25 +251,40 @@ export function GoodsReceiptFormPage() {
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center gap-2">
                         <h4 className="font-bold text-gray-800">
-                          Item: {item.itemId || item.id.slice(0, 8)}
+                          <LocalizedText
+                            text={'\n                          Item: '}
+                          />
+                          {item.itemId || item.id.slice(0, 8)}
                         </h4>
                         {isDiscrepant ? (
                           <Badge
                             variant="warning"
                             className="text-[10px] uppercase"
                           >
-                            Discrepancy
+                            <LocalizedText
+                              text={
+                                '\n                            Discrepancy\n                          '
+                              }
+                            />
                           </Badge>
                         ) : (
                           <span className="text-green-500 font-bold">
-                            &#10003; Matches Shipped
+                            <LocalizedText
+                              text={
+                                '\n                            &#10003; Matches Shipped\n                          '
+                              }
+                            />
                           </span>
                         )}
                       </div>
                       <div className="flex flex-wrap gap-4 text-sm text-gray-600 bg-gray-100 p-3 rounded-md">
                         <div className="flex flex-col">
                           <span className="text-xs uppercase text-gray-500 font-bold">
-                            PO Qty
+                            <LocalizedText
+                              text={
+                                '\n                            PO Qty\n                          '
+                              }
+                            />
                           </span>
                           <strong className="text-gray-900">
                             {poQty.toLocaleString()}
@@ -261,7 +292,11 @@ export function GoodsReceiptFormPage() {
                         </div>
                         <div className="flex flex-col border-l pl-4">
                           <span className="text-xs uppercase text-gray-500 font-bold">
-                            Shipped Qty
+                            <LocalizedText
+                              text={
+                                '\n                            Shipped Qty\n                          '
+                              }
+                            />
                           </span>
                           <strong className="text-gray-900">
                             {shippedQty.toLocaleString()}
@@ -269,7 +304,11 @@ export function GoodsReceiptFormPage() {
                         </div>
                         <div className="flex flex-col border-l pl-4">
                           <span className="text-xs uppercase text-gray-500 font-bold">
-                            Received Qty *
+                            <LocalizedText
+                              text={
+                                '\n                            Received Qty *\n                          '
+                              }
+                            />
                           </span>
                           <Input
                             type="number"
@@ -292,7 +331,11 @@ export function GoodsReceiptFormPage() {
 
                     <div className="flex-1 bg-white p-4 border rounded-md shadow-sm space-y-4">
                       <h5 className="font-semibold text-gray-700 border-b pb-1">
-                        Inspection Result (FR-09.2)
+                        <LocalizedText
+                          text={
+                            '\n                        Inspection Result (FR-09.2)\n                      '
+                          }
+                        />
                       </h5>
                       <Select
                         value={state.inspectionResult}
@@ -350,8 +393,12 @@ export function GoodsReceiptFormPage() {
                           </div>
                           {sumError && (
                             <p className="text-sm font-bold text-red-600">
-                              &#9888; Accepted + Rejected must equal Received
-                              Quantity ({rcvQty})
+                              <LocalizedText
+                                text={
+                                  '\n                              &#9888; Accepted + Rejected must equal Received\n                              Quantity ('
+                                }
+                              />
+                              {rcvQty})
                             </p>
                           )}
                           <Input
@@ -374,8 +421,17 @@ export function GoodsReceiptFormPage() {
                                 &#9888;
                               </span>
                               <span>
-                                FR-09.2: These {rejQty} units will be flagged
-                                for Quarantine and trigger a Claims Workflow.
+                                <LocalizedText
+                                  text={
+                                    '\n                                FR-09.2: These '
+                                  }
+                                />
+                                {rejQty}{' '}
+                                <LocalizedText
+                                  text={
+                                    ' units will be flagged\n                                for Quarantine and trigger a Claims Workflow.\n                              '
+                                  }
+                                />
                               </span>
                             </div>
                           )}
@@ -395,7 +451,7 @@ export function GoodsReceiptFormPage() {
             onClick={() => navigate('/goods-receipts')}
             type="button"
           >
-            Cancel
+            <LocalizedText text={'\n            Cancel\n          '} />
           </Button>
           <Button
             variant="primary"
@@ -403,7 +459,9 @@ export function GoodsReceiptFormPage() {
             disabled={isBlocked || !shipment}
             isLoading={createGrnMutation.isPending}
           >
-            Save Goods Receipt
+            <LocalizedText
+              text={'\n            Save Goods Receipt\n          '}
+            />
           </Button>
         </div>
       </form>

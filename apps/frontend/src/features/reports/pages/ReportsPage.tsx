@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
+import React, { useEffect, useState } from 'react';
 import { PageHeader, Card, Button } from '@/components/ui';
 import { ReportTable } from '../components/ReportTable';
 import { ReportFilterBar } from '../components/ReportFilterBar';
 import { useAuthStore } from '@/store/auth.store';
+import { formatAmount4 } from '@/lib/money';
 import {
   useReport,
   downloadExport,
@@ -59,6 +62,7 @@ const REPORTS = [
 ] as const;
 
 export function ReportsPage() {
+  const localize = useUiText();
   const { hasPermission } = useAuthStore();
 
   // Filter available reports based on exact permissions (or admin bypass built into hasPermission)
@@ -73,19 +77,48 @@ export function ReportsPage() {
   const [filters, setFilters] = useState<ReportFilterDto>({});
   const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [exportError, setExportError] = useState('');
+  const [exportSuccess, setExportSuccess] = useState('');
+
+  useEffect(() => {
+    if (availableReports.length === 0) {
+      if (activeReportKey !== null) setActiveReportKey(null);
+      return;
+    }
+    if (!availableReports.some((report) => report.key === activeReportKey)) {
+      setActiveReportKey(
+        availableReports[0].key as ReportKey,
+      );
+      setFilters({});
+    }
+  }, [activeReportKey, availableReports]);
 
   const {
     data: reportData,
     isLoading,
     isFetching,
+    isError,
+    error,
+    refetch,
   } = useReport(activeReportKey as ReportKey, filters);
 
   const handleExport = async (format: 'pdf' | 'excel') => {
     if (!activeReportKey) return;
+    setExportError('');
+    setExportSuccess('');
     if (format === 'excel') setIsExportingExcel(true);
     else setIsExportingPdf(true);
     try {
       await downloadExport(activeReportKey, format, filters);
+      setExportSuccess(
+        localize(`${format === 'excel' ? 'Excel' : 'PDF'} report downloaded.`),
+      );
+    } catch (error: any) {
+      setExportError(
+        error.response?.data?.message ||
+          error.message ||
+          localize(`Failed to export report as ${format.toUpperCase()}.`),
+      );
     } finally {
       if (format === 'excel') setIsExportingExcel(false);
       else setIsExportingPdf(false);
@@ -93,13 +126,28 @@ export function ReportsPage() {
   };
 
   const handleFilterChange = (field: keyof ReportFilterDto, value: string) => {
+    setExportError('');
+    setExportSuccess('');
     setFilters((prev) => ({ ...prev, [field]: value || undefined }));
   };
+
+  const handleClearFilters = () => {
+    setFilters({});
+    setExportError('');
+    setExportSuccess('');
+  };
+
+  const itemRequired =
+    activeReportKey === 'landed-cost-by-item' && !filters.itemId;
 
   if (availableReports.length === 0) {
     return (
       <div className="p-8 text-center text-red-500">
-        You do not have permission to view any reports.
+        <LocalizedText
+          text={
+            '\n        You do not have permission to view any reports.\n      '
+          }
+        />
       </div>
     );
   }
@@ -112,26 +160,32 @@ export function ReportsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <PageHeader
-          title="Reporting Engine"
-          description="Generate, filter, and export analytics (FR-11)."
+          title={localize('Reporting Engine')}
+          description={localize(
+            'Generate, filter, and export analytics (FR-11).',
+          )}
         />
         {activeReportKey && (
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => handleExport('excel')}
-              disabled={isFetching || isExportingPdf}
+              disabled={isFetching || isExportingPdf || itemRequired}
               isLoading={isExportingExcel}
             >
-              Export to Excel
+              <LocalizedText
+                text={'\n              Export to Excel\n            '}
+              />
             </Button>
             <Button
               variant="secondary"
               onClick={() => handleExport('pdf')}
-              disabled={isFetching || isExportingExcel}
+              disabled={isFetching || isExportingExcel || itemRequired}
               isLoading={isExportingPdf}
             >
-              Export to PDF
+              <LocalizedText
+                text={'\n              Export to PDF\n            '}
+              />
             </Button>
           </div>
         )}
@@ -141,7 +195,9 @@ export function ReportsPage() {
         {/* Navigation Sidebar */}
         <Card className="w-full lg:w-64 shrink-0 p-0 overflow-hidden shadow-sm border bg-white">
           <div className="p-3 border-b bg-gray-50 font-bold text-gray-800">
-            Available Reports
+            <LocalizedText
+              text={'\n            Available Reports\n          '}
+            />
           </div>
           <nav className="flex flex-col divide-y text-sm">
             {availableReports.map((report) => {
@@ -149,14 +205,20 @@ export function ReportsPage() {
               return (
                 <button
                   key={report.key}
-                  onClick={() => setActiveReportKey(report.key as ReportKey)}
+                  onClick={() => {
+                    setActiveReportKey(report.key as ReportKey);
+                    setFilters({});
+                    setExportError('');
+                    setExportSuccess('');
+                  }}
+                  aria-pressed={isActive}
                   className={`text-left px-4 py-3 hover:bg-blue-50 transition-colors ${
                     isActive
                       ? 'bg-blue-50 border-l-4 border-blue-600 font-bold text-blue-900'
                       : 'text-gray-600'
                   }`}
                 >
-                  {report.label}
+                  {localize(report.label)}
                 </button>
               );
             })}
@@ -169,17 +231,48 @@ export function ReportsPage() {
           <ReportFilterBar
             filters={filters}
             onFilterChange={handleFilterChange}
+            onClear={handleClearFilters}
+            reportKey={activeReportKey as ReportKey}
           />
+
+          {exportError && (
+            <div
+              role="alert"
+              className="flex items-center justify-between gap-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            >
+              <span>{exportError}</span>
+              <button
+                type="button"
+                aria-label={localize('Dismiss export error')}
+                onClick={() => setExportError('')}
+                className="font-semibold"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          {exportSuccess && (
+            <div
+              role="status"
+              className="rounded border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
+            >
+              {exportSuccess}
+            </div>
+          )}
 
           {/* Results Grid */}
           <Card className="p-0 bg-white border shadow-sm overflow-hidden">
             <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
               <h3 className="font-bold text-gray-800">
-                {activeReportConfig?.label} Results
+                {activeReportConfig
+                  ? localize(activeReportConfig.label)
+                  : ''}{' '}
+                <LocalizedText text={' Results\n              '} />
               </h3>
               {reportData?.generated_at && (
                 <span className="text-xs text-gray-500">
-                  Generated:{' '}
+                  <LocalizedText text={'\n                  Generated:'} />
+                  <LocalizedText text={' '} />
                   {new Date(reportData.generated_at).toLocaleString()}
                 </span>
               )}
@@ -188,11 +281,51 @@ export function ReportsPage() {
             <div className="p-4">
               {isLoading || isFetching ? (
                 <div className="text-center text-gray-500 py-8">
-                  Running analytics...
+                  <LocalizedText
+                    text={
+                      '\n                  Running analytics...\n                '
+                    }
+                  />
+                </div>
+              ) : isError ? (
+                <div className="py-8 text-center" role="alert">
+                  <p className="text-sm text-red-700">
+                    {localize(
+                      (error as any)?.response?.data?.message ||
+                        (error as any)?.message ||
+                        'Failed to load report data.',
+                    )}
+                  </p>
+                  <Button
+                    className="mt-3"
+                    variant="outline"
+                    onClick={() => refetch()}
+                  >
+                    {localize('Retry')}
+                  </Button>
+                </div>
+              ) : itemRequired ? (
+                <div className="py-8 text-center text-gray-500">
+                  {localize('Select an item to run this report.')}
                 </div>
               ) : !reportData || reportData.rows.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
-                  No data matched the selected filters.
+                  {activeReportKey === 'landed-cost-by-supplier' ? (
+                    <div>
+                      <p>{localize('No landed-cost results match these filters.')}</p>
+                      <p className="mt-2 text-sm">
+                        {localize(
+                          'This report includes suppliers only after a shipment has a computed landed-cost result.',
+                        )}
+                      </p>
+                    </div>
+                  ) : (
+                    <LocalizedText
+                      text={
+                        '\n                  No data matched the selected filters.\n                '
+                      }
+                    />
+                  )}
                 </div>
               ) : (
                 <ReportTable
@@ -204,7 +337,11 @@ export function ReportsPage() {
                       ? (row) => (
                           <div className="p-4 text-sm">
                             <h4 className="font-bold mb-2">
-                              Cost Allocation Breakdown
+                              <LocalizedText
+                                text={
+                                  '\n                              Cost Allocation Breakdown\n                            '
+                                }
+                              />
                             </h4>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                               {row.categoryTotals &&
@@ -218,7 +355,12 @@ export function ReportsPage() {
                                         {k.replace(/_/g, ' ')}
                                       </span>
                                       <span className="font-bold">
-                                        {Number(v).toLocaleString()} ETB
+                                        {formatAmount4(Number(v))}{' '}
+                                        <LocalizedText
+                                          text={
+                                            ' ETB\n                                      '
+                                          }
+                                        />
                                       </span>
                                     </div>
                                   ),
@@ -227,40 +369,53 @@ export function ReportsPage() {
                           </div>
                         )
                       : activeReportKey === 'landed-cost-by-item'
-                        ? (row) => (
-                            <div className="p-4 text-sm">
-                              <h4 className="font-bold mb-2">
-                                Cost Breakdown (Trend placeholder)
-                              </h4>
-                              <div className="flex items-end gap-2 h-24 mt-4 border-b border-l p-2">
-                                {row.totalBreakdown &&
-                                  Object.entries(row.totalBreakdown).map(
-                                    ([k, v], i) => (
+                        ? (row) => {
+                            const breakdown = Object.entries(
+                              row.perUnitBreakdown || {},
+                            );
+                            const maxValue = Math.max(
+                              1,
+                              ...breakdown.map(([, value]) => Number(value)),
+                            );
+                            return (
+                              <div className="p-4 text-sm">
+                                <h4 className="mb-2 font-bold">
+                                  {localize('Per-unit cost breakdown')}
+                                </h4>
+                                {breakdown.length === 0 ? (
+                                  <p className="text-gray-500">
+                                    {localize('No cost breakdown available.')}
+                                  </p>
+                                ) : (
+                                  <div className="flex h-32 items-end gap-2 overflow-x-auto border-b border-l p-2">
+                                    {breakdown.map(([name, value]) => (
                                       <div
-                                        key={k}
-                                        className="flex flex-col items-center justify-end h-full flex-1 group relative"
+                                        key={name}
+                                        className="group relative flex h-full min-w-12 flex-1 flex-col items-center justify-end"
                                       >
                                         <div
-                                          className="w-full bg-blue-500 rounded-t opacity-80 hover:opacity-100 transition-all"
+                                          className="w-full rounded-t bg-blue-600 opacity-80 transition-opacity group-hover:opacity-100"
                                           style={{
-                                            height: `${(Number(v) / Math.max(...Object.values(row.totalBreakdown).map(Number))) * 100}%`,
+                                            height: `${Math.max(2, (Number(value) / maxValue) * 100)}%`,
                                           }}
-                                        ></div>
+                                        />
                                         <span
-                                          className="text-[10px] text-gray-500 mt-1 truncate w-full text-center"
-                                          title={k}
+                                          className="mt-1 w-full truncate text-center text-[10px] text-gray-600"
+                                          title={name}
                                         >
-                                          {k.slice(0, 5)}
+                                          {name}
                                         </span>
-                                        <div className="absolute bottom-full mb-1 hidden group-hover:block bg-black text-white text-xs p-1 rounded whitespace-nowrap z-50">
-                                          {k}: {Number(v).toLocaleString()} ETB
-                                        </div>
+                                        <span className="absolute bottom-full z-10 mb-1 hidden whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white group-hover:block">
+                                          {name}:{' '}
+                                          {formatAmount4(Number(value))} ETB
+                                        </span>
                                       </div>
-                                    ),
-                                  )}
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          )
+                            );
+                          }
                         : undefined
                   }
                 />

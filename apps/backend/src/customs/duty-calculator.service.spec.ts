@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DutyCalculatorService } from './duty-calculator.service';
 import { AllocationService } from './allocation.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 
 describe('DutyCalculatorService', () => {
   let service: DutyCalculatorService;
@@ -89,8 +89,9 @@ describe('DutyCalculatorService', () => {
       expect(result.dutyEtb).toBe('1000.0000');
       // Excise = (10000 + 1000) * 100% = 11000
       expect(result.exciseEtb).toBe('11000.0000');
-      // VAT = (10000 + 1000 + 11000) * 15% = (22000) * 15% = 3300
-      expect(result.vatEtb).toBe('3300.0000');
+      // VAT = (CIF + Duty) * 15% = (10000 + 1000) * 15% = 1650
+      // Per SRS FR-05.1: Excise is NOT included in the VAT base.
+      expect(result.vatEtb).toBe('1650.0000');
       // Withholding = 10000 * 3% = 300
       expect(result.withholdingEtb).toBe('300.0000');
     });

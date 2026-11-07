@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 const request = require('supertest');
 import { VariancesModule } from './variances.module';
 import { AuthGuard } from '@nestjs/passport';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 
 describe('VariancesController (e2e)', () => {
   let app: INestApplication;

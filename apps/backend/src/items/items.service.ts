@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
-import { DRIZZLE, DrizzleDB } from '@/db';
+import { DRIZZLE, DrizzleDB } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, or, ilike, and, ne } from 'drizzle-orm';
 

@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import {
   useCostCategories,
@@ -43,6 +45,7 @@ const categorySchema = z.object({
 type CategoryFormData = z.infer<typeof categorySchema>;
 
 export function CostCategoriesPage() {
+  const localize = useUiText();
   const queryClient = useQueryClient();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -121,7 +124,7 @@ export function CostCategoriesPage() {
       header: 'Status',
       accessor: (row: CostCategory) => (
         <Badge variant={row.isActive ? 'success' : 'danger'}>
-          {row.isActive ? 'Active' : 'Inactive'}
+          <LocalizedText text={row.isActive ? 'Active' : 'Inactive'} />
         </Badge>
       ),
     },
@@ -133,14 +136,16 @@ export function CostCategoriesPage() {
             onClick={() => openEdit(row)}
             className="text-blue-600 hover:text-blue-900 font-medium text-sm"
           >
-            Edit
+            <LocalizedText text={'\n            Edit\n          '} />
           </button>
           {row.isActive ? (
             <button
               onClick={() => setDeactivateCategory(row)}
               className="text-red-600 hover:text-red-900 font-medium text-sm"
             >
-              Deactivate
+              <LocalizedText
+                text={'\n              Deactivate\n            '}
+              />
             </button>
           ) : (
             <button
@@ -150,7 +155,7 @@ export function CostCategoriesPage() {
               className="text-green-600 hover:text-green-900 font-medium text-sm"
               disabled={toggleActiveMutation.isPending}
             >
-              Activate
+              <LocalizedText text={'\n              Activate\n            '} />
             </button>
           )}
         </div>
@@ -162,7 +167,7 @@ export function CostCategoriesPage() {
   if (isError)
     return (
       <ErrorState
-        message="Failed to load cost categories"
+        message={localize('Failed to load cost categories')}
         onRetry={() => refetch()}
       />
     );
@@ -172,14 +177,20 @@ export function CostCategoriesPage() {
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            Cost Categories
+            <LocalizedText text={'\n            Cost Categories\n          '} />
           </h1>
           <p className="mt-2 text-sm text-gray-700">
-            Manage Landed Cost categories and their default allocation rules.
+            <LocalizedText
+              text={
+                '\n            Manage Landed Cost categories and their default allocation rules.\n          '
+              }
+            />
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
-          <Button onClick={openCreate}>Add Category</Button>
+          <Button onClick={openCreate}>
+            <LocalizedText text={'Add Category'} />
+          </Button>
         </div>
       </div>
 
@@ -196,20 +207,20 @@ export function CostCategoriesPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormError error={createMutation.error || updateMutation.error} />
           <Input
-            label="Code"
+            label={localize('Code')}
             {...register('code')}
             error={errors.code?.message}
-            placeholder="e.g. FOB"
+            placeholder={localize('e.g. FOB')}
           />
           <Input
-            label="Name"
+            label={localize('Name')}
             {...register('name')}
             error={errors.name?.message}
-            placeholder="e.g. Freight on Board"
+            placeholder={localize('e.g. Freight on Board')}
           />
 
           <Select
-            label="Default Allocation Method"
+            label={localize('Default Allocation Method')}
             options={ALLOCATION_METHODS}
             {...register('defaultAllocationMethod')}
             error={errors.defaultAllocationMethod?.message}
@@ -229,7 +240,9 @@ export function CostCategoriesPage() {
               )}
             />
             <label className="text-sm font-medium text-gray-700">
-              Is Item Specific?
+              <LocalizedText
+                text={'\n              Is Item Specific?\n            '}
+              />
             </label>
           </div>
 
@@ -239,7 +252,9 @@ export function CostCategoriesPage() {
               isLoading={createMutation.isPending || updateMutation.isPending}
               className="w-full sm:ml-3 sm:w-auto"
             >
-              {editingCategory ? 'Save Changes' : 'Create Category'}
+              <LocalizedText
+                text={editingCategory ? 'Save Changes' : 'Create Category'}
+              />
             </Button>
             <Button
               type="button"
@@ -247,7 +262,7 @@ export function CostCategoriesPage() {
               onClick={() => setIsFormOpen(false)}
               className="mt-3 w-full sm:mt-0 sm:w-auto"
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
           </div>
         </form>
@@ -255,9 +270,9 @@ export function CostCategoriesPage() {
 
       <ConfirmDialog
         isOpen={!!deactivateCategory}
-        title="Deactivate Cost Category"
+        title={localize('Deactivate Cost Category')}
         message={`Are you sure you want to deactivate ${deactivateCategory?.name}? It will no longer be available when adding costs to new shipments.`}
-        confirmText="Deactivate"
+        confirmText={localize('Deactivate')}
         isDestructive
         isLoading={toggleActiveMutation.isPending}
         onConfirm={() =>

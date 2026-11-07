@@ -27,7 +27,10 @@ import { PoStatusService } from './po-status.service';
 import { RejectPoDto } from './dto/reject-po.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionGuard } from '@/auth/guards/permissions.guards';
-import { RequiredPermission } from '@/auth/decorators/permissions.decorator';
+import {
+  RequiredAnyPermission,
+  RequiredPermission,
+} from '@/auth/decorators/permissions.decorator';
 import { Permission } from '@/auth/permissions';
 import { Request } from 'express';
 
@@ -70,6 +73,12 @@ export class PurchaseOrdersController {
       startDate,
       endDate,
     );
+  }
+
+  @Get('outstanding')
+  @RequiredPermission(Permission.PO_READ)
+  findOutstanding() {
+    return this.poService.findOutstanding();
   }
 
   @Get(':id')
@@ -117,7 +126,11 @@ export class PurchaseOrdersController {
     return this.poService.submit(id, req.user.userId);
   }
   @Post(':id/approve')
-  @RequiredPermission(Permission.PO_WRITE)
+  @RequiredAnyPermission(
+    Permission.PO_APPROVE_TIER1,
+    Permission.PO_APPROVE_TIER2,
+    Permission.PO_APPROVE_TIER3,
+  )
   approve(
     @Param('id') id: string,
     @Body() dto: ApprovePoDto,
@@ -126,7 +139,11 @@ export class PurchaseOrdersController {
     return this.poService.approve(id, req.user.userId, dto.comment);
   }
   @Post(':id/reject')
-  @RequiredPermission(Permission.PO_WRITE)
+  @RequiredAnyPermission(
+    Permission.PO_APPROVE_TIER1,
+    Permission.PO_APPROVE_TIER2,
+    Permission.PO_APPROVE_TIER3,
+  )
   reject(
     @Param('id') id: string,
     @Body() dto: RejectPoDto,

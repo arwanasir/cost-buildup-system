@@ -193,15 +193,21 @@ export const useUploadShipmentDocument = () => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('documentType', documentType);
-      if (documentRef) formData.append('documentRef', documentRef);
+      if (documentRef) formData.append('referenceNumber', documentRef);
 
+      // Override the shared JSON default so Axios preserves FormData as multipart.
+      // The browser/Axios adapter adds the boundary to the request header.
       return api.post(`/import-shipments/${shipmentId}/documents`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     },
     onSuccess: (_, { shipmentId }) => {
+      queryClient.invalidateQueries({ queryKey: ['shipments', shipmentId] });
       queryClient.invalidateQueries({
         queryKey: ['shipments', shipmentId, 'documents'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['shipments', shipmentId, 'document-checklist'],
       });
     },
   });
@@ -220,6 +226,9 @@ export const useDeleteShipmentDocument = () => {
     onSuccess: (_, { shipmentId }) => {
       queryClient.invalidateQueries({
         queryKey: ['shipments', shipmentId, 'documents'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['shipments', shipmentId, 'document-checklist'],
       });
     },
   });

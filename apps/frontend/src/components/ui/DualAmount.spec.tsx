@@ -22,9 +22,9 @@ describe('DualAmount', () => {
       />,
     );
 
-    // 'unitCost' format uses 6 decimal places
-    expect(screen.getByText('EUR 1.500000')).toBeInTheDocument();
-    expect(screen.getByText('ETB 80.123450')).toBeInTheDocument();
+    // 'unitCost' format follows the SRS monetary precision of 4 decimals.
+    expect(screen.getByText('EUR 1.5000')).toBeInTheDocument();
+    expect(screen.getByText('ETB 80.1235')).toBeInTheDocument();
   });
 
   it('applies custom className', () => {

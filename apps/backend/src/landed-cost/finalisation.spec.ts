@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { FinalisationGuardService } from './finalisation-guard.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 
 describe('Finalisation Workflow (AC07, BR02, BR05, BR07)', () => {
   let guardService: FinalisationGuardService;
@@ -36,7 +36,7 @@ describe('Finalisation Workflow (AC07, BR02, BR05, BR07)', () => {
       if (callCount === 1)
         return Promise.resolve([
           overrides.shipment || {
-            status: 'customs_released',
+            status: 'cleared',
             isFinalised: false,
           },
         ]);
@@ -103,7 +103,7 @@ describe('Finalisation Workflow (AC07, BR02, BR05, BR07)', () => {
 
   it('is absolutely irreversible after success (BR02)', async () => {
     setupMocks({
-      shipment: { status: 'customs_released', isFinalised: true }, // Already finalised
+      shipment: { status: 'cleared', isFinalised: true }, // Already finalised
     });
 
     const blockers = await guardService.check('ship-1');

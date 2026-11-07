@@ -7,7 +7,7 @@ export const rate = (name: string) =>
   numeric(name, { precision: 18, scale: 6 });
 
 export const unitCost = (name: string) =>
-  numeric(name, { precision: 18, scale: 6 });
+  numeric(name, { precision: 18, scale: 4 });
 
 export const auditColumns = {
   createdBy: uuid('created_by'),

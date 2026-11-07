@@ -1,6 +1,8 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React from 'react';
 import { useGrnClaims, useUpdateClaim } from '../api';
 import { Table, Select, Input } from '@/components/ui';
+import { formatAmount4 } from '@/lib/money';
 
 export function ClaimsTab({ grnId }: { grnId: string }) {
   const { data: claimsResponse, isLoading } = useGrnClaims(grnId);
@@ -23,13 +25,19 @@ export function ClaimsTab({ grnId }: { grnId: string }) {
 
   if (isLoading)
     return (
-      <div className="p-8 text-center text-gray-500">Loading claims...</div>
+      <div className="p-8 text-center text-gray-500">
+        <LocalizedText text={'Loading claims...'} />
+      </div>
     );
 
   if (claims.length === 0) {
     return (
       <div className="p-8 text-center text-gray-500">
-        No rejected goods claims found for this GRN.
+        <LocalizedText
+          text={
+            '\n        No rejected goods claims found for this GRN.\n      '
+          }
+        />
       </div>
     );
   }
@@ -40,22 +48,28 @@ export function ClaimsTab({ grnId }: { grnId: string }) {
         <thead>
           <tr className="bg-gray-50">
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-              Claim ID
+              <LocalizedText text={'\n              Claim ID\n            '} />
             </th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-              Rejected Qty
+              <LocalizedText
+                text={'\n              Rejected Qty\n            '}
+              />
             </th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-              Value (ETB)
+              <LocalizedText
+                text={'\n              Value (ETB)\n            '}
+              />
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-              Resolution Type (BR13)
+              <LocalizedText
+                text={'\n              Resolution Type (BR13)\n            '}
+              />
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-              Status
+              <LocalizedText text={'\n              Status\n            '} />
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-              Notes
+              <LocalizedText text={'\n              Notes\n            '} />
             </th>
           </tr>
         </thead>
@@ -69,7 +83,7 @@ export function ClaimsTab({ grnId }: { grnId: string }) {
                 {parseFloat(claim.quantity).toLocaleString()}
               </td>
               <td className="px-4 py-3 text-right text-sm font-bold text-red-600">
-                {parseFloat(claim.valueEtb).toLocaleString()}
+                {formatAmount4(claim.valueEtb)}
               </td>
               <td className="px-4 py-3">
                 <Select

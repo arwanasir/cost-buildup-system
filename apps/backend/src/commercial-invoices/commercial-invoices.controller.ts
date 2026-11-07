@@ -28,6 +28,6 @@ export class CommercialInvoicesController {
   @Post(':id/acknowledge')
   @RequiredPermission(Permission.PO_APPROVE_TIER1) // Procurement manager level
   async acknowledgeVariance(@Param('id') ciId: string, @Req() req: any) {
-    return this.ciService.acknowledgeVariance(ciId, req.user.id);
+    return this.ciService.acknowledgeVariance(ciId, req.user.userId);
   }
 }

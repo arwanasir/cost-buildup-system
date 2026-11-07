@@ -45,6 +45,7 @@ import { UpdateShipmentStatusDto } from './dto/update-shipment-status.dto';
 @ApiBearerAuth()
 @Controller('import-shipments')
 @UseGuards(AuthGuard('jwt'), PermissionGuard, ImmutabilityGuard)
+@RequiredPermission(Permission.SHIPMENT_READ)
 export class ImportShipmentsController {
   constructor(
     private readonly shipmentsService: ImportShipmentsService,
@@ -60,7 +61,7 @@ export class ImportShipmentsController {
   @Post()
   @RequiredPermission(Permission.SHIPMENT_WRITE)
   async createShipment(@Body() createDto: CreateShipmentDto, @Req() req: any) {
-    return this.shipmentsService.create(createDto, req.user.id);
+    return this.shipmentsService.create(createDto, req.user.userId);
   }
 
   @Post(':id/documents')
@@ -93,7 +94,7 @@ export class ImportShipmentsController {
       documentType,
       referenceNumber,
       documentDate,
-      req.user.id,
+      req.user.userId,
     );
   }
 
@@ -127,7 +128,7 @@ export class ImportShipmentsController {
     @Body() dto: UpdateShipmentStatusDto,
     @Req() req: any,
   ) {
-    return this.statusService.updateStatus(id, dto, req.user.id);
+    return this.statusService.updateStatus(id, dto, req.user.userId);
   }
 
   @Get()
@@ -173,7 +174,7 @@ export class ImportShipmentsController {
     @Body() dto: CreateClearingInvoiceDto,
     @Req() req: any,
   ) {
-    return this.shipmentsService.addClearingAgentInvoice(id, dto, req.user.id);
+    return this.shipmentsService.addClearingAgentInvoice(id, dto, req.user.userId);
   }
 
   @Post(':id/port-charges')
@@ -188,7 +189,7 @@ export class ImportShipmentsController {
       ['PORT_HANDLING', 'PORT'],
       'Port Handling Charge',
       dto,
-      req.user.id,
+      req.user.userId,
     );
   }
 
@@ -204,11 +205,12 @@ export class ImportShipmentsController {
       ['STORAGE', 'STORAGE_FEE'],
       'Storage Charge',
       dto,
-      req.user.id,
+      req.user.userId,
     );
   }
 
   @Get(':id/cost-entries')
+  @RequiredPermission(Permission.COST_READ)
   async getCostEntries(
     @Param('id') id: string,
     @Query('is_estimated') isEstimatedStr?: string,
@@ -220,11 +222,13 @@ export class ImportShipmentsController {
   }
 
   @Get(':id/estimated-entries')
+  @RequiredPermission(Permission.COST_READ)
   async getEstimatedEntries(@Param('id') id: string) {
     return this.shipmentsService.getCostEntries(id, true);
   }
 
   @Post(':id/cost-entries')
+  @RequiredPermission(Permission.COST_WRITE)
   @UseInterceptors(FileInterceptor('file'))
   async createCostEntry(
     @Param('id') id: string,
@@ -233,20 +237,23 @@ export class ImportShipmentsController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     dto.shipmentId = id;
-    return this.costEntriesService.create(dto, req.user.id, file);
+    return this.costEntriesService.create(dto, req.user.userId, file);
   }
 
   @Get(':id/cost-summary')
+  @RequiredPermission(Permission.COST_READ)
   async getCostSummary(@Param('id') id: string) {
     return this.costSummaryService.getSummary(id);
   }
 
   @Post(':id/allocate')
+  @RequiredPermission(Permission.COST_WRITE)
   async allocateShipment(@Param('id') id: string) {
     return this.allocationService.allocateShipment(id);
   }
 
   @Get(':id/allocations')
+  @RequiredPermission(Permission.COST_READ)
   async getShipmentAllocations(
     @Param('id') id: string,
     @Query('item_id') itemId?: string,
@@ -263,7 +270,7 @@ export class ImportShipmentsController {
   ) {
     return this.costEntriesService.acceptEstimates(
       id,
-      req.user.id,
+      req.user.userId,
       justification,
     );
   }
@@ -281,7 +288,7 @@ export class ImportShipmentsController {
   }
 
   @Get(':id/finalisation-check')
-  @RequiredPermission(Permission.COST_FINALIZE)
+  @RequiredPermission(Permission.COST_READ)
   async finalisationCheck(@Param('id') id: string) {
     const blockers = await this.finalisationGuardService.check(id);
     return {
@@ -294,7 +301,7 @@ export class ImportShipmentsController {
   @RequiredPermission(Permission.COST_FINALIZE)
   async finaliseShipment(@Param('id') id: string, @Req() req: any) {
     return this.landedCostService.finalise(id, {
-      id: req.user.id,
+      id: req.user.userId,
       role: req.user.role,
     });
   }

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LettersOfCreditService } from './letters-of-credit.service';
 import { LcStatusService } from './lc-status.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BadRequestException } from '@nestjs/common';
 import { validate } from 'class-validator';
@@ -31,7 +31,10 @@ describe('Letters Of Credit Module Tests', () => {
     mockDb = {
       transaction: jest.fn(async (cb) => cb(mockTx)),
       query: {
-        lettersOfCredit: { findFirst: jest.fn() },
+        lettersOfCredit: {
+          findFirst: jest.fn(),
+          findMany: jest.fn(),
+        },
       },
       update: jest.fn().mockReturnThis(),
       set: jest.fn().mockReturnThis(),
@@ -57,6 +60,20 @@ describe('Letters Of Credit Module Tests', () => {
   });
 
   describe('LettersOfCreditService', () => {
+    it('returns LC rows with supplier and linked PO summaries', async () => {
+      const rows = [{ id: 'lc1', supplier: { name: 'Supplier' }, pos: [] }];
+      mockDb.query.lettersOfCredit.findMany.mockResolvedValue(rows);
+
+      await expect(lcService.findAll({})).resolves.toBe(rows);
+      expect(mockDb.query.lettersOfCredit.findMany).toHaveBeenCalledWith({
+        where: undefined,
+        with: {
+          supplier: { columns: { id: true, name: true, country: true } },
+          pos: { columns: { id: true, poNumber: true } },
+        },
+      });
+    });
+
     it('should reject creation if any PO already has an LC (BR08)', async () => {
       mockTx.query.importPurchaseOrders.findMany.mockResolvedValue([
         { id: 'po1', supplierId: 'sup1', status: 'approved', lcId: null },

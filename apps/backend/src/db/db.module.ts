@@ -5,12 +5,14 @@ import {
   Provider,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { NodePgDatabase, drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import * as schema from './schema/schema';
+import * as tables from './schema/schema';
+import * as relations from './schema/relations';
+import { DRIZZLE } from './db.token';
 
-export const DRIZZLE = Symbol('DRIZZLE');
-export type DrizzleDB = NodePgDatabase<typeof schema>;
+const schema = { ...tables, ...relations };
+
 const drizzleProvider: Provider = {
   provide: DRIZZLE,
   inject: [ConfigService],

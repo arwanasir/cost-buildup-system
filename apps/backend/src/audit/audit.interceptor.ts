@@ -7,10 +7,10 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { concatMap } from 'rxjs/operators';
 import { AuditService } from './audit.service';
 import { AUDITED_ENTITY_KEY } from './audited.decorator';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -47,6 +47,7 @@ export class AuditInterceptor implements NestInterceptor {
       req.params.varianceId ||
       req.params.ciId ||
       req.params.declarationId ||
+      req.params.hsCode ||
       null;
 
     let beforeValue = null;
@@ -72,29 +73,29 @@ export class AuditInterceptor implements NestInterceptor {
     }
 
     return next.handle().pipe(
-      tap(async (responseValue) => {
+      concatMap(async (responseValue) => {
         try {
-          // Normalize response (Drizzle often returns arrays from .returning())
-          let afterValue = responseValue;
-          if (Array.isArray(responseValue) && responseValue.length > 0) {
-            afterValue = responseValue[0];
-          }
+          const responseEntity =
+            responseValue?.data ?? responseValue?.result ?? responseValue;
+          const afterValue = Array.isArray(responseEntity)
+            ? responseEntity[0]
+            : responseEntity;
 
-          // If it was a CREATE, we capture the ID from the returned entity
-          const resolvedEntityId = entityId || (afterValue && afterValue.id);
+          const resolvedEntityId =
+            entityId || afterValue?.id || responseValue?.id;
           if (!resolvedEntityId) {
-            return; // Cannot log without an ID
+            return responseValue;
           }
 
           const action = this.determineAction(req);
-          const actorId = req.user?.id;
+          const actorId = req.user?.id || req.user?.sub;
 
           await this.auditService.record({
             entityType,
             entityId: resolvedEntityId,
             action,
             actorId,
-            ip: req.clientIp,
+            ip: req.clientIp || req.ip,
             before: beforeValue,
             after: action === 'delete' ? null : afterValue,
             correlationId: req.correlationId,
@@ -102,6 +103,7 @@ export class AuditInterceptor implements NestInterceptor {
         } catch (err) {
           console.error('[AuditInterceptor] Failed to write audit log', err);
         }
+        return responseValue;
       }),
     );
   }

@@ -1,6 +1,8 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React from 'react';
 import { Modal } from './Modal';
 import { Button } from './Button';
+import { useUiText } from '@/lib/ui-text';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -29,10 +31,11 @@ export function ConfirmDialog({
   isLoading = false,
   children,
 }: ConfirmDialogProps) {
+  const localize = useUiText();
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
       <div className="mt-2">
-        <p className="text-sm text-gray-500">{message}</p>
+        <p className="text-sm text-gray-500">{localize(message)}</p>
 
         {children && <div className="mt-4">{children}</div>}
 
@@ -41,9 +44,15 @@ export function ConfirmDialog({
             <div className="flex">
               <div className="ml-3">
                 <p className="text-sm text-yellow-700 font-medium">
-                  Impact Warning
+                  <LocalizedText
+                    text={
+                      '\n                  Impact Warning\n                '
+                    }
+                  />
                 </p>
-                <p className="text-sm text-yellow-600 mt-1">{impactMessage}</p>
+                <p className="text-sm text-yellow-600 mt-1">
+                  {localize(impactMessage)}
+                </p>
               </div>
             </div>
           </div>
@@ -56,7 +65,7 @@ export function ConfirmDialog({
           isLoading={isLoading}
           className="w-full sm:ml-3 sm:w-auto"
         >
-          {confirmText}
+          {localize(confirmText)}
         </Button>
         <Button
           variant="secondary"
@@ -64,7 +73,7 @@ export function ConfirmDialog({
           disabled={isLoading}
           className="mt-3 w-full sm:mt-0 sm:w-auto"
         >
-          {cancelText}
+          {localize(cancelText)}
         </Button>
       </div>
     </Modal>

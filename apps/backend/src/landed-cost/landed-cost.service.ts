@@ -4,12 +4,13 @@ import {
   InternalServerErrorException,
   ForbiddenException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { LANDED_COST_FORMULA } from './landed-cost.constants';
 import { AllocationService } from '@/allocation/allocation.service';
 import { FinalisationGuardService } from './finalisation-guard.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, and, isNull, inArray } from 'drizzle-orm';
 import Decimal from 'decimal.js';
@@ -28,9 +29,20 @@ export class LandedCostService {
   }
 
   async computeDraft(shipmentId: string) {
+    const [shipment] = await this.db
+      .select()
+      .from(schema.importShipments)
+      .where(eq(schema.importShipments.id, shipmentId));
+    if (!shipment) throw new NotFoundException('Shipment not found');
+    if (shipment.isFinalised) {
+      throw new BadRequestException(
+        'Finalised landed costs are locked. Use an authorised reversal workflow for corrections.',
+      );
+    }
+
     await this.allocationService.allocateShipment(shipmentId);
     return this.db.transaction(async (tx: any) => {
-      return this._executeCalculationEngine(tx, shipmentId, false, undefined);
+      return this._executeCalculationEngine(tx, shipmentId, undefined);
     });
   }
 
@@ -57,7 +69,6 @@ export class LandedCostService {
       const computed = await this._executeCalculationEngine(
         tx,
         shipmentId,
-        true,
         { actorId: actor.id, timestamp: now },
       );
 
@@ -80,7 +91,6 @@ export class LandedCostService {
   private async _executeCalculationEngine(
     tx: any,
     shipmentId: string,
-    useAcceptedQuantity: boolean,
     finaliseMeta?: { actorId: string; timestamp: string },
   ) {
     const items = await tx
@@ -109,10 +119,7 @@ export class LandedCostService {
         .from(schema.goodsReceiptItems)
         .where(eq(schema.goodsReceiptItems.grnId, confirmedGrn.id));
       gItems.forEach((gi: any) =>
-        grnItemsMap.set(
-          gi.shipmentItemId,
-          useAcceptedQuantity ? gi.acceptedQuantity : gi.receivedQuantity,
-        ),
+        grnItemsMap.set(gi.shipmentItemId, gi.acceptedQuantity),
       );
     }
 
@@ -121,6 +128,7 @@ export class LandedCostService {
         shipmentItemId: schema.costAllocations.shipmentItemId,
         allocatedEtb: schema.costAllocations.allocatedEtb,
         categoryCode: schema.costCategories.code,
+        source: schema.importCostEntries.source,
       })
       .from(schema.costAllocations)
       .innerJoin(
@@ -153,6 +161,7 @@ export class LandedCostService {
     });
 
     allocations.forEach((alloc: any) => {
+      if (alloc.source === 'commercial_invoice') return;
       const itemCosts = allocationsByItem.get(alloc.shipmentItemId);
       if (!itemCosts) return;
 
@@ -206,11 +215,13 @@ export class LandedCostService {
 
     let totalCostEntriesEtb = new Decimal(0);
     for (const entry of activeEntries) {
+      if (entry.source === 'commercial_invoice') continue;
       totalCostEntriesEtb = totalCostEntriesEtb.plus(entry.amountEtb);
     }
 
     const landedCostResults = [];
     let totalAllocatedEtb = new Decimal(0);
+    const computedAt = new Date().toISOString();
 
     for (const item of items) {
       const costs = allocationsByItem.get(item.id);
@@ -255,9 +266,10 @@ export class LandedCostService {
         clearingFeeAllocatedEtb: costs.clearingFeeAllocatedEtb.toFixed(4),
         otherChargesAllocatedEtb: costs.otherChargesAllocatedEtb.toFixed(4),
         totalLandedCostEtb: totalLandedCost.toFixed(4),
-        perUnitLandedCostEtb: perUnit.toFixed(6),
+        perUnitLandedCostEtb: perUnit.toFixed(4),
         isEstimated: finaliseMeta ? false : true,
         isFinalised: finaliseMeta ? true : false,
+        computedAt,
         finalisedBy: finaliseMeta ? finaliseMeta.actorId : null,
         finalisedAt: finaliseMeta ? finaliseMeta.timestamp : null,
       });

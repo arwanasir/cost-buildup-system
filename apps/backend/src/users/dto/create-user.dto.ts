@@ -28,7 +28,7 @@ export class CreateUserDto {
   preferredLanguage?: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @ApiProperty()
   temporaryPassword?: string;
 }

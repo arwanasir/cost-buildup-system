@@ -13,34 +13,69 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
   private readonly s3Client: S3Client;
-  private readonly bucketName = 'import-docs';
+  private readonly signedUrlClient: S3Client;
+  private readonly bucketName =
+    process.env.MINIO_BUCKET || 'costbuildup-documents';
 
   constructor() {
-    // Local MinIO Configuration
-    this.s3Client = new S3Client({
-      endpoint: process.env.MINIO_ENDPOINT || 'http://localhost:9000',
+    const endpoint = this.normalizeEndpoint(
+      process.env.MINIO_ENDPOINT || 'localhost',
+    );
+    const publicEndpoint = this.normalizeEndpoint(
+      process.env.MINIO_PUBLIC_ENDPOINT || endpoint,
+    );
+
+    const clientConfig = {
       region: 'us-east-1', // MinIO default
       credentials: {
-        accessKeyId: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-        secretAccessKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
+        accessKeyId:
+          process.env.MINIO_ACCESS_KEY ||
+          process.env.MINIO_ROOT_USER ||
+          'minioadmin',
+        secretAccessKey:
+          process.env.MINIO_SECRET_KEY ||
+          process.env.MINIO_ROOT_PASSWORD ||
+          'minioadmin_password',
       },
       forcePathStyle: true, // Required for MinIO
+    };
+
+    this.s3Client = new S3Client({ ...clientConfig, endpoint });
+    this.signedUrlClient = new S3Client({
+      ...clientConfig,
+      endpoint: publicEndpoint,
     });
+  }
+
+  private normalizeEndpoint(endpoint: string): string {
+    if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+      return endpoint;
+    }
+
+    const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
+    const port = process.env.MINIO_PORT || '9000';
+    return `${protocol}://${endpoint}:${port}`;
   }
 
   async onModuleInit() {
     try {
-      await this.s3Client.send(
+      await this.sendWithTimeout(
         new HeadBucketCommand({ Bucket: this.bucketName }),
       );
       this.logger.log(`Bucket '${this.bucketName}' already exists.`);
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        this.logger.error(
+          `Timed out checking bucket '${this.bucketName}'. Storage will be unavailable until MinIO is reachable.`,
+        );
+        return;
+      }
       if (error.$metadata?.httpStatusCode === 404) {
         this.logger.log(
           `Bucket '${this.bucketName}' not found. Creating on boot...`,
         );
         try {
-          await this.s3Client.send(
+          await this.sendWithTimeout(
             new CreateBucketCommand({ Bucket: this.bucketName }),
           );
           this.logger.log(`Bucket '${this.bucketName}' created successfully.`);
@@ -53,6 +88,20 @@ export class StorageService implements OnModuleInit {
       } else {
         this.logger.error(`Error checking bucket '${this.bucketName}'`, error);
       }
+    }
+  }
+
+  private async sendWithTimeout(
+    command: HeadBucketCommand | CreateBucketCommand,
+  ) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    try {
+      return await this.s3Client.send(command, {
+        abortSignal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
     }
   }
 
@@ -77,7 +126,9 @@ export class StorageService implements OnModuleInit {
       Key: key,
     });
 
-    return getSignedUrl(this.s3Client, command, { expiresIn: expirySeconds });
+    return getSignedUrl(this.signedUrlClient, command, {
+      expiresIn: expirySeconds,
+    });
   }
 
   async delete(key: string): Promise<void> {

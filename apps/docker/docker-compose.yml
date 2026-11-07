@@ -17,6 +17,13 @@ services:
       - NODE_ENV=development
       - PORT=3000
       - DATABASE_URL=postgresql://cost_buildup_user:password@postgres:5432/cost_buildup_db
+      - POSTGRES_HOST=postgres
+      - MINIO_ENDPOINT=minio
+      - MINIO_PUBLIC_ENDPOINT=${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
+      - SMTP_HOST=mailpit
+      - ERP_BASE_URL=http://erp-mock:3001
+      - ERP_INVENTORY_URL=http://erp-mock:3001/inventory/postings
+      - ERP_FINANCE_URL=http://erp-mock:3001/finance/journal-entries
     depends_on:
       postgres:
         condition: service_healthy
@@ -49,9 +56,6 @@ services:
     restart: unless-stopped
     env_file:
       - ../.env
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"
@@ -76,7 +80,7 @@ services:
       - "1025:1025"
       - "8025:8025"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8025/api/v1/info" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8025/api/v1/info" ]
       interval: 10s
       timeout: 5s
       retries: 5

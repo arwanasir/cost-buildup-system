@@ -5,7 +5,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { DRIZZLE, DrizzleDB } from '@/db';
+import { DRIZZLE, DrizzleDB } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';

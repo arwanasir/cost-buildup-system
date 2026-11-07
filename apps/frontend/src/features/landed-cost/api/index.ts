@@ -21,8 +21,12 @@ export interface LandedCostResult {
   perUnitLandedCostEtb: string;
   isEstimated: boolean;
   isFinalised: boolean;
-  createdAt: string;
-  updatedAt: string;
+  computedAt: string | null;
+}
+
+export interface FinalisationCheck {
+  canFinalise: boolean;
+  blockers: string[];
 }
 
 export const useComputeLandedCost = () => {
@@ -51,7 +55,7 @@ export const useLandedCostResults = (shipmentId: string) => {
 };
 
 export const useFinalisationCheck = (shipmentId: string) => {
-  return useQuery({
+  return useQuery<FinalisationCheck>({
     queryKey: ['finalisation-check', shipmentId],
     queryFn: () =>
       api

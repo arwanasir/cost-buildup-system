@@ -1,7 +1,10 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCustomsDeclarations } from '../api';
 import { Badge, Button, Input, Skeleton } from '@/components/ui';
+import { formatAmount4 } from '@/lib/money';
 
 const STATUS_TABS = [
   { id: 'all', label: 'All' },
@@ -12,6 +15,7 @@ const STATUS_TABS = [
 ];
 
 export function CustomsListPage() {
+  const localize = useUiText();
   const [statusTab, setStatusTab] = useState('all');
   const [shipmentIdFilter, setShipmentIdFilter] = useState('');
 
@@ -24,10 +28,12 @@ export function CustomsListPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">
-          Customs Declarations
+          <LocalizedText text={'\n          Customs Declarations\n        '} />
         </h1>
         <Link to="/customs/new">
-          <Button variant="primary">New Declaration</Button>
+          <Button variant="primary">
+            <LocalizedText text={'New Declaration'} />
+          </Button>
         </Link>
       </div>
 
@@ -51,7 +57,7 @@ export function CustomsListPage() {
 
           <div className="w-full md:w-64">
             <Input
-              placeholder="Filter by Shipment ID..."
+              placeholder={localize('Filter by Shipment ID...')}
               value={shipmentIdFilter}
               onChange={(e) => setShipmentIdFilter(e.target.value)}
             />
@@ -71,40 +77,58 @@ export function CustomsListPage() {
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Decl #
+                    <LocalizedText
+                      text={'\n                    Decl #\n                  '}
+                    />
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Date
+                    <LocalizedText
+                      text={'\n                    Date\n                  '}
+                    />
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Agent
+                    <LocalizedText
+                      text={'\n                    Agent\n                  '}
+                    />
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    CIF (ETB)
+                    <LocalizedText
+                      text={
+                        '\n                    CIF (ETB)\n                  '
+                      }
+                    />
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Total Tax (ETB)
+                    <LocalizedText
+                      text={
+                        '\n                    Total Tax (ETB)\n                  '
+                      }
+                    />
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Status
+                    <LocalizedText
+                      text={'\n                    Status\n                  '}
+                    />
                   </th>
                   <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">
+                      <LocalizedText text={'Actions'} />
+                    </span>
                   </th>
                 </tr>
               </thead>
@@ -115,7 +139,11 @@ export function CustomsListPage() {
                       colSpan={7}
                       className="px-6 py-10 text-center text-gray-500"
                     >
-                      No declarations found matching the current filters.
+                      <LocalizedText
+                        text={
+                          '\n                      No declarations found matching the current filters.\n                    '
+                        }
+                      />
                     </td>
                   </tr>
                 ) : (
@@ -133,10 +161,10 @@ export function CustomsListPage() {
                         {decl.clearingAgent || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                        {parseFloat(decl.cifValueEtb).toLocaleString()}
+                        {formatAmount4(decl.cifValueEtb)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
-                        {parseFloat(decl.totalAssessmentEtb).toLocaleString()}
+                        {formatAmount4(decl.totalAssessmentEtb)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Badge
@@ -158,7 +186,11 @@ export function CustomsListPage() {
                           to={`/customs/${decl.id}`}
                           className="text-primary-600 hover:text-primary-900"
                         >
-                          Manage
+                          <LocalizedText
+                            text={
+                              '\n                          Manage\n                        '
+                            }
+                          />
                         </Link>
                       </td>
                     </tr>

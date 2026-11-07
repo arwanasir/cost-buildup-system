@@ -41,7 +41,7 @@ describe('SettingsPage', () => {
 
     // Wait for the settings to load
     expect(
-      await screen.findByText('PO Approval Tier 1 Threshold'),
+      await screen.findByText('PO Approval Tier 1 Threshold (ETB)'),
     ).toBeInTheDocument();
     expect(screen.getByText('10000.0000')).toBeInTheDocument();
     expect(screen.getByText('Purchase Order Prefix')).toBeInTheDocument();
@@ -52,9 +52,7 @@ describe('SettingsPage', () => {
     fireEvent.click(editButtons[0]); // Numeric setting
 
     // Verify modal is open with correct input
-    expect(
-      await screen.findByText('Update PO Approval Tier 1 Threshold'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Update setting')).toBeInTheDocument();
 
     // Impact message should be visible
     expect(
@@ -95,9 +93,7 @@ describe('SettingsPage', () => {
     const editButtons = screen.getAllByText('Edit Value');
     fireEvent.click(editButtons[1]); // Text setting
 
-    expect(
-      await screen.findByText('Update Purchase Order Prefix'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Update setting')).toBeInTheDocument();
 
     const input = screen.getByDisplayValue('PO-') as HTMLInputElement;
     expect(input.type).toBe('text');

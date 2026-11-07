@@ -1,4 +1,4 @@
-﻿export interface Supplier {
+export interface Supplier {
   id: string;
   code: string;
   name: string;
@@ -33,15 +33,20 @@ export interface PurchaseOrder {
   incoterm?: string;
   status:
     | 'draft'
-    | 'submitted'
+    | 'pending_approval'
     | 'approved'
+    | 'rejected'
+    | 'lc_applied'
+    | 'processing'
     | 'shipped'
-    | 'partially_shipped'
+    | 'partially_received'
     | 'closed'
     | 'cancelled';
   currency: string;
   totalValueForeign: string;
   totalValueEtb: string;
+  estimatedDutyEtb?: string;
+  fxRate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -248,8 +253,16 @@ export interface Variance {
 export interface Notification {
   id: string;
   userId: string;
-  title: string;
-  message: string;
+  type: string;
+  /** English title (primary display field) */
+  titleEn: string;
+  /** English body (primary display field) */
+  bodyEn: string;
+  /** Amharic title */
+  titleAm: string;
+  /** Amharic body */
+  bodyAm: string;
+  channels: string[];
   isRead: boolean;
   createdAt: string;
 }

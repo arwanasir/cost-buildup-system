@@ -3,7 +3,7 @@ import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { ReportExportService } from './report-export.service';
 import { Role } from '../auth/permissions';
-import { DRIZZLE } from '../db/db.module';
+import { DRIZZLE } from '../db/db.token';
 
 describe('ReportsController', () => {
   let controller: ReportsController;

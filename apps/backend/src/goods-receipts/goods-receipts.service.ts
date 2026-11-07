@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, inArray, and } from 'drizzle-orm';
 import { CreateGrnDto } from './dto/create-grn.dto';
@@ -35,10 +35,7 @@ export class GoodsReceiptsService {
 
       // BR01A: Customs release required
       const validStatuses = ['cleared', 'partially_received', 'received'];
-      if (
-        !validStatuses.includes(shipment.status) &&
-        shipment.status !== 'customs_released'
-      ) {
+      if (!validStatuses.includes(shipment.status)) {
         throw new BadRequestException(
           `BR01A: Cannot receive goods. Shipment status '${shipment.status}' does not indicate customs release.`,
         );
@@ -123,7 +120,7 @@ export class GoodsReceiptsService {
           rejectionReason: item.rejectionReason,
           quarantineFlag: rej.greaterThan(0),
           // Defaulting to 0; will be over-written upon actual inventory posting / landed cost finalisation
-          perUnitLandedCostEtb: '0.000000',
+          perUnitLandedCostEtb: '0.0000',
           lineValueEtb: '0.0000',
         };
       });
@@ -333,11 +330,14 @@ export class GoodsReceiptsService {
         claimsGenerated: claimsToInsert.length,
         grnId,
         shipmentId: grn.shipmentId,
+        landedCostFinalised: shipment.isFinalised,
       };
     });
 
     // Post-Transaction: Recompute Landed Cost Matrix based strictly on Accepted Quantity overrides (BR06)
-    await this.landedCostService.computeDraft(result.shipmentId);
+    if (!result.landedCostFinalised) {
+      await this.landedCostService.computeDraft(result.shipmentId);
+    }
 
     // Apply the Landed Cost (FR-09.3)
     await this.db.transaction(async (tx2: any) => {
@@ -367,7 +367,7 @@ export class GoodsReceiptsService {
         await tx2
           .update(schema.goodsReceiptItems)
           .set({
-            perUnitLandedCostEtb: perUnit.toFixed(6),
+            perUnitLandedCostEtb: perUnit.toFixed(4),
             lineValueEtb: lineValue.toFixed(4),
           })
           .where(eq(schema.goodsReceiptItems.id, gi.id));

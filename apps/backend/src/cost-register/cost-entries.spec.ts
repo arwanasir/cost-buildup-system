@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CostEntriesService } from './cost-entries.service';
 import { CostSummaryService } from './cost-summary.service';
 import { FxToleranceService } from './fx-tolerance.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import { StorageService } from '@/storage/storage.service';
 import { BadRequestException } from '@nestjs/common';
 import * as schema from '@/db/schema';
@@ -183,6 +183,29 @@ describe('CostEntries & Summary Services', () => {
         'user-1',
       ),
     ).rejects.toThrow('Cannot add cost entries to a finalized shipment');
+  });
+
+  it('rejects FOB entries because the invoice value is already the CI base', async () => {
+    const categoryWhere = jest
+      .fn()
+      .mockResolvedValue([{ id: 'fob-category', code: 'FOB' }]);
+    dbMock.select.mockReturnValue({
+      from: jest.fn().mockReturnValue({ where: categoryWhere }),
+    });
+
+    await expect(
+      costEntriesService.create(
+        {
+          costCategoryId: 'fob-category',
+          amountForeign: 100,
+          currency: 'ETB',
+          fxRate: 1,
+        } as any,
+        'user-1',
+      ),
+    ).rejects.toThrow(
+      'Supplier invoice value is already included in the shipment CI value',
+    );
   });
 
   it('summary totals match a hand-computed example (FR-06.3)', async () => {

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LineageService } from './lineage.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 
 describe('Lineage Tracing Service (SRS 5.3)', () => {
   let service: LineageService;

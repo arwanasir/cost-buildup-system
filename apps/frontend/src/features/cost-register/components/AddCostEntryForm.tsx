@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,6 +34,7 @@ export function AddCostEntryForm({
   onClose: () => void;
   shipmentId: string;
 }) {
+  const localize = useUiText();
   const { data: categories } = useCostCategories();
   const createMutation = useCreateCostEntry();
 
@@ -108,31 +111,33 @@ export function AddCostEntryForm({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add Cost Entry">
+    <Modal isOpen={isOpen} onClose={onClose} title={localize('Add Cost Entry')}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <Select
-            label="Cost Category *"
+            label={localize('Cost Category *')}
             options={
-              categories?.map((c) => ({ label: c.name, value: c.id })) || []
+              categories
+                ?.filter((c) => c.code !== 'FOB' && c.isActive !== false)
+                .map((c) => ({ label: c.name, value: c.id })) || []
             }
             {...form.register('costCategoryId')}
             error={form.formState.errors.costCategoryId?.message}
           />
           <Input
-            label="Subcategory (Optional)"
+            label={localize('Subcategory (Optional)')}
             {...form.register('costSubcategory')}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="Provider Name *"
+            label={localize('Provider Name *')}
             {...form.register('providerName')}
             error={form.formState.errors.providerName?.message}
           />
           <Select
-            label="Allocation Method *"
+            label={localize('Allocation Method *')}
             options={[
               { label: 'By Value', value: 'by_value' },
               { label: 'By Weight', value: 'by_weight' },
@@ -147,12 +152,12 @@ export function AddCostEntryForm({
 
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="Invoice Number *"
+            label={localize('Invoice Number *')}
             {...form.register('invoiceNumber')}
             error={form.formState.errors.invoiceNumber?.message}
           />
           <Input
-            label="Invoice Date *"
+            label={localize('Invoice Date *')}
             type="date"
             {...form.register('invoiceDate')}
             error={form.formState.errors.invoiceDate?.message}
@@ -161,10 +166,12 @@ export function AddCostEntryForm({
 
         <div className="grid grid-cols-3 gap-4 p-4 border rounded-md bg-gray-50">
           <div className="col-span-3 pb-2 mb-2 border-b">
-            <h4 className="text-sm font-semibold text-gray-700">Financials</h4>
+            <h4 className="text-sm font-semibold text-gray-700">
+              <LocalizedText text={'Financials'} />
+            </h4>
           </div>
           <Select
-            label="Currency *"
+            label={localize('Currency *')}
             options={[
               { label: 'ETB', value: 'ETB' },
               { label: 'USD', value: 'USD' },
@@ -177,7 +184,7 @@ export function AddCostEntryForm({
             error={form.formState.errors.currency?.message}
           />
           <Input
-            label="Foreign Amount *"
+            label={localize('Foreign Amount *')}
             type="number"
             step="0.01"
             {...form.register('amountForeign', { valueAsNumber: true })}
@@ -185,7 +192,7 @@ export function AddCostEntryForm({
           />
           <div>
             <Input
-              label="FX Rate *"
+              label={localize('FX Rate *')}
               type="number"
               step="0.000001"
               {...form.register('fxRate', { valueAsNumber: true })}
@@ -194,7 +201,11 @@ export function AddCostEntryForm({
             />
             {showFxWarning && (
               <p className="text-xs text-red-600 mt-1">
-                Warning: Rate differs by &gt;5% from official NBE rate (
+                <LocalizedText
+                  text={
+                    '\n                Warning: Rate differs by &gt;5% from official NBE rate (\n                '
+                  }
+                />
                 {nbeRate?.rate})
               </p>
             )}
@@ -203,13 +214,16 @@ export function AddCostEntryForm({
 
         <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-md">
           <span className="text-sm text-blue-800 font-medium">
-            Computed ETB Value:
+            <LocalizedText
+              text={'\n            Computed ETB Value:\n          '}
+            />
           </span>
           <span className="text-xl font-bold text-blue-900">
-            ETB{' '}
+            <LocalizedText text={'\n            ETB'} />
+            <LocalizedText text={' '} />
             {computedEtb.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
+              minimumFractionDigits: 4,
+              maximumFractionDigits: 4,
             })}
           </span>
         </div>
@@ -221,12 +235,14 @@ export function AddCostEntryForm({
               {...form.register('isEstimated')}
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
             />
-            Mark as Estimated / Accrual
+            <LocalizedText
+              text={'\n            Mark as Estimated / Accrual\n          '}
+            />
           </label>
         </div>
 
         <Input
-          label="Attachment URL (Optional)"
+          label={localize('Attachment URL (Optional)')}
           {...form.register('attachment')}
           error={form.formState.errors.attachment?.message}
         />
@@ -238,14 +254,14 @@ export function AddCostEntryForm({
             onClick={onClose}
             disabled={createMutation.isPending}
           >
-            Cancel
+            <LocalizedText text={'\n            Cancel\n          '} />
           </Button>
           <Button
             type="submit"
             variant="primary"
             isLoading={createMutation.isPending}
           >
-            Save Cost Entry
+            <LocalizedText text={'\n            Save Cost Entry\n          '} />
           </Button>
         </div>
       </form>

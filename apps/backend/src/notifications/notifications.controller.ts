@@ -20,17 +20,17 @@ export class NotificationsController {
 
   @Get('unread-count')
   async getUnreadCount(@Req() req: any) {
-    return this.notificationsService.getUnreadCount(req.user.id);
+    return this.notificationsService.getUnreadCount(req.user.userId);
   }
 
   @Patch('read-all')
   async markAllAsRead(@Req() req: any) {
-    return this.notificationsService.markAllAsRead(req.user.id);
+    return this.notificationsService.markAllAsRead(req.user.userId);
   }
 
   @Patch(':id/read')
   async markAsRead(@Param('id') id: string, @Req() req: any) {
-    return this.notificationsService.markAsRead(id, req.user.id);
+    return this.notificationsService.markAsRead(id, req.user.userId);
   }
 
   @Get()
@@ -42,7 +42,7 @@ export class NotificationsController {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 20;
     return this.notificationsService.findAllForUser(
-      req.user.id,
+      req.user.userId,
       pageNum,
       limitNum,
     );

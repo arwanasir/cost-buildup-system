@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateCostCategoryDto } from './dto/create-cost-category.dto';
 import { UpdateCostCategoryDto } from './dto/update-cost-category.dto';
-import { DRIZZLE, DrizzleDB } from '@/db';
+import { DRIZZLE, DrizzleDB } from '@/db/db.token';
 import * as schema from '@/db/schema/schema';
 import { eq } from 'drizzle-orm';
 

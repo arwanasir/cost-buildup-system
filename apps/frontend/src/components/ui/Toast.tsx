@@ -1,4 +1,6 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useEffect } from 'react';
+import { useUiText } from '@/lib/ui-text';
 
 interface ToastProps {
   message: string;
@@ -13,6 +15,7 @@ export function Toast({
   onClose,
   duration = 3000,
 }: ToastProps) {
+  const localize = useUiText();
   useEffect(() => {
     const timer = setTimeout(onClose, duration);
     return () => clearTimeout(timer);
@@ -30,12 +33,12 @@ export function Toast({
         className={`border-l-4 p-4 shadow-lg rounded-md bg-white ${colors[type]}`}
       >
         <div className="flex justify-between items-center gap-4">
-          <p className="text-sm font-medium">{message}</p>
+          <p className="text-sm font-medium">{localize(message)}</p>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-900 focus:outline-none"
           >
-            &times;
+            <LocalizedText text={'\n            &times;\n          '} />
           </button>
         </div>
       </div>

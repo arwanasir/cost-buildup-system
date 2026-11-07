@@ -1,16 +1,20 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { DRIZZLE, DrizzleDB } from '@/db';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DRIZZLE, DrizzleDB } from '@/db/db.token';
 import * as schema from '@/db/schema';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import Decimal from 'decimal.js';
 import { CreateCommercialInvoiceDto } from './dto/create-commercial-invoice.dto';
 
 @Injectable()
 export class CommercialInvoicesService {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async create(shipmentId: string, dto: CreateCommercialInvoiceDto) {
-    return this.db.transaction(async (tx) => {
+    const invoice = await this.db.transaction(async (tx) => {
       const shipment = await tx.query.importShipments.findFirst({
         where: eq(schema.importShipments.id, shipmentId),
       });
@@ -26,7 +30,6 @@ export class CommercialInvoicesService {
       let totalForeign = new Decimal(0);
       let totalEtb = new Decimal(0);
       const shipmentItemUpdates = [];
-      const costEntriesToInsert: any[] = [];
 
       // BR11: Fetch PO Lines to calculate PO expected total
       const poLineIds = shipmentItems.map((i: any) => i.poLineId);
@@ -36,11 +39,6 @@ export class CommercialInvoicesService {
       const poLineMap = new Map(poLines.map((l) => [l.id, l]));
 
       let poTotalForeign = new Decimal(0);
-
-      // Fetch cost category for FOB (Base supplier cost)
-      const fobCat = await tx.query.costCategories.findFirst({
-        where: eq(schema.costCategories.code, 'FOB'),
-      });
 
       for (const itemDto of dto.items) {
         const existingItem = shipmentItems.find(
@@ -78,20 +76,6 @@ export class CommercialInvoicesService {
           ciValueForeign: ciValueForeign.toString(),
           ciValueEtb: ciValueEtb.toString(),
         });
-
-        if (fobCat) {
-          costEntriesToInsert.push({
-            shipmentId,
-            costCategoryId: fobCat.id,
-            providerName: shipment.supplierId,
-            isEstimated: false,
-            isItemSpecific: true,
-            shipmentItemId: existingItem.id,
-            amountEtb: ciValueEtb.toString(),
-            source: 'commercial_invoice' as any,
-            allocationMethod: 'by_value' as any,
-          });
-        }
       }
 
       // BR11: Compute Price Variance Pct
@@ -164,21 +148,10 @@ export class CommercialInvoicesService {
           .where(eq(schema.shipmentItems.id, update.id));
       }
 
-      // 3. Replace FOB cost entries (supplier_cost)
-      if (fobCat) {
-        await tx
-          .delete(schema.importCostEntries)
-          .where(
-            and(
-              eq(schema.importCostEntries.shipmentId, shipmentId),
-              eq(schema.importCostEntries.costCategoryId, fobCat.id),
-            ),
-          );
-        await tx.insert(schema.importCostEntries).values(costEntriesToInsert);
-      }
-
       return ci;
     });
+    this.eventEmitter.emit('cost.changed', { shipmentId });
+    return invoice;
   }
 
   async acknowledgeVariance(ciId: string, userId: string) {

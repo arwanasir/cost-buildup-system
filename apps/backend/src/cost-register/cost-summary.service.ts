@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -32,7 +32,12 @@ export class CostSummaryService {
       const costEntries = await tx
         .select()
         .from(schema.importCostEntries)
-        .where(eq(schema.importCostEntries.shipmentId, shipmentId));
+        .where(
+          and(
+            eq(schema.importCostEntries.shipmentId, shipmentId),
+            ne(schema.importCostEntries.source, 'commercial_invoice'),
+          ),
+        );
 
       const categories = await tx.select().from(schema.costCategories);
       const categoryMap = new Map(categories.map((c: any) => [c.id, c.name]));

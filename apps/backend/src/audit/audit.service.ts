@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, and, gte, lte, desc, sql } from 'drizzle-orm';
 
@@ -101,7 +101,10 @@ export class AuditService {
       .offset((page - 1) * limit);
 
     return {
-      data,
+      data: data.map((row: { id: bigint; [key: string]: unknown }) => ({
+        ...row,
+        id: row.id.toString(),
+      })),
       meta: {
         total,
         page,

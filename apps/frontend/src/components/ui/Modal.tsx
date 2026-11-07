@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useUiText } from '@/lib/ui-text';
 
 interface ModalProps {
   isOpen: boolean;
@@ -8,7 +9,14 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | string;
 }
 
-export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+export function Modal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  size = 'md',
+}: ModalProps) {
+  const localize = useUiText();
   useEffect(() => {
     if (isOpen) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = 'unset';
@@ -26,7 +34,9 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         ? 'max-w-2xl'
         : size === 'xl'
           ? 'max-w-4xl'
-          : 'max-w-lg';
+          : size === '5xl'
+            ? 'max-w-5xl'
+            : 'max-w-lg';
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -43,7 +53,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         >
           <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white px-4 py-5 sm:max-h-[calc(100dvh-3rem)] sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900">
-              {title}
+              {localize(title)}
             </h3>
             <div className="mt-4">{children}</div>
           </div>

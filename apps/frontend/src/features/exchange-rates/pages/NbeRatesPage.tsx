@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import {
   useExchangeRates,
@@ -38,6 +40,7 @@ const rateSchema = z.object({
 type RateFormData = z.infer<typeof rateSchema>;
 
 export function NbeRatesPage() {
+  const localize = useUiText();
   const queryClient = useQueryClient();
   const [isFormOpen, setIsFormOpen] = useState(false);
 
@@ -95,7 +98,7 @@ export function NbeRatesPage() {
   if (isError)
     return (
       <ErrorState
-        message="Failed to load exchange rates"
+        message={localize('Failed to load exchange rates')}
         onRetry={() => refetch()}
       />
     );
@@ -105,15 +108,22 @@ export function NbeRatesPage() {
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            NBE Exchange Rates
+            <LocalizedText
+              text={'\n            NBE Exchange Rates\n          '}
+            />
           </h1>
           <p className="mt-2 text-sm text-gray-700">
-            Record daily National Bank of Ethiopia exchange rates. History is
-            immutable for audit purposes.
+            <LocalizedText
+              text={
+                '\n            Record daily National Bank of Ethiopia exchange rates. History is\n            immutable for audit purposes.\n          '
+              }
+            />
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
-          <Button onClick={openCreate}>Record Daily Rate</Button>
+          <Button onClick={openCreate}>
+            <LocalizedText text={'Record Daily Rate'} />
+          </Button>
         </div>
       </div>
 
@@ -122,23 +132,23 @@ export function NbeRatesPage() {
       <Modal
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
-        title="Record NBE Exchange Rate"
+        title={localize('Record NBE Exchange Rate')}
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormError error={createMutation.error} />
           <Select
-            label="Currency"
+            label={localize('Currency')}
             options={CURRENCIES}
             {...register('currency')}
             error={errors.currency?.message}
           />
           <DatePicker
-            label="Rate Date"
+            label={localize('Rate Date')}
             {...register('rateDate')}
             error={errors.rateDate?.message}
           />
           <FxInput
-            label="Rate against ETB"
+            label={localize('Rate against ETB')}
             currency={selectedCurrency}
             {...register('rate', { valueAsNumber: true })}
             error={errors.rate?.message}
@@ -150,7 +160,7 @@ export function NbeRatesPage() {
               isLoading={createMutation.isPending}
               className="w-full sm:ml-3 sm:w-auto"
             >
-              Apply
+              <LocalizedText text={'\n              Apply\n            '} />
             </Button>
             <Button
               type="button"
@@ -158,7 +168,7 @@ export function NbeRatesPage() {
               onClick={() => setIsFormOpen(false)}
               className="mt-3 w-full sm:mt-0 sm:w-auto"
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
           </div>
         </form>

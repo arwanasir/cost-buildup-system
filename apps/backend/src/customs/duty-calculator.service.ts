@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { AllocationService } from './allocation.service';
 import Decimal from 'decimal.js';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -47,6 +47,19 @@ export class DutyCalculatorService {
     return cif.toString();
   }
 
+  /**
+   * Computes all customs duties for a single line item.
+   *
+   * Ethiopian customs tax cascade (SRS FR-05.1):
+   *  1. Duty    = CIF × dutyRate%  (or qty × specificDutyPerUnit for specific duty)
+   *  2. Excise  = (CIF + Duty) × exciseRate%
+   *  3. VAT     = (CIF + Duty) × vatRate%      ← Excise is NOT part of the VAT base
+   *  4. WHT     = CIF × withholdingRate%
+   *
+   * Note: Although excise is calculated on (CIF + Duty), it is NOT added to
+   * the VAT base. This matches the SRS FR-05.1 formula and Ethiopian Revenue
+   * and Customs Authority (ERCA) practice.
+   */
   computeItemDuties(
     itemCifEtb: string,
     quantity: string,
@@ -65,6 +78,7 @@ export class DutyCalculatorService {
     const vRate = new Decimal(vatRate || 0);
     const wRate = new Decimal(withholdingRate || 0);
 
+    // Step 1: Duty
     let dutyEtb = new Decimal(0);
     if (dutyStructure === 'specific') {
       dutyEtb = qty.times(specificDuty);
@@ -72,12 +86,15 @@ export class DutyCalculatorService {
       dutyEtb = cif.times(dRate).dividedBy(100);
     }
 
+    // Step 2: Excise = (CIF + Duty) × exciseRate%
     const exciseEtb = cif.plus(dutyEtb).times(eRate).dividedBy(100);
-    const vatEtb = cif
-      .plus(dutyEtb)
-      .plus(exciseEtb)
-      .times(vRate)
-      .dividedBy(100);
+
+    // Step 3: FIX — VAT = (CIF + Duty) × vatRate%
+    // The old (incorrect) code was: vatEtb = (CIF + Duty + Excise) × vatRate%
+    // The correct SRS FR-05.1 formula does NOT include excise in the VAT base.
+    const vatEtb = cif.plus(dutyEtb).times(vRate).dividedBy(100);
+
+    // Step 4: Withholding = CIF × withholdingRate%
     const withholdingEtb = cif.times(wRate).dividedBy(100);
 
     return {

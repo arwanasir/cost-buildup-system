@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ExtractTablesWithRelations } from 'drizzle-orm';
 import { PgTransaction } from 'drizzle-orm/pg-core';
 import { NodePgQueryResultHKT } from 'drizzle-orm/node-postgres';
-import { DRIZZLE, DrizzleDB } from './db.module';
+import { DRIZZLE, DrizzleDB } from './db.token';
 import * as schema from './schema/schema';
 
 export type TransactionClient = PgTransaction<

@@ -1,6 +1,8 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { type CostSummary } from '../api';
 import { Card, Table } from '@/components/ui';
+import { formatAmount4 } from '@/lib/money';
 
 export function CostSummaryBar({ summary }: { summary: CostSummary }) {
   const [expanded, setExpanded] = useState(false);
@@ -20,29 +22,38 @@ export function CostSummaryBar({ summary }: { summary: CostSummary }) {
         <div className="flex space-x-6">
           <div>
             <div className="text-xs text-gray-500 uppercase font-semibold tracking-wider">
-              Supplier Cost
+              <LocalizedText
+                text={'\n              Supplier Cost\n            '}
+              />
             </div>
             <div className="text-lg font-bold">
-              ETB {parseFloat(summary.totalSupplierCostEtb).toLocaleString()}
+              <LocalizedText text={'\n              ETB '} />
+              {formatAmount4(summary.totalSupplierCostEtb)}
             </div>
           </div>
           <div className="text-gray-300 text-2xl font-light">|</div>
           <div>
             <div className="text-xs text-gray-500 uppercase font-semibold tracking-wider">
-              Additional Charges
+              <LocalizedText
+                text={'\n              Additional Charges\n            '}
+              />
             </div>
             <div className="text-lg font-bold">
-              ETB{' '}
-              {parseFloat(summary.totalAdditionalChargesEtb).toLocaleString()}
+              <LocalizedText text={'\n              ETB'} />
+              <LocalizedText text={' '} />
+              {formatAmount4(summary.totalAdditionalChargesEtb)}
             </div>
           </div>
           <div className="text-gray-300 text-2xl font-light">|</div>
           <div>
             <div className="text-xs text-gray-500 uppercase font-semibold tracking-wider">
-              Grand Total
+              <LocalizedText
+                text={'\n              Grand Total\n            '}
+              />
             </div>
             <div className="text-lg font-bold text-blue-700">
-              ETB {parseFloat(summary.grandTotalEtb).toLocaleString()}
+              <LocalizedText text={'\n              ETB '} />
+              {formatAmount4(summary.grandTotalEtb)}
             </div>
           </div>
         </div>
@@ -50,17 +61,22 @@ export function CostSummaryBar({ summary }: { summary: CostSummary }) {
         {/* Variance Summary */}
         <div className="flex items-center space-x-4 bg-gray-50 p-2 rounded-md border">
           <div>
-            <div className="text-xs text-gray-500">Est vs Actual</div>
+            <div className="text-xs text-gray-500">
+              <LocalizedText text={'Est vs Actual'} />
+            </div>
             <div className="text-sm font-medium">
-              {parseFloat(summary.variance.estimatedTotalEtb).toLocaleString()}{' '}
-              / {parseFloat(summary.variance.actualTotalEtb).toLocaleString()}
+              {formatAmount4(summary.variance.estimatedTotalEtb)}
+              <LocalizedText text={' '} />/{' '}
+              {formatAmount4(summary.variance.actualTotalEtb)}
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-gray-500">Variance</div>
+            <div className="text-xs text-gray-500">
+              <LocalizedText text={'Variance'} />
+            </div>
             <div className={`text-sm font-bold ${varianceColor}`}>
-              {variancePercent > 0 ? '+' : ''}
-              {parseFloat(summary.variance.varianceAmountEtb).toLocaleString()}
+              <LocalizedText text={variancePercent > 0 ? '+' : ''} />
+              {formatAmount4(summary.variance.varianceAmountEtb)}
               <span className="ml-1 text-xs">({variancePercent}%)</span>
             </div>
           </div>
@@ -71,7 +87,11 @@ export function CostSummaryBar({ summary }: { summary: CostSummary }) {
           onClick={() => setExpanded(!expanded)}
           className="flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
         >
-          <span>{expanded ? 'Hide Details' : 'View Breakdown & Previews'}</span>
+          <span>
+            <LocalizedText
+              text={expanded ? 'Hide Details' : 'View Breakdown & Previews'}
+            />
+          </span>
           {expanded ? <span>&#9650;</span> : <span>&#9660;</span>}
         </button>
       </div>
@@ -82,15 +102,25 @@ export function CostSummaryBar({ summary }: { summary: CostSummary }) {
           {/* Charges by Category */}
           <div>
             <h4 className="text-sm font-semibold mb-3 text-gray-700">
-              Charges by Category
+              <LocalizedText
+                text={'\n              Charges by Category\n            '}
+              />
             </h4>
             <Table>
               <thead>
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs">Category</th>
-                  <th className="px-3 py-2 text-right text-xs">Estimated</th>
-                  <th className="px-3 py-2 text-right text-xs">Actual</th>
-                  <th className="px-3 py-2 text-right text-xs">Total</th>
+                  <th className="px-3 py-2 text-left text-xs">
+                    <LocalizedText text={'Category'} />
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs">
+                    <LocalizedText text={'Estimated'} />
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs">
+                    <LocalizedText text={'Actual'} />
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs">
+                    <LocalizedText text={'Total'} />
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y bg-white">
@@ -98,13 +128,13 @@ export function CostSummaryBar({ summary }: { summary: CostSummary }) {
                   <tr key={idx}>
                     <td className="px-3 py-2 text-sm">{cat.categoryName}</td>
                     <td className="px-3 py-2 text-sm text-right text-gray-500">
-                      {parseFloat(cat.estimatedAmountEtb).toLocaleString()}
+                      {formatAmount4(cat.estimatedAmountEtb)}
                     </td>
                     <td className="px-3 py-2 text-sm text-right font-medium">
-                      {parseFloat(cat.actualAmountEtb).toLocaleString()}
+                      {formatAmount4(cat.actualAmountEtb)}
                     </td>
                     <td className="px-3 py-2 text-sm text-right font-bold text-gray-800">
-                      {parseFloat(cat.totalAmountEtb).toLocaleString()}
+                      {formatAmount4(cat.totalAmountEtb)}
                     </td>
                   </tr>
                 ))}
@@ -114,7 +144,11 @@ export function CostSummaryBar({ summary }: { summary: CostSummary }) {
                       colSpan={4}
                       className="px-3 py-4 text-center text-sm text-gray-400"
                     >
-                      No additional charges recorded.
+                      <LocalizedText
+                        text={
+                          '\n                      No additional charges recorded.\n                    '
+                        }
+                      />
                     </td>
                   </tr>
                 )}
@@ -125,20 +159,38 @@ export function CostSummaryBar({ summary }: { summary: CostSummary }) {
           {/* Per-Unit Preview */}
           <div>
             <h4 className="text-sm font-semibold mb-3 text-gray-700">
-              Per-Unit Landed Cost Preview (Draft)
+              <LocalizedText
+                text={
+                  '\n              Per-Unit Landed Cost Preview (Draft)\n            '
+                }
+              />
             </h4>
             <Table>
               <thead>
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs">Item ID</th>
-                  <th className="px-3 py-2 text-right text-xs">
-                    CI Value (ETB)
+                  <th className="px-3 py-2 text-left text-xs">
+                    <LocalizedText text={'Item ID'} />
                   </th>
                   <th className="px-3 py-2 text-right text-xs">
-                    Allocated Costs
+                    <LocalizedText
+                      text={
+                        '\n                    CI Value (ETB)\n                  '
+                      }
+                    />
                   </th>
                   <th className="px-3 py-2 text-right text-xs">
-                    Unit LC (ETB)
+                    <LocalizedText
+                      text={
+                        '\n                    Allocated Costs\n                  '
+                      }
+                    />
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs">
+                    <LocalizedText
+                      text={
+                        '\n                    Unit LC (ETB)\n                  '
+                      }
+                    />
                   </th>
                 </tr>
               </thead>
@@ -149,13 +201,13 @@ export function CostSummaryBar({ summary }: { summary: CostSummary }) {
                       {item.itemId}
                     </td>
                     <td className="px-3 py-2 text-sm text-right text-gray-500">
-                      {parseFloat(item.ciValueEtb).toLocaleString()}
+                      {formatAmount4(item.ciValueEtb)}
                     </td>
                     <td className="px-3 py-2 text-sm text-right text-gray-500">
-                      {parseFloat(item.allocatedDraftCostsEtb).toLocaleString()}
+                      {formatAmount4(item.allocatedDraftCostsEtb)}
                     </td>
                     <td className="px-3 py-2 text-sm text-right font-bold text-blue-700">
-                      {parseFloat(item.perUnitLandedCostEtb).toLocaleString()}
+                      {formatAmount4(item.perUnitLandedCostEtb)}
                     </td>
                   </tr>
                 ))}
@@ -165,7 +217,11 @@ export function CostSummaryBar({ summary }: { summary: CostSummary }) {
                       colSpan={4}
                       className="px-3 py-4 text-center text-sm text-gray-400"
                     >
-                      No items found in shipment.
+                      <LocalizedText
+                        text={
+                          '\n                      No items found in shipment.\n                    '
+                        }
+                      />
                     </td>
                   </tr>
                 )}

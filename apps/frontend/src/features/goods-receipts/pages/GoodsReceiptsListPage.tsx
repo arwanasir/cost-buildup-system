@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import {
   PageHeader,
@@ -12,6 +14,7 @@ import { useGrns } from '../api';
 import { useNavigate } from 'react-router-dom';
 
 export function GoodsReceiptsListPage() {
+  const localize = useUiText();
   const { data: grnsResponse, isLoading, isError, refetch } = useGrns();
   const [activeTab, setActiveTab] = useState('draft');
   const navigate = useNavigate();
@@ -33,15 +36,35 @@ export function GoodsReceiptsListPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'draft':
-        return <Badge variant="default">Draft</Badge>;
+        return (
+          <Badge variant="default">
+            <LocalizedText text={'Draft'} />
+          </Badge>
+        );
       case 'confirmed':
-        return <Badge variant="info">Confirmed</Badge>;
+        return (
+          <Badge variant="info">
+            <LocalizedText text={'Confirmed'} />
+          </Badge>
+        );
       case 'posting_failed':
-        return <Badge variant="danger">Posting Failed</Badge>;
+        return (
+          <Badge variant="danger">
+            <LocalizedText text={'Posting Failed'} />
+          </Badge>
+        );
       case 'posted':
-        return <Badge variant="success">Posted</Badge>;
+        return (
+          <Badge variant="success">
+            <LocalizedText text={'Posted'} />
+          </Badge>
+        );
       case 'flagged_for_adjustment':
-        return <Badge variant="warning">Flagged</Badge>;
+        return (
+          <Badge variant="warning">
+            <LocalizedText text={'Flagged'} />
+          </Badge>
+        );
       default:
         return <Badge variant="default">{status}</Badge>;
     }
@@ -51,14 +74,16 @@ export function GoodsReceiptsListPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <PageHeader
-          title="Goods Receipts (GRN)"
-          description="Manage inventory receiving, discrepancies, and ERP posting."
+          title={localize('Goods Receipts (GRN)')}
+          description={localize(
+            'Manage inventory receiving, discrepancies, and ERP posting.',
+          )}
         />
         <Button
           variant="primary"
           onClick={() => navigate('/goods-receipts/new')}
         >
-          + New GRN
+          <LocalizedText text={'\n          + New GRN\n        '} />
         </Button>
       </div>
 
@@ -69,16 +94,22 @@ export function GoodsReceiptsListPage() {
 
         {isLoading ? (
           <div className="p-8 text-center text-gray-500">
-            Loading Goods Receipts...
+            <LocalizedText
+              text={'\n            Loading Goods Receipts...\n          '}
+            />
           </div>
         ) : isError ? (
           <ErrorState
-            message="The GRN service could not be reached. Try again, or check the API and database services."
+            message={localize(
+              'The GRN service could not be reached. Try again, or check the API and database services.',
+            )}
             onRetry={() => refetch()}
           />
         ) : filteredGrns.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            No {activeTab.replace('_', ' ')} GRNs found.
+            <LocalizedText text={'\n            No '} />
+            {activeTab.replace('_', ' ')}{' '}
+            <LocalizedText text={' GRNs found.\n          '} />
           </div>
         ) : (
           <>
@@ -92,19 +123,29 @@ export function GoodsReceiptsListPage() {
                         {grn.grnNumber}
                       </h3>
                       <p className="text-sm text-gray-500">
-                        Date: {new Date(grn.receiptDate).toLocaleDateString()}
+                        <LocalizedText
+                          text={'\n                        Date: '}
+                        />
+                        {new Date(grn.receiptDate).toLocaleDateString()}
                       </p>
                     </div>
                     {getStatusBadge(grn.status)}
                   </div>
                   <div className="mt-2 text-sm text-gray-700">
-                    <span className="font-medium">Warehouse:</span>{' '}
+                    <span className="font-medium">
+                      <LocalizedText text={'Warehouse:'} />
+                    </span>
+                    <LocalizedText text={' '} />
                     {grn.warehouseLocation}
                   </div>
                   {grn.usesEstimatedCost && (
                     <div className="mt-1">
                       <span className="inline-flex items-center text-xs font-medium bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
-                        Estimated Costs Applied
+                        <LocalizedText
+                          text={
+                            '\n                        Estimated Costs Applied\n                      '
+                          }
+                        />
                       </span>
                     </div>
                   )}
@@ -113,7 +154,11 @@ export function GoodsReceiptsListPage() {
                       variant="outline"
                       onClick={() => navigate(`/goods-receipts/${grn.id}`)}
                     >
-                      View Details
+                      <LocalizedText
+                        text={
+                          '\n                      View Details\n                    '
+                        }
+                      />
                     </Button>
                   </div>
                 </div>
@@ -126,22 +171,46 @@ export function GoodsReceiptsListPage() {
                 <thead>
                   <tr className="bg-gray-50 border-b">
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                      GRN Number
+                      <LocalizedText
+                        text={
+                          '\n                      GRN Number\n                    '
+                        }
+                      />
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                      Receipt Date
+                      <LocalizedText
+                        text={
+                          '\n                      Receipt Date\n                    '
+                        }
+                      />
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                      Warehouse
+                      <LocalizedText
+                        text={
+                          '\n                      Warehouse\n                    '
+                        }
+                      />
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                      Status
+                      <LocalizedText
+                        text={
+                          '\n                      Status\n                    '
+                        }
+                      />
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                      Flags
+                      <LocalizedText
+                        text={
+                          '\n                      Flags\n                    '
+                        }
+                      />
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-                      Action
+                      <LocalizedText
+                        text={
+                          '\n                      Action\n                    '
+                        }
+                      />
                     </th>
                   </tr>
                 </thead>
@@ -163,7 +232,11 @@ export function GoodsReceiptsListPage() {
                       <td className="px-4 py-3">
                         {grn.usesEstimatedCost ? (
                           <span className="inline-flex items-center text-[10px] font-bold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded uppercase">
-                            Est. Cost
+                            <LocalizedText
+                              text={
+                                '\n                            Est. Cost\n                          '
+                              }
+                            />
                           </span>
                         ) : (
                           <span className="text-gray-400">-</span>
@@ -174,7 +247,11 @@ export function GoodsReceiptsListPage() {
                           variant="outline"
                           onClick={() => navigate(`/goods-receipts/${grn.id}`)}
                         >
-                          View Details
+                          <LocalizedText
+                            text={
+                              '\n                          View Details\n                        '
+                            }
+                          />
                         </Button>
                       </td>
                     </tr>

@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -53,6 +55,7 @@ interface Props {
 }
 
 export function SupplierFormModal({ isOpen, onClose, supplier }: Props) {
+  const localize = useUiText();
   const createMutation = useCreateSupplier();
   const updateMutation = useUpdateSupplier();
 
@@ -229,50 +232,50 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: Props) {
         {activeTab === 'details' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Supplier Name *"
+              label={localize('Supplier Name *')}
               {...register('name')}
               error={errors.name?.message}
             />
             <Input
-              label="Country"
+              label={localize('Country')}
               {...register('country')}
               error={errors.country?.message}
             />
             <Input
-              label="TIN"
+              label={localize('TIN')}
               {...register('tin')}
               error={errors.tin?.message}
             />
             <Input
-              label="Contact Person"
+              label={localize('Contact Person')}
               {...register('contactPerson')}
               error={errors.contactPerson?.message}
             />
             <Input
-              label="Email Address"
+              label={localize('Email Address')}
               type="email"
               {...register('email')}
               error={errors.email?.message}
             />
             <Input
-              label="Phone Number"
+              label={localize('Phone Number')}
               {...register('phone')}
               error={errors.phone?.message}
             />
             <Input
-              label="Payment Terms"
+              label={localize('Payment Terms')}
               {...register('paymentTerms')}
               error={errors.paymentTerms?.message}
-              placeholder="e.g. LC at Sight"
+              placeholder={localize('e.g. LC at Sight')}
             />
             <Select
-              label="Default Currency *"
+              label={localize('Default Currency *')}
               options={CURRENCIES}
               {...register('defaultCurrency')}
               error={errors.defaultCurrency?.message}
             />
             <Input
-              label="Lead Time (Days) *"
+              label={localize('Lead Time (Days) *')}
               type="number"
               {...register('leadTimeDays', { valueAsNumber: true })}
               error={errors.leadTimeDays?.message}
@@ -284,7 +287,11 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: Props) {
           <div className="space-y-4">
             <div className="flex justify-between items-center mb-4">
               <h4 className="text-sm font-medium text-gray-900">
-                Manage Banking Instructions
+                <LocalizedText
+                  text={
+                    '\n                Manage Banking Instructions\n              '
+                  }
+                />
               </h4>
               <Button
                 type="button"
@@ -299,13 +306,19 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: Props) {
                   })
                 }
               >
-                + Add Bank Account
+                <LocalizedText
+                  text={'\n                + Add Bank Account\n              '}
+                />
               </Button>
             </div>
 
             {fields.length === 0 ? (
               <p className="text-sm text-gray-500 italic text-center py-4 border rounded-md bg-gray-50">
-                No bank accounts added yet.
+                <LocalizedText
+                  text={
+                    '\n                No bank accounts added yet.\n              '
+                  }
+                />
               </p>
             ) : (
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
@@ -358,7 +371,12 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: Props) {
                           htmlFor={`default-bank-${index}`}
                           className="text-sm font-medium text-gray-700"
                         >
-                          Set as default account for{' '}
+                          <LocalizedText
+                            text={
+                              '\n                          Set as default account for'
+                            }
+                          />
+                          <LocalizedText text={' '} />
                           {CURRENCIES.find(
                             (c) =>
                               c.value ===
@@ -387,7 +405,9 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: Props) {
             }
             className="w-full sm:ml-3 sm:w-auto"
           >
-            {supplier ? 'Save Supplier & Accounts' : 'Create Supplier'}
+            <LocalizedText
+              text={supplier ? 'Save Supplier & Accounts' : 'Create Supplier'}
+            />
           </Button>
           <Button
             type="button"
@@ -395,7 +415,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: Props) {
             onClick={onClose}
             className="mt-3 w-full sm:mt-0 sm:w-auto"
           >
-            Cancel
+            <LocalizedText text={'\n            Cancel\n          '} />
           </Button>
         </div>
       </form>

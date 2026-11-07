@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InventoryPostingService } from './inventory-posting.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import { NotificationsService } from '@/notifications/notifications.service';
 import { InventoryClient } from './clients/inventory.client';
 

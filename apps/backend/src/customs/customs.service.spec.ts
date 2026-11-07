@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CustomsService } from './customs.service';
 import { DutyCalculatorService } from './duty-calculator.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { BadRequestException } from '@nestjs/common';
 
@@ -15,6 +15,7 @@ describe('CustomsService', () => {
   let updateSetMock: jest.Mock;
   let updateWhereMock: jest.Mock;
   let deleteWhereMock: jest.Mock;
+  let computeItemDutiesMock: jest.Mock;
 
   // Storage for our dynamic query results
   let mockDeclarationData: any;
@@ -31,6 +32,12 @@ describe('CustomsService', () => {
 
     deleteWhereMock = jest.fn().mockResolvedValue(true);
     eventEmitterEmitMock = jest.fn();
+    computeItemDutiesMock = jest.fn().mockReturnValue({
+      dutyEtb: '48.0000',
+      exciseEtb: '0.0000',
+      vatEtb: '157.2000',
+      withholdingEtb: '0.0000',
+    });
 
     // Default mock data
     mockDeclarationData = {
@@ -44,14 +51,14 @@ describe('CustomsService', () => {
         shipmentItemId: 'si-1',
         dutyEtb: '100',
         vatEtb: '150',
-        exciseEtb: '0',
+        exciseEtb: '20',
         withholdingEtb: '0',
       },
     ];
     mockCategoriesData = [
-      { id: 'cat-duty', code: 'DUTY' },
+      { id: 'cat-duty', code: 'CUSTOMS_DUTY' },
       { id: 'cat-vat', code: 'VAT' },
-      { id: 'cat-other', code: 'OTHER' },
+      { id: 'cat-excise', code: 'EXCISE' },
     ];
 
     const fromMock = jest.fn((table) => {
@@ -78,6 +85,8 @@ describe('CustomsService', () => {
             .fn()
             .mockImplementation(() => Promise.resolve(mockCategoriesData)),
         },
+        importShipments: { findFirst: jest.fn() },
+        tariffRates: { findMany: jest.fn() },
       },
       insert: jest.fn(() => ({ values: valuesMock })),
       delete: jest.fn(() => ({ where: deleteWhereMock })),
@@ -95,7 +104,10 @@ describe('CustomsService', () => {
         CustomsService,
         {
           provide: DutyCalculatorService,
-          useValue: { computeItemCif: jest.fn() },
+          useValue: {
+            computeItemCif: jest.fn().mockResolvedValue('1000.0000'),
+            computeItemDuties: computeItemDutiesMock,
+          },
         },
         {
           provide: EventEmitter2,
@@ -111,6 +123,72 @@ describe('CustomsService', () => {
     service = module.get<CustomsService>(CustomsService);
   });
 
+  it('uses the specific tariff structure and units when creating a declaration', async () => {
+    const declarationReturningMock = jest
+      .fn()
+      .mockResolvedValue([{ id: 'decl-new' }]);
+    mockTx.insert.mockImplementation((table: any) => {
+      if (table === schema.customsDeclarations) {
+        return {
+          values: jest.fn().mockReturnValue({
+            returning: declarationReturningMock,
+          }),
+        };
+      }
+      return { values: valuesMock };
+    });
+    mockTx.query.importShipments.findFirst.mockResolvedValue({
+      items: [
+        {
+          id: 'shipment-item-1',
+          shippedQuantity: '4',
+          poLine: { item: { defaultHsCode: '8471' } },
+        },
+      ],
+    });
+    mockTx.query.tariffRates.findMany.mockResolvedValue([
+      {
+        hsCode: '8471',
+        dutyStructure: 'specific',
+        dutyRate: '0',
+        specificDutyPerUnit: '12',
+        exciseRate: '0',
+        withholdingRate: '0',
+      },
+    ]);
+
+    await service.createDeclaration(
+      'shipment-1',
+      {
+        shipmentId: 'shipment-1',
+        declarationNumber: 'DECL-SPEC-1',
+        declarationDate: '2026-11-02',
+        fxRate: 1,
+      },
+      'user-1',
+    );
+
+    expect(computeItemDutiesMock).toHaveBeenCalledWith(
+      '1000',
+      '4',
+      'specific',
+      '0',
+      '12',
+      '0',
+      '15',
+      '0',
+    );
+    const declarationItems = valuesMock.mock.calls[0][0];
+    expect(declarationItems[0]).toEqual(
+      expect.objectContaining({
+        dutyStructure: 'specific',
+        specificDutyPerUnit: '12',
+        dutyEtb: '48',
+        vatEtb: '157.2',
+      }),
+    );
+  });
+
   describe('assessDeclaration()', () => {
     it('assess creates item-specific entries never allocated', async () => {
       await service.assessDeclaration('decl-1', 'user-1');
@@ -122,14 +200,17 @@ describe('CustomsService', () => {
       expect(mockTx.insert).toHaveBeenCalledWith(schema.importCostEntries);
       const insertedValues = valuesMock.mock.calls[0][0]; // First argument of first call to values()
 
-      // We expect 2 entries for our mock item (dutyEtb=100, vatEtb=150)
-      expect(insertedValues.length).toBe(2);
+      // Use the seeded duty, VAT, and excise categories.
+      expect(insertedValues.length).toBe(3);
 
       const dutyEntry = insertedValues.find(
         (v: any) => v.costCategoryId === 'cat-duty',
       );
       const vatEntry = insertedValues.find(
         (v: any) => v.costCategoryId === 'cat-vat',
+      );
+      const exciseEntry = insertedValues.find(
+        (v: any) => v.costCategoryId === 'cat-excise',
       );
 
       expect(dutyEntry).toBeDefined();
@@ -145,6 +226,10 @@ describe('CustomsService', () => {
       expect(vatEntry.allocationMethod).toBe('item_specific');
       expect(vatEntry.source).toBe('customs');
       expect(vatEntry.shipmentItemId).toBe('si-1');
+
+      expect(exciseEntry).toBeDefined();
+      expect(exciseEntry.amountEtb).toBe('20');
+      expect(exciseEntry.costSubcategory).toBeUndefined();
 
       // Verify declaration status update
       expect(mockTx.update).toHaveBeenCalledWith(schema.customsDeclarations);
