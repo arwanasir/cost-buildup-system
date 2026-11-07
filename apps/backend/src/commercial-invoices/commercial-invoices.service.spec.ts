@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CommercialInvoicesService } from './commercial-invoices.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('CommercialInvoicesService', () => {
   let service: CommercialInvoicesService;
@@ -50,6 +51,7 @@ describe('CommercialInvoicesService', () => {
       providers: [
         CommercialInvoicesService,
         { provide: DRIZZLE, useValue: mockDb },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
       ],
     }).compile();
 
@@ -81,7 +83,7 @@ describe('CommercialInvoicesService', () => {
   };
 
   describe('create() BR11 & Actual Costs', () => {
-    it('should replace estimated FOB cost entries with actuals and auto-acknowledge a 4% variance', async () => {
+    it('updates the invoice base without creating a duplicate FOB cost and auto-acknowledges a 4% variance', async () => {
       setupMockData();
 
       const dto = {
@@ -94,23 +96,16 @@ describe('CommercialInvoicesService', () => {
 
       await service.create('shp-1', dto);
 
-      // 1. Verify FOB entries were deleted
-      expect(mockTx.delete).toHaveBeenCalled();
+      expect(mockTx.delete).not.toHaveBeenCalled();
+      expect(
+        valuesMock.mock.calls.some(
+          (call) =>
+            Array.isArray(call[0]) &&
+            call[0].some((entry: any) => entry.source === 'commercial_invoice'),
+        ),
+      ).toBe(false);
 
-      // 2. Verify new actual entries inserted
-      const costEntryCall = valuesMock.mock.calls.find(
-        (call) =>
-          Array.isArray(call[0]) && call[0][0]?.source === 'commercial_invoice',
-      );
-      expect(costEntryCall).toBeDefined();
-      const actualFobEntry = costEntryCall[0][0];
-      expect(actualFobEntry.isEstimated).toBe(false); // Replaced with actual
-      expect(actualFobEntry.costCategoryId).toBe('fob-cat');
-
-      // Calculate Expected ETB = 1040 * 120 = 124800
-      expect(actualFobEntry.amountEtb).toBe('124800');
-
-      // 3. Verify BR11 - 4% is under 5% threshold
+      // Verify BR11 - 4% is under 5% threshold
       const ciHeaderCall = valuesMock.mock.calls.find(
         (call) =>
           !Array.isArray(call[0]) && call[0]?.invoiceNumber === 'INV-001',
@@ -120,7 +115,7 @@ describe('CommercialInvoicesService', () => {
       expect(ciHeader.priceVariancePct).toBe('4');
       expect(ciHeader.acknowledgedAt).not.toBeNull(); // Auto-acknowledged
 
-      // 4. Verify no notifications fired
+      // Verify no notifications fired
       const notificationCall = valuesMock.mock.calls.find(
         (call) =>
           Array.isArray(call[0]) && call[0][0]?.type === 'approval_request',

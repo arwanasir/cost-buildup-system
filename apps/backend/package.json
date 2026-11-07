@@ -1,6 +1,7 @@
 {
   "name": "backend",
   "version": "0.0.1",
+  "packageManager": "pnpm@9.15.9",
   "description": "",
   "author": "",
   "private": true,
@@ -49,6 +50,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "decimal.js": "^10.6.0",
+    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "exceljs": "^4.4.0",
     "i18next": "^26.4.2",
@@ -118,6 +120,12 @@
       "/node_modules/(?!(@nestjs)/)"
     ],
     "moduleNameMapper": {
+      "^@nestjs/config$": "<rootDir>/../test/jest-mocks/nestjs-config.ts",
+      "^@nestjs/event-emitter$": "<rootDir>/../test/jest-mocks/nestjs-event-emitter.ts",
+      "^@nestjs/axios$": "<rootDir>/../test/jest-mocks/nestjs-axios.ts",
+      "^@nestjs/jwt$": "<rootDir>/../test/jest-mocks/nestjs-jwt.ts",
+      "^@nestjs/passport$": "<rootDir>/../test/jest-mocks/nestjs-passport.ts",
+      "^@nestjs/schedule$": "<rootDir>/../test/jest-mocks/nestjs-schedule.ts",
       "^@/(.*)$": "<rootDir>/$1"
     },
     "coverageThreshold": {

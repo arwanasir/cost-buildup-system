@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSuppliers, useDeactivateSupplier, type Supplier } from '../api';
@@ -11,6 +13,7 @@ import {
   Skeleton,
   ErrorState,
   Badge,
+  PermissionGate,
 } from '@/components/ui';
 
 const CURRENCIES = [
@@ -22,6 +25,7 @@ const CURRENCIES = [
 ];
 
 export function SuppliersListPage() {
+  const localize = useUiText();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [isActiveFilter, setIsActiveFilter] = useState<
@@ -67,12 +71,26 @@ export function SuppliersListPage() {
     {
       header: 'Name',
       accessor: (row: Supplier) => (
-        <Link
-          to={`/suppliers/${row.id}`}
-          className="text-blue-600 hover:underline font-medium"
+        <PermissionGate
+          permission="suppliers:write"
+          fallback={
+            <Link
+              to={`/suppliers/${row.id}`}
+              className="font-medium text-blue-700 hover:underline"
+            >
+              {row.name}
+            </Link>
+          }
         >
-          {row.name}
-        </Link>
+          <button
+            type="button"
+            onClick={() => openEdit(row)}
+            aria-label={`${localize('Edit supplier')}: ${row.name}`}
+            className="text-left font-medium text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-sm"
+          >
+            {row.name}
+          </button>
+        </PermissionGate>
       ),
     },
     { header: 'Country', accessor: 'country' as keyof Supplier },
@@ -85,7 +103,7 @@ export function SuppliersListPage() {
       header: 'Status',
       accessor: (row: Supplier) => (
         <Badge variant={row.isActive ? 'success' : 'danger'}>
-          {row.isActive ? 'Active' : 'Inactive'}
+          <LocalizedText text={row.isActive ? 'Active' : 'Inactive'} />
         </Badge>
       ),
     },
@@ -93,19 +111,25 @@ export function SuppliersListPage() {
       header: 'Actions',
       accessor: (row: Supplier) => (
         <div className="flex gap-2">
-          <button
-            onClick={() => openEdit(row)}
-            className="text-blue-600 hover:text-blue-900 font-medium text-sm"
-          >
-            Edit
-          </button>
-          {row.isActive && (
+          <PermissionGate permission="suppliers:write">
             <button
-              onClick={() => setDeactivateSupplier(row)}
-              className="text-red-600 hover:text-red-900 font-medium text-sm"
+              onClick={() => openEdit(row)}
+              className="text-blue-600 hover:text-blue-900 font-medium text-sm"
             >
-              Deactivate
+              <LocalizedText text={'\n            Edit\n          '} />
             </button>
+          </PermissionGate>
+          {row.isActive && (
+            <PermissionGate permission="suppliers:write">
+              <button
+                onClick={() => setDeactivateSupplier(row)}
+                className="text-red-600 hover:text-red-900 font-medium text-sm"
+              >
+                <LocalizedText
+                  text={'\n              Deactivate\n            '}
+                />
+              </button>
+            </PermissionGate>
           )}
         </div>
       ),
@@ -116,20 +140,30 @@ export function SuppliersListPage() {
     <div className="space-y-6">
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Suppliers</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            <LocalizedText text={'Suppliers'} />
+          </h1>
           <p className="mt-2 text-sm text-gray-700">
-            Manage vendor directory, payment terms, and lead times.
+            <LocalizedText
+              text={
+                '\n            Manage vendor directory, payment terms, and lead times.\n          '
+              }
+            />
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
-          <Button onClick={openCreate}>New Supplier</Button>
+          <PermissionGate permission="suppliers:write">
+            <Button onClick={openCreate}>
+              <LocalizedText text={'New Supplier'} />
+            </Button>
+          </PermissionGate>
         </div>
       </div>
 
       <div className="bg-white p-4 shadow sm:rounded-lg border border-gray-200 flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <Input
-            placeholder="Search by name, TIN, or country..."
+            placeholder={localize('Search by name, TIN, or country...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -154,7 +188,7 @@ export function SuppliersListPage() {
         <Skeleton className="h-[600px] w-full" />
       ) : isError ? (
         <ErrorState
-          message="Failed to load suppliers"
+          message={localize('Failed to load suppliers')}
           onRetry={() => refetch()}
         />
       ) : (
@@ -165,33 +199,49 @@ export function SuppliersListPage() {
             <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  Showing{' '}
-                  <span className="font-medium">{(page - 1) * 10 + 1}</span> to{' '}
+                  <LocalizedText text={'\n                  Showing'} />
+                  <LocalizedText text={' '} />
+                  <span className="font-medium">
+                    {(page - 1) * 10 + 1}
+                  </span>{' '}
+                  <LocalizedText text={' to'} />
+                  <LocalizedText text={' '} />
                   <span className="font-medium">
                     {Math.min(page * 10, data?.total || 0)}
-                  </span>{' '}
-                  of <span className="font-medium">{data?.total || 0}</span>{' '}
-                  results
+                  </span>
+                  <LocalizedText text={' '} />
+                  <LocalizedText text={'\n                  of '} />
+                  <span className="font-medium">{data?.total || 0}</span>
+                  <LocalizedText text={' '} />
+                  <LocalizedText
+                    text={'\n                  results\n                '}
+                  />
                 </p>
               </div>
               <div>
                 <nav
                   className="isolate inline-flex -space-x-px rounded-md shadow-sm"
-                  aria-label="Pagination"
+                  aria-label={localize('Pagination')}
                 >
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
                     className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                   >
-                    Previous
+                    <LocalizedText
+                      text={
+                        '\n                    Previous\n                  '
+                      }
+                    />
                   </button>
                   <button
                     onClick={() => setPage((p) => p + 1)}
                     disabled={page * 10 >= (data?.total || 0)}
                     className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                   >
-                    Next
+                    <LocalizedText
+                      text={'\n                    Next\n                  '}
+                    />
                   </button>
                 </nav>
               </div>
@@ -209,9 +259,9 @@ export function SuppliersListPage() {
       {deactivateSupplier && (
         <ConfirmDialog
           isOpen={true}
-          title="Deactivate Supplier"
+          title={localize('Deactivate Supplier')}
           message={`Are you sure you want to deactivate ${deactivateSupplier.name}? They will no longer appear in active dropdowns for new Purchase Orders.`}
-          confirmText="Deactivate"
+          confirmText={localize('Deactivate')}
           isDestructive
           isLoading={deactivateMutation.isPending}
           onConfirm={() =>

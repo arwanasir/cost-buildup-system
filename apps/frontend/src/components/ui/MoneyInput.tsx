@@ -1,3 +1,4 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { forwardRef } from 'react';
 import type { InputHTMLAttributes } from 'react';
 
@@ -24,7 +25,9 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
             {...props}
           />
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <span className="text-gray-500 sm:text-sm">ETB</span>
+            <span className="text-gray-500 sm:text-sm">
+              <LocalizedText text={'ETB'} />
+            </span>
           </div>
         </div>
         {error && <p className="mt-1 text-sm text-red-600">{error}</p>}

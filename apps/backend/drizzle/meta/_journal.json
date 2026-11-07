@@ -8,6 +8,41 @@
       "when": 1791347614507,
       "tag": "0000_flat_pretty_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792176000000,
+      "tag": "0001_seed_po_approval_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792600000000,
+      "tag": "0002_add_landed_cost_computed_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793577600000,
+      "tag": "0003_srs_unit_cost_precision",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793578000000,
+      "tag": "0004_remove_warehouse_cost_read",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793693016295,
+      "tag": "0005_normalize_policy_settings",
+      "breakpoints": true
     }
   ]
 }

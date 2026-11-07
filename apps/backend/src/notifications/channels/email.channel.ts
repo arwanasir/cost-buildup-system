@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DRIZZLE, DrizzleDB } from '../../db';
+import { DRIZZLE, DrizzleDB } from '../../db/db.token';
 import * as schema from '../../db/schema/schema';
 import { inArray } from 'drizzle-orm';
 import * as nodemailer from 'nodemailer';
@@ -22,6 +22,9 @@ export class EmailChannel {
       host,
       port,
       ignoreTLS: true,
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 10000,
     });
   }
 

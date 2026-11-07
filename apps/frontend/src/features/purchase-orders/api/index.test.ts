@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { normalizePurchaseOrder } from './index';
+import {
+  mapPurchaseOrderStatusFilter,
+  normalizePurchaseOrder,
+} from './index';
 
 describe('normalizePurchaseOrder', () => {
   it('maps the backend value fields to the amounts used by the UI', () => {
@@ -28,5 +31,19 @@ describe('normalizePurchaseOrder', () => {
 
     expect(po.totalAmount).toBe('900');
     expect(po.totalAmountEtb).toBe('90000');
+  });
+});
+
+describe('mapPurchaseOrderStatusFilter', () => {
+  it('maps the legacy processing filter to the persisted LC-applied status', () => {
+    expect(mapPurchaseOrderStatusFilter('processing')).toBe('lc_applied');
+    expect(mapPurchaseOrderStatusFilter('lc_applied')).toBe('lc_applied');
+  });
+
+  it('leaves persisted statuses unchanged', () => {
+    expect(mapPurchaseOrderStatusFilter('pending_approval')).toBe(
+      'pending_approval',
+    );
+    expect(mapPurchaseOrderStatusFilter(undefined)).toBeUndefined();
   });
 });

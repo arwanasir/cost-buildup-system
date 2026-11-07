@@ -6,9 +6,9 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { DRIZZLE, DrizzleDB } from '@/db';
+import { DRIZZLE, DrizzleDB } from '@/db/db.token';
 import * as schema from '@/db/schema';
-import { eq, inArray, and, gte, lte } from 'drizzle-orm';
+import { eq, inArray, and, gte, lte, ne } from 'drizzle-orm';
 import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { CreateClearingInvoiceDto } from './dto/create-clearing-invoice.dto';
 import { CreateShipmentChargeDto } from './dto/create-shipment-charge.dto';
@@ -142,27 +142,10 @@ export class ImportShipmentsService {
         .values(itemsToInsert)
         .returning();
 
-      // 5b. Insert Cost Entries for PO Estimates and CI Values
+      // 5b. Insert cost entries for PO estimates; CI value remains on shipment items.
       const categories = await tx.query.costCategories.findMany();
       const catMap = new Map(categories.map((c) => [c.code, c.id]));
       const costEntriesToInsert: any[] = [];
-
-      // FOB - Supplier Cost (Actual per item)
-      const fobCatId = catMap.get('FOB');
-      if (fobCatId) {
-        for (const item of insertedItems) {
-          costEntriesToInsert.push({
-            shipmentId: shipment.id,
-            costCategoryId: fobCatId,
-            isEstimated: false,
-            isItemSpecific: true,
-            shipmentItemId: item.id,
-            amountEtb: item.ciValueEtb,
-            source: 'commercial_invoice' as any,
-            allocationMethod: 'by_value' as any,
-          });
-        }
-      }
 
       // FREIGHT (Estimated)
       const freightCatId = catMap.get('FREIGHT');
@@ -174,6 +157,7 @@ export class ImportShipmentsService {
         costEntriesToInsert.push({
           shipmentId: shipment.id,
           costCategoryId: freightCatId,
+          createdBy: userId,
           isEstimated: true,
           isItemSpecific: false,
           amountEtb: po.estimatedFreightEtb,
@@ -192,6 +176,7 @@ export class ImportShipmentsService {
         costEntriesToInsert.push({
           shipmentId: shipment.id,
           costCategoryId: insCatId,
+          createdBy: userId,
           isEstimated: true,
           isItemSpecific: false,
           amountEtb: po.estimatedInsuranceEtb,
@@ -233,6 +218,7 @@ export class ImportShipmentsService {
         costEntriesToInsert.push({
           shipmentId: shipment.id,
           costCategoryId: otherCatId,
+          createdBy: userId,
           isEstimated: true,
           isItemSpecific: false,
           amountEtb: po.estimatedOtherChargesEtb,
@@ -489,22 +475,19 @@ export class ImportShipmentsService {
   }
 
   async getCostEntries(shipmentId: string, isEstimated?: boolean) {
-    return this.db.transaction(async (tx: any) => {
-      if (isEstimated !== undefined) {
-        return tx
-          .select()
-          .from(schema.importCostEntries)
-          .where(
-            and(
-              eq(schema.importCostEntries.shipmentId, shipmentId),
-              eq(schema.importCostEntries.isEstimated, isEstimated),
-            ),
-          );
-      }
-      return tx
-        .select()
-        .from(schema.importCostEntries)
-        .where(eq(schema.importCostEntries.shipmentId, shipmentId));
+    const conditions = [
+      eq(schema.importCostEntries.shipmentId, shipmentId),
+      ne(schema.importCostEntries.source, 'commercial_invoice'),
+    ];
+    if (isEstimated !== undefined) {
+      conditions.push(
+        eq(schema.importCostEntries.isEstimated, isEstimated),
+      );
+    }
+
+    return this.db.query.importCostEntries.findMany({
+      where: and(...conditions),
+      with: { costCategory: true },
     });
   }
 }

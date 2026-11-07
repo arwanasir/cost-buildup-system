@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -10,7 +12,9 @@ import {
   ErrorState,
 } from '@/components/ui';
 import { useState } from 'react';
+import { BackButton } from '@/components/ui/BackButton';
 import { ClaimsTab } from '../components/ClaimsTab';
+import { formatAmount4 } from '@/lib/money';
 import {
   useGrn,
   useConfirmGrn,
@@ -19,6 +23,7 @@ import {
 } from '../api';
 
 export function GoodsReceiptDetailPage() {
+  const localize = useUiText();
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('items');
   const navigate = useNavigate();
@@ -31,18 +36,24 @@ export function GoodsReceiptDetailPage() {
   if (isLoading)
     return (
       <div className="p-8 text-center text-gray-500">
-        Loading GRN Details...
+        <LocalizedText text={'\n        Loading GRN Details...\n      '} />
       </div>
     );
   if (isError)
     return (
       <ErrorState
-        message="The goods receipt could not be loaded. Try again, or return to the GRN list."
+        message={localize(
+          'The goods receipt could not be loaded. Try again, or return to the GRN list.',
+        )}
         onRetry={() => refetch()}
       />
     );
   if (!grnData)
-    return <div className="p-8 text-center text-red-500">GRN Not Found</div>;
+    return (
+      <div className="p-8 text-center text-red-500">
+        <LocalizedText text={'GRN Not Found'} />
+      </div>
+    );
 
   const { grn, items } = grnData;
 
@@ -73,15 +84,35 @@ export function GoodsReceiptDetailPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'draft':
-        return <Badge variant="default">Draft</Badge>;
+        return (
+          <Badge variant="default">
+            <LocalizedText text={'Draft'} />
+          </Badge>
+        );
       case 'confirmed':
-        return <Badge variant="info">Confirmed</Badge>;
+        return (
+          <Badge variant="info">
+            <LocalizedText text={'Confirmed'} />
+          </Badge>
+        );
       case 'posting_failed':
-        return <Badge variant="danger">Posting Failed</Badge>;
+        return (
+          <Badge variant="danger">
+            <LocalizedText text={'Posting Failed'} />
+          </Badge>
+        );
       case 'posted':
-        return <Badge variant="success">Posted</Badge>;
+        return (
+          <Badge variant="success">
+            <LocalizedText text={'Posted'} />
+          </Badge>
+        );
       case 'flagged_for_adjustment':
-        return <Badge variant="warning">Flagged</Badge>;
+        return (
+          <Badge variant="warning">
+            <LocalizedText text={'Flagged'} />
+          </Badge>
+        );
       default:
         return <Badge variant="default">{status}</Badge>;
     }
@@ -89,6 +120,7 @@ export function GoodsReceiptDetailPage() {
 
   return (
     <div className="space-y-6">
+      <BackButton to="/goods-receipts" label="Back to goods receipts" />
       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
         <PageHeader
           title={`Goods Receipt: ${grn.grnNumber}`}
@@ -102,7 +134,7 @@ export function GoodsReceiptDetailPage() {
               variant="secondary"
               onClick={() => navigate('/goods-receipts')}
             >
-              Back
+              <LocalizedText text={'\n              Back\n            '} />
             </Button>
             {grn.status === 'draft' && (
               <Button
@@ -110,7 +142,9 @@ export function GoodsReceiptDetailPage() {
                 onClick={handleConfirm}
                 isLoading={confirmMutation.isPending}
               >
-                Confirm GRN
+                <LocalizedText
+                  text={'\n                Confirm GRN\n              '}
+                />
               </Button>
             )}
             {grn.status === 'confirmed' && (
@@ -119,7 +153,9 @@ export function GoodsReceiptDetailPage() {
                 onClick={handlePost}
                 isLoading={postMutation.isPending}
               >
-                Post to ERP
+                <LocalizedText
+                  text={'\n                Post to ERP\n              '}
+                />
               </Button>
             )}
           </div>
@@ -130,13 +166,19 @@ export function GoodsReceiptDetailPage() {
       <Card className="p-4 bg-gray-50 border shadow-sm">
         <div className="flex justify-between items-center">
           <div>
-            <h4 className="font-bold text-gray-800">ERP Sync Status</h4>
+            <h4 className="font-bold text-gray-800">
+              <LocalizedText text={'ERP Sync Status'} />
+            </h4>
             <p className="text-sm text-gray-600">
-              {grn.status === 'posted'
-                ? `Posted to Inventory Ledger on ${new Date(grn.postedAt).toLocaleString()}`
-                : grn.status === 'posting_failed'
-                  ? 'The last ERP sync attempt failed due to an API or validation error.'
-                  : 'Not yet posted to ERP.'}
+              <LocalizedText
+                text={
+                  grn.status === 'posted'
+                    ? `Posted to Inventory Ledger on ${new Date(grn.postedAt).toLocaleString()}`
+                    : grn.status === 'posting_failed'
+                      ? 'The last ERP sync attempt failed due to an API or validation error.'
+                      : 'Not yet posted to ERP.'
+                }
+              />
             </p>
           </div>
           {grn.status === 'posting_failed' && (
@@ -145,7 +187,9 @@ export function GoodsReceiptDetailPage() {
               onClick={handleRetry}
               isLoading={retryMutation.isPending}
             >
-              Retry ERP Sync
+              <LocalizedText
+                text={'\n              Retry ERP Sync\n            '}
+              />
             </Button>
           )}
         </div>
@@ -167,17 +211,27 @@ export function GoodsReceiptDetailPage() {
         {activeTab === 'items' && (
           <div className="overflow-x-auto">
             <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
-              <h3 className="font-bold text-gray-800">Cost Basis</h3>
+              <h3 className="font-bold text-gray-800">
+                <LocalizedText text={'Cost Basis'} />
+              </h3>
               <div className="flex gap-2">
                 {grn.usesEstimatedCost ? (
                   <Badge variant="warning">
-                    Basis: Estimated Costs Applied
+                    <LocalizedText
+                      text={
+                        '\n                    Basis: Estimated Costs Applied\n                  '
+                      }
+                    />
                   </Badge>
                 ) : (
-                  <Badge variant="success">Basis: Finalized Landed Costs</Badge>
+                  <Badge variant="success">
+                    <LocalizedText text={'Basis: Finalized Landed Costs'} />
+                  </Badge>
                 )}
                 {grn.status === 'flagged_for_adjustment' && (
-                  <Badge variant="danger">Adjustments Pending</Badge>
+                  <Badge variant="danger">
+                    <LocalizedText text={'Adjustments Pending'} />
+                  </Badge>
                 )}
               </div>
             </div>
@@ -185,22 +239,42 @@ export function GoodsReceiptDetailPage() {
               <thead>
                 <tr className="bg-gray-100">
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">
-                    Item ID
+                    <LocalizedText
+                      text={'\n                    Item ID\n                  '}
+                    />
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase">
-                    Qty Recv
+                    <LocalizedText
+                      text={
+                        '\n                    Qty Recv\n                  '
+                      }
+                    />
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">
-                    Status
+                    <LocalizedText
+                      text={'\n                    Status\n                  '}
+                    />
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">
-                    Quarantine
+                    <LocalizedText
+                      text={
+                        '\n                    Quarantine\n                  '
+                      }
+                    />
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase">
-                    Unit Cost (ETB)
+                    <LocalizedText
+                      text={
+                        '\n                    Unit Cost (ETB)\n                  '
+                      }
+                    />
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase">
-                    Line Value (ETB)
+                    <LocalizedText
+                      text={
+                        '\n                    Line Value (ETB)\n                  '
+                      }
+                    />
                   </th>
                 </tr>
               </thead>
@@ -216,15 +290,27 @@ export function GoodsReceiptDetailPage() {
                     <td className="px-4 py-3 text-center">
                       {item.inspectionResult === 'accepted' ? (
                         <span className="inline-flex items-center text-xs font-medium bg-green-100 text-green-800 px-2 py-0.5 rounded">
-                          Accepted
+                          <LocalizedText
+                            text={
+                              '\n                          Accepted\n                        '
+                            }
+                          />
                         </span>
                       ) : item.inspectionResult === 'rejected' ? (
                         <span className="inline-flex items-center text-xs font-medium bg-red-100 text-red-800 px-2 py-0.5 rounded">
-                          Rejected
+                          <LocalizedText
+                            text={
+                              '\n                          Rejected\n                        '
+                            }
+                          />
                         </span>
                       ) : (
                         <span className="inline-flex items-center text-xs font-medium bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
-                          Partial
+                          <LocalizedText
+                            text={
+                              '\n                          Partial\n                        '
+                            }
+                          />
                         </span>
                       )}
                     </td>
@@ -234,7 +320,11 @@ export function GoodsReceiptDetailPage() {
                           variant="warning"
                           className="text-[10px] uppercase"
                         >
-                          Quarantined
+                          <LocalizedText
+                            text={
+                              '\n                          Quarantined\n                        '
+                            }
+                          />
                         </Badge>
                       ) : (
                         <span className="text-gray-400">-</span>
@@ -243,11 +333,11 @@ export function GoodsReceiptDetailPage() {
                     <td className="px-4 py-3 text-sm text-right font-bold text-blue-700">
                       {parseFloat(item.perUnitLandedCostEtb).toLocaleString(
                         undefined,
-                        { minimumFractionDigits: 6 },
+                        { minimumFractionDigits: 4, maximumFractionDigits: 4 },
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-right font-bold text-gray-900">
-                      {parseFloat(item.lineValueEtb).toLocaleString()}
+                      {formatAmount4(item.lineValueEtb)}
                     </td>
                   </tr>
                 ))}

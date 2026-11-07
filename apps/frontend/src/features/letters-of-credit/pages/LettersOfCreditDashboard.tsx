@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { differenceInDays } from 'date-fns';
@@ -9,9 +11,11 @@ import {
   Skeleton,
   ErrorState,
   DualAmount,
+  PermissionGate,
 } from '@/components/ui';
 
 export function LettersOfCreditDashboard() {
+  const localize = useUiText();
   const { data, isLoading, isError, refetch } = useLettersOfCredit();
 
   const lcs = data?.data || [];
@@ -31,10 +35,32 @@ export function LettersOfCreditDashboard() {
     if (!dateString) return <span className="text-gray-400">-</span>;
     const days = differenceInDays(new Date(dateString), new Date());
 
-    if (days < 0) return <Badge variant="danger">Expired</Badge>;
-    if (days <= 7) return <Badge variant="danger">{days}d left</Badge>;
-    if (days <= 30) return <Badge variant="warning">{days}d left</Badge>;
-    return <Badge variant="success">{days}d left</Badge>;
+    if (days < 0)
+      return (
+        <Badge variant="danger">
+          <LocalizedText text={'Expired'} />
+        </Badge>
+      );
+    if (days <= 7)
+      return (
+        <Badge variant="danger">
+          {days}
+          <LocalizedText text={'d left'} />
+        </Badge>
+      );
+    if (days <= 30)
+      return (
+        <Badge variant="warning">
+          {days}
+          <LocalizedText text={'d left'} />
+        </Badge>
+      );
+    return (
+      <Badge variant="success">
+        {days}
+        <LocalizedText text={'d left'} />
+      </Badge>
+    );
   };
 
   const columns = [
@@ -78,7 +104,10 @@ export function LettersOfCreditDashboard() {
         <div className="text-sm">
           <p className="font-medium text-gray-900">{row.issuingBank}</p>
           {row.advisingBank && (
-            <p className="text-xs text-gray-500">Adv: {row.advisingBank}</p>
+            <p className="text-xs text-gray-500">
+              <LocalizedText text={'Adv: '} />
+              {row.advisingBank}
+            </p>
           )}
         </div>
       ),
@@ -122,17 +151,41 @@ export function LettersOfCreditDashboard() {
       accessor: (row: LetterOfCredit) => {
         switch (row.status) {
           case 'applied':
-            return <Badge variant="secondary">Applied</Badge>;
+            return (
+              <Badge variant="secondary">
+                <LocalizedText text={'Applied'} />
+              </Badge>
+            );
           case 'pending_gm_approval':
-            return <Badge variant="warning">Pending GM</Badge>;
+            return (
+              <Badge variant="warning">
+                <LocalizedText text={'Pending GM'} />
+              </Badge>
+            );
           case 'approved':
-            return <Badge variant="success">Approved</Badge>;
+            return (
+              <Badge variant="success">
+                <LocalizedText text={'Approved'} />
+              </Badge>
+            );
           case 'opened':
-            return <Badge variant="info">Opened</Badge>;
+            return (
+              <Badge variant="info">
+                <LocalizedText text={'Opened'} />
+              </Badge>
+            );
           case 'amended':
-            return <Badge variant="warning">Amended</Badge>;
+            return (
+              <Badge variant="warning">
+                <LocalizedText text={'Amended'} />
+              </Badge>
+            );
           case 'closed':
-            return <Badge variant="secondary">Closed</Badge>;
+            return (
+              <Badge variant="secondary">
+                <LocalizedText text={'Closed'} />
+              </Badge>
+            );
           default:
             return <Badge variant="secondary">{row.status}</Badge>;
         }
@@ -167,7 +220,7 @@ export function LettersOfCreditDashboard() {
   if (isError)
     return (
       <ErrorState
-        message="Failed to load Letters of Credit"
+        message={localize('Failed to load Letters of Credit')}
         onRetry={() => refetch()}
       />
     );
@@ -177,18 +230,27 @@ export function LettersOfCreditDashboard() {
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            Letters of Credit
+            <LocalizedText
+              text={'\n            Letters of Credit\n          '}
+            />
           </h1>
           <p className="mt-2 text-sm text-gray-700">
-            Manage and track trade finance instruments, expiry dates, and
-            banking metrics.
+            <LocalizedText
+              text={
+                '\n            Manage and track trade finance instruments, expiry dates, and\n            banking metrics.\n          '
+              }
+            />
           </p>
         </div>
-        <div className="mt-4 sm:mt-0">
-          <Link to="/letters-of-credit/new">
-            <Button>Create LC</Button>
-          </Link>
-        </div>
+        <PermissionGate permission="lc:write">
+          <div className="mt-4 sm:mt-0">
+            <Link to="/letters-of-credit/new">
+              <Button>
+                <LocalizedText text={'Create LC'} />
+              </Button>
+            </Link>
+          </div>
+        </PermissionGate>
       </div>
 
       {/* KPI Status Cards */}
@@ -222,7 +284,9 @@ export function LettersOfCreditDashboard() {
       <div className="bg-white shadow sm:rounded-lg border border-gray-200">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg font-medium leading-6 text-gray-900">
-            Active Instruments
+            <LocalizedText
+              text={'\n            Active Instruments\n          '}
+            />
           </h3>
         </div>
         <div className="overflow-x-auto p-4">

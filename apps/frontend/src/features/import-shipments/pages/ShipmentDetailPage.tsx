@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useShipment, useUpdateShipmentStatus, type Shipment } from '../api';
@@ -6,6 +8,7 @@ import { ChangeStatusButton } from '../components/ChangeStatusButton';
 import { DocumentsTab } from '../components/DocumentsTab';
 import { CommercialInvoiceTab } from '../components/CommercialInvoiceTab';
 import { usePurchaseOrder } from '@/features/purchase-orders/api';
+import { BackButton } from '@/components/ui/BackButton';
 
 const STATUS_PIPELINE = [
   'ordered',
@@ -17,6 +20,7 @@ const STATUS_PIPELINE = [
 ];
 
 export function ShipmentDetailPage() {
+  const localize = useUiText();
   const { id } = useParams<{ id: string }>();
   const { data: shipmentData, isLoading, isError, refetch } = useShipment(id!);
   const updateStatus = useUpdateShipmentStatus();
@@ -34,7 +38,10 @@ export function ShipmentDetailPage() {
   if (isLoading) return <Skeleton className="h-[800px] w-full" />;
   if (isError || !shipment)
     return (
-      <ErrorState message="Failed to load shipment" onRetry={() => refetch()} />
+      <ErrorState
+        message={localize('Failed to load shipment')}
+        onRetry={() => refetch()}
+      />
     );
 
   const handleAdvanceStatus = async (nextStatus: Shipment['status']) => {
@@ -51,6 +58,7 @@ export function ShipmentDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-8 space-y-6">
+      <BackButton to="/shipments" label="Back to shipments" />
       {/* Header */}
       <div className="md:flex md:items-center md:justify-between bg-white p-6 rounded-lg shadow border border-gray-200">
         <div className="min-w-0 flex-1">
@@ -62,19 +70,22 @@ export function ShipmentDetailPage() {
           </h2>
           <p className="mt-1 text-sm text-gray-500 flex gap-4">
             <span>
-              B/L:{' '}
+              B/L:
+              <LocalizedText text={' '} />
               <strong className="text-gray-900">
                 {shipment.blNumber || 'Pending'}
               </strong>
             </span>
             <span>
-              Vessel:{' '}
+              <LocalizedText text={'\n              Vessel:'} />
+              <LocalizedText text={' '} />
               <strong className="text-gray-900">
                 {shipment.vesselName || 'Pending'}
               </strong>
             </span>
             <span>
-              Incoterm:{' '}
+              <LocalizedText text={'\n              Incoterm:'} />
+              <LocalizedText text={' '} />
               <strong className="text-gray-900">{shipment.incoterm}</strong>
             </span>
           </p>
@@ -92,9 +103,9 @@ export function ShipmentDetailPage() {
       {/* 6-Step Timeline */}
       <div className="bg-white p-6 rounded-lg shadow border border-gray-200 overflow-x-auto">
         <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-          Transit Lifecycle
+          <LocalizedText text={'\n          Transit Lifecycle\n        '} />
         </h3>
-        <nav aria-label="Progress">
+        <nav aria-label={localize('Progress')}>
           <ol role="list" className="flex items-center">
             {STATUS_PIPELINE.map((step, stepIdx) => {
               const isActive = shipment.status === step;
@@ -156,21 +167,32 @@ export function ShipmentDetailPage() {
           <div className="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
             <div className="px-4 py-5 sm:px-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Routing & Release Info
+                <LocalizedText
+                  text={
+                    '\n                Routing & Release Info\n              '
+                  }
+                />
               </h3>
             </div>
             <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
               <dl className="sm:divide-y sm:divide-gray-200">
                 <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Route</dt>
+                  <dt className="text-sm font-medium text-gray-500">
+                    <LocalizedText text={'Route'} />
+                  </dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {shipment.portOfLoading || 'Unknown'} ➔{' '}
+                    {shipment.portOfLoading || 'Unknown'} ➔
+                    <LocalizedText text={' '} />
                     {shipment.portOfDestination || 'Unknown'}
                   </dd>
                 </div>
                 <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                   <dt className="text-sm font-medium text-gray-500">
-                    Estimated Arrival (ETA)
+                    <LocalizedText
+                      text={
+                        '\n                    Estimated Arrival (ETA)\n                  '
+                      }
+                    />
                   </dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-mono">
                     {shipment.eta
@@ -180,7 +202,11 @@ export function ShipmentDetailPage() {
                 </div>
                 <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                   <dt className="text-sm font-medium text-gray-500">
-                    Containers
+                    <LocalizedText
+                      text={
+                        '\n                    Containers\n                  '
+                      }
+                    />
                   </dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                     <div className="flex flex-wrap gap-2">
@@ -200,16 +226,29 @@ export function ShipmentDetailPage() {
                 </div>
                 <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                   <dt className="text-sm font-medium text-gray-500">
-                    Physical Dimensions
+                    <LocalizedText
+                      text={
+                        '\n                    Physical Dimensions\n                  '
+                      }
+                    />
                   </dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {shipment.totalWeightKg
-                      ? `${shipment.totalWeightKg} KG`
-                      : 'Unknown KG'}{' '}
-                    /{' '}
-                    {shipment.totalVolumeCbm
-                      ? `${shipment.totalVolumeCbm} CBM`
-                      : 'Unknown CBM'}
+                    <LocalizedText
+                      text={
+                        shipment.totalWeightKg
+                          ? `${shipment.totalWeightKg} KG`
+                          : 'Unknown KG'
+                      }
+                    />
+                    <LocalizedText text={' '} />
+                    /<LocalizedText text={' '} />
+                    <LocalizedText
+                      text={
+                        shipment.totalVolumeCbm
+                          ? `${shipment.totalVolumeCbm} CBM`
+                          : 'Unknown CBM'
+                      }
+                    />
                   </dd>
                 </div>
               </dl>
@@ -219,7 +258,9 @@ export function ShipmentDetailPage() {
           <div className="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
             <div className="px-4 py-5 sm:px-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Line Items Manifest
+                <LocalizedText
+                  text={'\n                Line Items Manifest\n              '}
+                />
               </h3>
             </div>
             <div className="border-t border-gray-200">
@@ -230,19 +271,31 @@ export function ShipmentDetailPage() {
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                     >
-                      Item ID
+                      <LocalizedText
+                        text={
+                          '\n                      Item ID\n                    '
+                        }
+                      />
                     </th>
                     <th
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                     >
-                      Shipped Qty
+                      <LocalizedText
+                        text={
+                          '\n                      Shipped Qty\n                    '
+                        }
+                      />
                     </th>
                     <th
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                     >
-                      Unit Price
+                      <LocalizedText
+                        text={
+                          '\n                      Unit Price\n                    '
+                        }
+                      />
                     </th>
                   </tr>
                 </thead>
@@ -254,7 +307,8 @@ export function ShipmentDetailPage() {
                     return (
                       <tr key={item.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {poLine?.item?.name || 'Unknown Item'}{' '}
+                          {poLine?.item?.name || 'Unknown Item'}
+                          <LocalizedText text={' '} />
                           <span className="text-xs text-gray-500 block">
                             {poLine?.item?.itemCode}
                           </span>
@@ -279,13 +333,19 @@ export function ShipmentDetailPage() {
           <div className="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
             <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
               <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Linked Records
+                <LocalizedText
+                  text={'\n                Linked Records\n              '}
+                />
               </h3>
             </div>
             <div className="px-4 py-5 space-y-4">
               <div className="p-3 border rounded bg-blue-50">
                 <p className="text-xs text-blue-800 font-bold uppercase mb-1">
-                  Purchase Order
+                  <LocalizedText
+                    text={
+                      '\n                  Purchase Order\n                '
+                    }
+                  />
                 </p>
                 <Link
                   to={`/purchase-orders`}
@@ -298,13 +358,20 @@ export function ShipmentDetailPage() {
               {shipment.lcId && (
                 <div className="p-3 border rounded bg-indigo-50">
                   <p className="text-xs text-indigo-800 font-bold uppercase mb-1">
-                    Letter of Credit
+                    <LocalizedText
+                      text={
+                        '\n                    Letter of Credit\n                  '
+                      }
+                    />
                   </p>
                   <Link
                     to={`/letters-of-credit/${shipment.lcId}`}
                     className="text-sm font-medium text-indigo-900 hover:underline"
                   >
-                    View Instrument (ID: {shipment.lcId.split('-')[0]})
+                    <LocalizedText
+                      text={'\n                    View Instrument (ID: '}
+                    />
+                    {shipment.lcId.split('-')[0]})
                   </Link>
                 </div>
               )}
@@ -318,7 +385,7 @@ export function ShipmentDetailPage() {
         <div className="border-b border-gray-200 px-4">
           <nav
             className="-mb-px flex space-x-8 overflow-x-auto"
-            aria-label="Tabs"
+            aria-label={localize('Tabs')}
           >
             {[
               { id: 'documents', label: 'Documents' },
@@ -354,25 +421,47 @@ export function ShipmentDetailPage() {
           )}
           {activeTab === 'costs' && (
             <div className="text-center py-12 text-gray-500">
-              <p>AC04 Cost Register Pane will mount here.</p>
+              <p>
+                <LocalizedText
+                  text={'AC04 Cost Register Pane will mount here.'}
+                />
+              </p>
               <p className="text-xs mt-2">
-                Bank Charges, Clearing Agent Fees, Storage Fees sync here.
+                <LocalizedText
+                  text={
+                    '\n                Bank Charges, Clearing Agent Fees, Storage Fees sync here.\n              '
+                  }
+                />
               </p>
             </div>
           )}
           {activeTab === 'landed' && (
             <div className="text-center py-12 text-gray-500">
-              <p>Landed Cost Calculation Engine will mount here.</p>
+              <p>
+                <LocalizedText
+                  text={'Landed Cost Calculation Engine will mount here.'}
+                />
+              </p>
               <p className="text-xs mt-2">
-                Proportional cost mapping (By Value / By Volume / By Weight).
+                <LocalizedText
+                  text={
+                    '\n                Proportional cost mapping (By Value / By Volume / By Weight).\n              '
+                  }
+                />
               </p>
             </div>
           )}
           {activeTab === 'grn' && (
             <div className="text-center py-12 text-gray-500">
-              <p>Warehouse GRN Pane will mount here.</p>
+              <p>
+                <LocalizedText text={'Warehouse GRN Pane will mount here.'} />
+              </p>
               <p className="text-xs mt-2">
-                Physical receiving and condition checks.
+                <LocalizedText
+                  text={
+                    '\n                Physical receiving and condition checks.\n              '
+                  }
+                />
               </p>
             </div>
           )}

@@ -4,8 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DRIZZLE } from '@/db';
-import { DrizzleDB } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
+import { DrizzleDB } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import Decimal from 'decimal.js';

@@ -16,6 +16,7 @@ export interface jwtConfig {
 
 export interface MinioConfig {
   endpoint: string;
+  publicEndpoint?: string;
   port: number;
   useSSL: boolean;
   accessKey: string;
@@ -56,7 +57,7 @@ export default (): AppConfig => ({
     database: process.env.POSTGRES_DB || 'cost_buildup_db',
     url:
       process.env.DATABASE_URL ||
-      `postgres://${process.env.POSTGRES_USER || 'postgres'}:${process.env.POSTGRES_PASSWORD || ''}:@${process.env.POSTGRES_HOST || 'localhost'}:${process.env.POSTGRES_PORT || '5432'}/${
+      `postgresql://${process.env.POSTGRES_USER || 'postgres'}:${process.env.POSTGRES_PASSWORD || ''}@${process.env.POSTGRES_HOST || 'localhost'}:${process.env.POSTGRES_PORT || '5432'}/${
         process.env.POSTGRES_DB || 'cost_buildup_db'
       }`,
   },
@@ -68,6 +69,7 @@ export default (): AppConfig => ({
   },
   minio: {
     endpoint: process.env.MINIO_ENDPOINT || 'localhost',
+    publicEndpoint: process.env.MINIO_PUBLIC_ENDPOINT,
     port: parseInt(process.env.MINIO_PORT || '9000', 10),
     useSSL: process.env.MINIO_USE_SSL === 'true',
     accessKey: process.env.MINIO_ROOT_USER || 'minioadmin',
@@ -79,7 +81,7 @@ export default (): AppConfig => ({
     port: parseInt(process.env.SMTP_PORT || '1025', 10),
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
-    from: process.env.SMTP_FROM || 'noreply@costbuildup.local',
+    from: process.env.SMTP_FROM || 'noreply@example.com',
   },
   erp: {
     baseUrl: process.env.ERP_BASE_URL || 'http://localhost:3001',

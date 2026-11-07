@@ -8,7 +8,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, inArray, and, desc } from 'drizzle-orm';
 import { CreateDeclarationDto } from './dto/create-declaration.dto';
@@ -117,29 +117,39 @@ export class CustomsService {
             ? override.withholdingRate
             : tariff?.withholdingRate || 3,
         );
+        const specificDutyPerUnit = new Decimal(
+          override?.isRateOverridden &&
+            override.specificDutyPerUnit !== undefined
+            ? override.specificDutyPerUnit
+            : tariff?.specificDutyPerUnit || 0,
+        );
 
-        // Get CIF
+        // Get CIF value for this item
         const itemCif = new Decimal(
           await this.dutyCalculatorService.computeItemCif(shipItem.id),
         );
-
-        const dutyEtb = itemCif.times(dutyRate).dividedBy(100);
-        const exciseEtb = itemCif
-          .plus(dutyEtb)
-          .times(exciseRate)
-          .dividedBy(100);
-        const vatEtb = itemCif
-          .plus(dutyEtb)
-          .plus(exciseEtb)
-          .times(vatRate)
-          .dividedBy(100);
-        const withholdingEtb = itemCif.times(withholdingRate).dividedBy(100);
+        const dutyStructure = tariff?.dutyStructure || 'ad_valorem';
+        const calculated = this.dutyCalculatorService.computeItemDuties(
+          itemCif.toString(),
+          String(shipItem.shippedQuantity || 0),
+          dutyStructure,
+          dutyRate.toString(),
+          specificDutyPerUnit.toString(),
+          exciseRate.toString(),
+          vatRate.toString(),
+          withholdingRate.toString(),
+        );
+        const dutyEtb = new Decimal(calculated.dutyEtb);
+        const exciseEtb = new Decimal(calculated.exciseEtb);
+        const vatEtb = new Decimal(calculated.vatEtb);
+        const withholdingEtb = new Decimal(calculated.withholdingEtb);
 
         itemsToInsert.push({
           shipmentItemId: shipItem.id,
           hsCode,
-          dutyStructure: tariff?.dutyStructure || 'ad_valorem',
+          dutyStructure,
           dutyRate: dutyRate.toString(),
+          specificDutyPerUnit: specificDutyPerUnit.toString(),
           cifValueEtb: itemCif.toString(),
           dutyEtb: dutyEtb.toString(),
           vatRate: vatRate.toString(),
@@ -286,7 +296,7 @@ export class CustomsService {
         );
       }
 
-      // Recompute the duties
+      // Recompute the duties using the new or existing rates
       const itemCif = new Decimal(item.cifValueEtb);
       const dutyRate = new Decimal(
         dto.isRateOverridden && dto.dutyRate !== undefined
@@ -308,20 +318,38 @@ export class CustomsService {
           ? dto.withholdingRate
           : item.withholdingRate,
       );
-
-      const dutyEtb = itemCif.times(dutyRate).dividedBy(100);
-      const exciseEtb = itemCif.plus(dutyEtb).times(exciseRate).dividedBy(100);
-      const vatEtb = itemCif
-        .plus(dutyEtb)
-        .plus(exciseEtb)
-        .times(vatRate)
-        .dividedBy(100);
-      const withholdingEtb = itemCif.times(withholdingRate).dividedBy(100);
+      const specificDutyPerUnit = new Decimal(
+        dto.isRateOverridden && dto.specificDutyPerUnit !== undefined
+          ? dto.specificDutyPerUnit
+          : item.specificDutyPerUnit || 0,
+      );
+      const [shipmentItem] = await tx
+        .select()
+        .from(schema.shipmentItems)
+        .where(eq(schema.shipmentItems.id, item.shipmentItemId));
+      if (!shipmentItem) {
+        throw new NotFoundException('Shipment item not found');
+      }
+      const calculated = this.dutyCalculatorService.computeItemDuties(
+        itemCif.toString(),
+        String(shipmentItem.shippedQuantity || 0),
+        item.dutyStructure,
+        dutyRate.toString(),
+        specificDutyPerUnit.toString(),
+        exciseRate.toString(),
+        vatRate.toString(),
+        withholdingRate.toString(),
+      );
+      const dutyEtb = new Decimal(calculated.dutyEtb);
+      const exciseEtb = new Decimal(calculated.exciseEtb);
+      const vatEtb = new Decimal(calculated.vatEtb);
+      const withholdingEtb = new Decimal(calculated.withholdingEtb);
 
       await tx
         .update(schema.customsDeclarationItems)
         .set({
           dutyRate: dutyRate.toString(),
+          specificDutyPerUnit: specificDutyPerUnit.toString(),
           exciseRate: exciseRate.toString(),
           vatRate: vatRate.toString(),
           withholdingRate: withholdingRate.toString(),
@@ -334,7 +362,7 @@ export class CustomsService {
         })
         .where(eq(schema.customsDeclarationItems.id, itemId));
 
-      // Re-sum header
+      // Re-sum the declaration header totals from all items
       const allItems = await tx
         .select()
         .from(schema.customsDeclarationItems)
@@ -371,7 +399,7 @@ export class CustomsService {
   }
 
   async assessDeclaration(declarationId: string, userId: string) {
-    return this.db.transaction(async (tx: any) => {
+    const declaration = await this.db.transaction(async (tx: any) => {
       const [declaration] = await tx
         .select()
         .from(schema.customsDeclarations)
@@ -383,7 +411,6 @@ export class CustomsService {
         .where(eq(schema.customsDeclarationItems.declarationId, declarationId));
       declaration.items = items;
 
-      if (!declaration) throw new NotFoundException('Declaration not found');
       if (declaration.status !== 'draft') {
         throw new BadRequestException(
           'Only draft declarations can be assessed',
@@ -396,13 +423,7 @@ export class CustomsService {
 
       const dutyCatId = catMap.get('CUSTOMS_DUTY') || catMap.get('DUTY');
       const vatCatId = catMap.get('IMPORT_VAT') || catMap.get('VAT');
-      const otherCatId = catMap.get('OTHER');
-
-      if (!dutyCatId || !vatCatId || !otherCatId) {
-        throw new BadRequestException(
-          'Required cost categories (DUTY, VAT, OTHER) are missing from the system.',
-        );
-      }
+      const exciseCatId = catMap.get('EXCISE') || catMap.get('EXCISE_TAX');
 
       // 2. Clear any existing customs cost entries for this shipment (upsert logic)
       await tx
@@ -418,6 +439,11 @@ export class CustomsService {
 
       for (const item of declaration.items) {
         if (Number(item.dutyEtb) > 0) {
+          if (!dutyCatId) {
+            throw new BadRequestException(
+              'Cost category CUSTOMS_DUTY is missing; cannot record assessed duty.',
+            );
+          }
           costEntriesToInsert.push({
             shipmentId: declaration.shipmentId,
             costCategoryId: dutyCatId,
@@ -432,6 +458,11 @@ export class CustomsService {
         }
 
         if (Number(item.vatEtb) > 0) {
+          if (!vatCatId) {
+            throw new BadRequestException(
+              'Cost category VAT is missing; cannot record assessed VAT.',
+            );
+          }
           costEntriesToInsert.push({
             shipmentId: declaration.shipmentId,
             costCategoryId: vatCatId,
@@ -446,10 +477,14 @@ export class CustomsService {
         }
 
         if (Number(item.exciseEtb) > 0) {
+          if (!exciseCatId) {
+            throw new BadRequestException(
+              'Cost category EXCISE is missing; cannot record assessed excise tax.',
+            );
+          }
           costEntriesToInsert.push({
             shipmentId: declaration.shipmentId,
-            costCategoryId: otherCatId,
-            costSubcategory: 'Excise Tax',
+            costCategoryId: exciseCatId,
             amountEtb: item.exciseEtb,
             allocationMethod: 'item_specific',
             isItemSpecific: true,
@@ -474,6 +509,10 @@ export class CustomsService {
 
       return updated;
     });
+    this.eventEmitter.emit('cost.changed', {
+      shipmentId: declaration.shipmentId,
+    });
+    return declaration;
   }
 
   async releaseDeclaration(

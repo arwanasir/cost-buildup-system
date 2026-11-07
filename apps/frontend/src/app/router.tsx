@@ -1,8 +1,10 @@
-﻿import React from 'react';
+import { LocalizedText } from '@/components/ui/LocalizedText';
+import React from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { LoginPage } from '@/features/auth';
 import { DashboardPage } from '@/features/dashboard';
 import { SuppliersListPage } from '@/features/suppliers';
+import { SupplierDetailPage } from '@/features/suppliers/pages/SupplierDetailPage';
 import { ItemsListPage } from '@/features/items';
 import { PurchaseOrdersListPage } from '@/features/purchase-orders';
 import { PurchaseOrderDetailPage } from '@/features/purchase-orders/pages/PurchaseOrderDetailPage';
@@ -39,7 +41,9 @@ import { ReportsPage } from '@/features/reports/pages/ReportsPage';
 const Placeholder = ({ title }: { title: string }) => (
   <div className="bg-white rounded shadow p-6 max-w-sm">
     <h2 className="text-2xl font-bold mb-2">{title}</h2>
-    <p className="text-gray-600">This page is under construction.</p>
+    <p className="text-gray-600">
+      <LocalizedText text={'This page is under construction.'} />
+    </p>
   </div>
 );
 
@@ -102,6 +106,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredPermission="suppliers:read">
             <SuppliersListPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/suppliers/:id',
+        element: (
+          <ProtectedRoute requiredPermission="suppliers:read">
+            <SupplierDetailPage />
           </ProtectedRoute>
         ),
       },

@@ -1,3 +1,4 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState, useMemo } from 'react';
 
 export interface ColumnDef {
@@ -29,36 +30,59 @@ export function ReportTable({
   const columns = useMemo(() => {
     return rawColumns.map((col) => {
       if (typeof col === 'string') {
-        // Guess type
-        const type =
-          col.toLowerCase().includes('etb') ||
-          col.toLowerCase().includes('foreign') ||
-          col.toLowerCase().includes('amount') ||
-          col.toLowerCase().includes('cost') ||
-          col.toLowerCase().includes('value') ||
-          col.toLowerCase().includes('duty') ||
-          col.toLowerCase().includes('variance')
-            ? 'money'
-            : col.toLowerCase().includes('date') ||
-                col.toLowerCase().includes('at')
-              ? 'date'
+        const normalized = col.toLowerCase();
+        const sample = rows.find(
+          (row) => row[col] !== null && row[col] !== undefined,
+        )?.[col];
+        const isMoney =
+          normalized.includes('etb') ||
+          normalized.includes('foreign') ||
+          normalized.includes('amount') ||
+          normalized.includes('cost') ||
+          normalized.includes('value') ||
+          normalized.includes('duty') ||
+          normalized.includes('variance');
+        const isDate = normalized.includes('date') || normalized === 'eta';
+        const type = isMoney
+          ? 'money'
+          : isDate
+            ? 'date'
+            : typeof sample === 'number'
+              ? 'number'
               : 'text';
         return { key: col, label: col.replace(/_/g, ' '), type };
       }
       return col;
     });
-  }, [rawColumns]);
+  }, [rawColumns, rows]);
 
   const sortedRows = useMemo(() => {
     if (!sortConfig) return rows;
+    const columnType =
+      columns.find((column) => column.key === sortConfig.key)?.type || 'text';
     return [...rows].sort((a, b) => {
       const aVal = a[sortConfig.key];
       const bVal = b[sortConfig.key];
+      if (aVal == null || bVal == null) {
+        if (aVal == null && bVal == null) return 0;
+        return aVal == null ? 1 : -1;
+      }
+      if (columnType === 'number' || columnType === 'money') {
+        const delta = Number(aVal) - Number(bVal);
+        if (Number.isFinite(delta) && delta !== 0) {
+          return sortConfig.direction === 'asc' ? delta : -delta;
+        }
+      } else if (columnType === 'date') {
+        const delta = new Date(aVal).getTime() - new Date(bVal).getTime();
+        if (Number.isFinite(delta) && delta !== 0) {
+          return sortConfig.direction === 'asc' ? delta : -delta;
+        }
+      }
       if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [rows, sortConfig]);
+  }, [columns, rows, sortConfig]);
 
   const handleSort = (key: string) => {
     setSortConfig((prev) => {
@@ -69,10 +93,9 @@ export function ReportTable({
     });
   };
 
-  const toggleExpand = (index: number) => {
+  const toggleExpand = (key: string) => {
     setExpandedRows((prev) => {
       const next = new Set(prev);
-      const key = String(index);
       if (next.has(key)) next.delete(key);
       else next.add(key);
       return next;
@@ -81,31 +104,51 @@ export function ReportTable({
 
   const renderValue = (val: any, type: string) => {
     if (val === null || val === undefined) return '-';
-    if (type === 'money')
-      return parseFloat(val).toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-    if (type === 'date') return new Date(val).toLocaleDateString();
+    if (type === 'money') {
+      const amount = Number(val);
+      return Number.isFinite(amount)
+        ? amount.toLocaleString('en-US', {
+            minimumFractionDigits: 4,
+            maximumFractionDigits: 4,
+          })
+        : String(val);
+    }
+    if (type === 'date') {
+      const date = new Date(val);
+      return Number.isNaN(date.getTime())
+        ? String(val)
+        : date.toLocaleDateString();
+    }
     if (typeof val === 'boolean') {
       return val ? (
         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-          Yes
+          <LocalizedText text={'\n          Yes\n        '} />
         </span>
       ) : (
         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-          No
+          <LocalizedText text={'\n          No\n        '} />
         </span>
       );
     }
-    if (typeof val === 'object')
-      return <span className="text-gray-400 italic">[Object]</span>;
+    if (typeof val === 'object') {
+      const serialized = JSON.stringify(val);
+      return (
+        <span
+          className="block max-w-xs truncate text-gray-600"
+          title={serialized}
+        >
+          {serialized}
+        </span>
+      );
+    }
     return String(val);
   };
 
   if (!rows || rows.length === 0) {
     return (
-      <div className="p-8 text-center text-gray-500">No data available</div>
+      <div className="p-8 text-center text-gray-500">
+        <LocalizedText text={'No data available'} />
+      </div>
     );
   }
 
@@ -118,28 +161,39 @@ export function ReportTable({
             {columns.map((col) => (
               <th
                 key={col.key}
-                onClick={() => handleSort(col.key)}
-                className={`px-4 py-3.5 text-xs font-semibold text-gray-900 uppercase cursor-pointer hover:bg-gray-100 ${col.type === 'money' || col.type === 'number' ? 'text-right' : 'text-left'}`}
+                aria-sort={
+                  sortConfig?.key === col.key
+                    ? sortConfig.direction === 'asc'
+                      ? 'ascending'
+                      : 'descending'
+                    : 'none'
+                }
+                className={`px-4 py-3.5 text-xs font-semibold text-gray-900 uppercase hover:bg-gray-100 ${col.type === 'money' || col.type === 'number' ? 'text-right' : 'text-left'}`}
               >
-                <div
-                  className={`flex items-center gap-1 ${col.type === 'money' || col.type === 'number' ? 'justify-end' : ''}`}
+                <button
+                  type="button"
+                  onClick={() => handleSort(col.key)}
+                  className={`flex w-full items-center gap-1 text-inherit ${col.type === 'money' || col.type === 'number' ? 'justify-end' : 'justify-start'}`}
                 >
-                  {col.label}
+                  <LocalizedText text={col.label} />
                   {sortConfig?.key === col.key && (
                     <span className="text-gray-400">
-                      {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      <LocalizedText
+                        text={sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      />
                     </span>
                   )}
-                </div>
+                </button>
               </th>
             ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200 bg-white">
           {sortedRows.map((row, index) => {
-            const isExpanded = expandedRows.has(String(index));
+            const rowKey = `${row.id || row.shipmentId || row.itemId || row.supplierId || index}:${row.reportSection || ''}:${row.varianceType || ''}`;
+            const isExpanded = expandedRows.has(rowKey);
             return (
-              <React.Fragment key={index}>
+              <React.Fragment key={rowKey}>
                 <tr
                   className={
                     'hover:bg-gray-50 ' + (row.isOverdue ? 'bg-red-50' : '')
@@ -148,9 +202,9 @@ export function ReportTable({
                   {expandableRow && (
                     <td
                       className="px-4 py-3 cursor-pointer text-gray-400 hover:text-gray-600"
-                      onClick={() => toggleExpand(index)}
+                      onClick={() => toggleExpand(rowKey)}
                     >
-                      {isExpanded ? '▼' : '▶'}
+                      <LocalizedText text={isExpanded ? '▼' : '▶'} />
                     </td>
                   )}
                   {columns.map((col) => (

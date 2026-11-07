@@ -12,7 +12,14 @@ export function ProtectedRoute({
   children,
 }: ProtectedRouteProps) {
   const token = useAuthStore((state) => state.accessToken);
+  const initialized = useAuthStore((state) => state.initialized);
   const hasPermission = useAuthStore((state) => state.hasPermission);
+
+  if (!initialized) {
+    return (
+      <div className="p-6 text-sm text-gray-600">Restoring session...</div>
+    );
+  }
 
   if (!token) {
     return <Navigate to="/login" replace />;

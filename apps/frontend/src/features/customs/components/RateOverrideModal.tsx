@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState, useEffect } from 'react';
 import { Modal, Input, Button } from '@/components/ui';
 
@@ -14,6 +16,7 @@ export function RateOverrideModal({
   onSubmit,
   isLoading,
 }: RateOverrideModalProps) {
+  const localize = useUiText();
   const [overrideReason, setOverrideReason] = useState('');
   const [dutyRateOverride, setDutyRateOverride] = useState('');
 
@@ -36,29 +39,32 @@ export function RateOverrideModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Override HS Duty Rate (BR07)"
+      title={localize('Override HS Duty Rate (BR07)')}
     >
       <div className="space-y-4">
         <p className="text-sm text-gray-500">
-          Customs often disputes HS codes. Provide the official reason and the
-          new overridden rate. A mandatory reason is required by business rules.
+          <LocalizedText
+            text={
+              '\n          Customs often disputes HS codes. Provide the official reason and the\n          new overridden rate. A mandatory reason is required by business rules.\n        '
+            }
+          />
         </p>
         <Input
-          label="New Duty Rate (%)"
+          label={localize('New Duty Rate (%)')}
           type="number"
           step="0.01"
           value={dutyRateOverride}
           onChange={(e) => setDutyRateOverride(e.target.value)}
         />
         <Input
-          label="Override Reason *"
-          placeholder="e.g. Disputed at port, official decree #..."
+          label={localize('Override Reason *')}
+          placeholder={localize('e.g. Disputed at port, official decree #...')}
           value={overrideReason}
           onChange={(e) => setOverrideReason(e.target.value)}
         />
         <div className="flex justify-end gap-2 pt-4">
           <Button variant="secondary" onClick={onClose} disabled={isLoading}>
-            Cancel
+            <LocalizedText text={'\n            Cancel\n          '} />
           </Button>
           <Button
             variant="primary"
@@ -66,7 +72,7 @@ export function RateOverrideModal({
             isLoading={isLoading}
             disabled={!overrideReason.trim()}
           >
-            Apply Override
+            <LocalizedText text={'\n            Apply Override\n          '} />
           </Button>
         </div>
       </div>

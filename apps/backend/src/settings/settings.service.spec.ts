@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SettingsService } from './settings.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('SettingsService', () => {

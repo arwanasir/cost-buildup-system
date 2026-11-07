@@ -1,4 +1,5 @@
 import type { AxiosError } from 'axios';
+import { useUiText } from '@/lib/ui-text';
 
 interface FormErrorProps {
   error: unknown;
@@ -16,12 +17,16 @@ function getMessage(error: unknown): string | null {
 }
 
 export function FormError({ error }: FormErrorProps) {
+  const localize = useUiText();
   const message = getMessage(error);
   if (!message) return null;
 
   return (
-    <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-      {message}
+    <div
+      role="alert"
+      className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+    >
+      {localize(message)}
     </div>
   );
 }

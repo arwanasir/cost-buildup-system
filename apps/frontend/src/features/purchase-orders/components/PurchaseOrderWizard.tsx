@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useEffect, useState } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -110,9 +112,13 @@ function ItemCombobox({
 }
 
 export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
+  const localize = useUiText();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState<PoFormData | null>(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(
+    null,
+  );
 
   // Queries
   const { data: activeSuppliers, isLoading: isLoadingSuppliers } = useSuppliers(
@@ -144,6 +150,7 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
     register,
     control,
     handleSubmit,
+    trigger,
     watch,
     setValue,
     reset,
@@ -214,7 +221,47 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
     }
   }, [latestRate, watchCurrency, setValue]);
 
-  const onNext = () => setStep(step + 1);
+  const onNext = async () => {
+    setValidationMessage(null);
+    const fieldsByStep: Record<number, (keyof PoFormData)[]> = {
+      1: ['supplierId', 'poDate', 'incoterm', 'currency', 'fxRate'],
+      2: ['lines'],
+      3: [
+        'estimatedFreightEtb',
+        'estimatedInsuranceEtb',
+        'estimatedOtherChargesEtb',
+      ],
+    } as const;
+    const fieldsForStep = fieldsByStep[step as keyof typeof fieldsByStep];
+
+    if (fieldsForStep && !(await trigger(fieldsForStep))) {
+      setValidationMessage(
+        'Please complete the required fields before continuing.',
+      );
+      return;
+    }
+
+    setStep((currentStep) => Math.min(currentStep + 1, 4));
+  };
+
+  const handleInvalidSubmit = (invalidFields: typeof errors) => {
+    setValidationMessage(
+      'Please correct the highlighted fields before saving.',
+    );
+    if (
+      invalidFields.supplierId ||
+      invalidFields.poDate ||
+      invalidFields.incoterm ||
+      invalidFields.currency ||
+      invalidFields.fxRate
+    ) {
+      setStep(1);
+    } else if (invalidFields.lines) {
+      setStep(2);
+    } else {
+      setStep(3);
+    }
+  };
 
   const onFinalSubmit = async (
     data: PoFormData,
@@ -259,6 +306,7 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
         await submitMutation.mutateAsync(res.data.id);
       }
 
+      setConfirmSubmit(null);
       onClose();
     } catch (e) {
       console.error('Failed to create PO', e);
@@ -330,7 +378,7 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Purchase Order Creation Wizard"
+      title={localize('Purchase Order Creation Wizard')}
       size="5xl"
     >
       <div className="mb-6">
@@ -370,12 +418,20 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
             ? (e) => e.preventDefault()
             : (e) => {
                 e.preventDefault();
-                onNext();
+                void onNext();
               }
         }
         className="space-y-6"
       >
         <FormError error={createMutation.error || submitMutation.error} />
+        {validationMessage && (
+          <p
+            role="alert"
+            className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
+          >
+            {localize(validationMessage)}
+          </p>
+        )}
         {/* Step 1: Header */}
         {step === 1 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -394,33 +450,33 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
               )}
             />
             <DatePicker
-              label="PO Date *"
+              label={localize('PO Date *')}
               {...register('poDate')}
               error={errors.poDate?.message}
             />
             <Select
-              label="Incoterm *"
+              label={localize('Incoterm *')}
               options={INCOTERMS}
               {...register('incoterm')}
               error={errors.incoterm?.message}
             />
             <Input
-              label="Country of Origin"
+              label={localize('Country of Origin')}
               {...register('countryOfOrigin')}
               error={errors.countryOfOrigin?.message}
             />
             <DatePicker
-              label="Estimated Shipment Date"
+              label={localize('Estimated Shipment Date')}
               {...register('estimatedShipmentDate')}
               error={errors.estimatedShipmentDate?.message}
             />
             <DatePicker
-              label="Estimated Arrival Date"
+              label={localize('Estimated Arrival Date')}
               {...register('estimatedArrivalDate')}
               error={errors.estimatedArrivalDate?.message}
             />
             <Input
-              label="Currency"
+              label={localize('Currency')}
               {...register('currency')}
               error={errors.currency?.message}
               readOnly
@@ -447,12 +503,12 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
               )}
             </div>
             <Input
-              label="Port of Loading"
+              label={localize('Port of Loading')}
               {...register('portOfLoading')}
               error={errors.portOfLoading?.message}
             />
             <Input
-              label="Port of Destination"
+              label={localize('Port of Destination')}
               {...register('portOfDestination')}
               error={errors.portOfDestination?.message}
             />
@@ -464,7 +520,11 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
           <div className="space-y-4">
             <div className="flex justify-between items-center mb-4">
               <h4 className="text-sm font-medium text-gray-900">
-                Purchase Order Lines
+                <LocalizedText
+                  text={
+                    '\n                Purchase Order Lines\n              '
+                  }
+                />
               </h4>
               <Button
                 type="button"
@@ -478,7 +538,9 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
                   })
                 }
               >
-                + Add Line Item
+                <LocalizedText
+                  text={'\n                + Add Line Item\n              '}
+                />
               </Button>
             </div>
             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
@@ -487,7 +549,7 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
                   watch(`lines.${index}.quantity`) || 0,
                 )
                   .mul(new Decimal(watch(`lines.${index}.unitPrice`) || 0))
-                  .toFixed(2);
+                  .toFixed(4);
                 return (
                   <div
                     key={field.id}
@@ -544,8 +606,19 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
                         />
                       </div>
                       <div className="md:col-span-1">
-                        <Input
+                        <Select
                           label="HS Code"
+                          options={[
+                            { label: 'Select HS Code', value: '' },
+                            ...Array.from(
+                              new Set(
+                                (tariffs || []).map((tariff) => tariff.hsCode),
+                              ),
+                            ).map((hsCode) => ({
+                              label: hsCode,
+                              value: hsCode,
+                            })),
+                          ]}
                           {...register(`lines.${index}.hsCode`)}
                         />
                       </div>
@@ -590,7 +663,11 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
                       </div>
                       <div className="md:col-span-1 flex flex-col justify-end pb-2 text-right">
                         <span className="text-xs text-gray-500 uppercase">
-                          Line Total
+                          <LocalizedText
+                            text={
+                              '\n                          Line Total\n                        '
+                            }
+                          />
                         </span>
                         <span className="font-mono font-medium text-lg text-gray-900">
                           {lineTotal}
@@ -609,22 +686,26 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
               <h4 className="text-lg font-medium text-gray-900">
-                Estimated Logistics Costs (ETB)
+                <LocalizedText
+                  text={
+                    '\n                Estimated Logistics Costs (ETB)\n              '
+                  }
+                />
               </h4>
               <Input
-                label="Estimated Freight (ETB)"
+                label={localize('Estimated Freight (ETB)')}
                 type="number"
                 step="0.01"
                 {...register('estimatedFreightEtb', { valueAsNumber: true })}
               />
               <Input
-                label="Estimated Insurance (ETB)"
+                label={localize('Estimated Insurance (ETB)')}
                 type="number"
                 step="0.01"
                 {...register('estimatedInsuranceEtb', { valueAsNumber: true })}
               />
               <Input
-                label="Other Charges (ETB)"
+                label={localize('Other Charges (ETB)')}
                 type="number"
                 step="0.01"
                 {...register('estimatedOtherChargesEtb', {
@@ -640,45 +721,65 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
           <div className="space-y-8">
             <div>
               <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Final Financial Summary
+                <LocalizedText
+                  text={
+                    '\n                Final Financial Summary\n              '
+                  }
+                />
               </h3>
               <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                Review the total projected cost boundaries for this Purchase
-                Order.
+                <LocalizedText
+                  text={
+                    '\n                Review the total projected cost boundaries for this Purchase\n                Order.\n              '
+                  }
+                />
               </p>
             </div>
 
             <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-500">
-                  Total Purchase Value (FOB)
+                  <LocalizedText
+                    text={
+                      '\n                  Total Purchase Value (FOB)\n                '
+                    }
+                  />
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900">
                   <DualAmount
-                    amountForeign={totalFobFcx.toFixed(2)}
-                    amountEtb={totalFobEtb.toFixed(2)}
+                    amountForeign={totalFobFcx.toFixed(4)}
+                    amountEtb={totalFobEtb.toFixed(4)}
                     currency={watchCurrency}
                   />
                 </dd>
               </div>
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-500">
-                  Total Landed Estimate (CIF)
+                  <LocalizedText
+                    text={
+                      '\n                  Total Landed Estimate (CIF)\n                '
+                    }
+                  />
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900">
                   <DualAmount
-                    amountForeign={totalFobFcx.toFixed(2)}
-                    amountEtb={totalCifEtb.toFixed(2)}
+                    amountForeign={totalFobFcx.toFixed(4)}
+                    amountEtb={totalCifEtb.toFixed(4)}
                     currency={watchCurrency}
                   />
                 </dd>
               </div>
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-500">
-                  Projected Customs Duty
+                  <LocalizedText
+                    text={
+                      '\n                  Projected Customs Duty\n                '
+                    }
+                  />
                 </dt>
                 <dd className="mt-1 text-xl font-bold font-mono text-red-600">
-                  {totalDutyPreview.toFixed(2)} ETB
+                  {totalDutyPreview.toFixed(4)}{' '}
+                  <LocalizedText text={' ETB\n                '} />
                 </dd>
               </div>
             </dl>
@@ -686,12 +787,25 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
               <div>
                 <h4 className="text-blue-800 font-medium text-sm">
-                  Approval Routing
+                  <LocalizedText
+                    text={
+                      '\n                  Approval Routing\n                '
+                    }
+                  />
                 </h4>
                 <p className="text-blue-600 text-xs mt-1">
-                  Based on the equivalent USD value of{' '}
-                  <span className="font-mono">${usdEquivalent.toFixed(2)}</span>
-                  , this PO will route to:
+                  <LocalizedText
+                    text={
+                      '\n                  Based on the equivalent USD value of'
+                    }
+                  />
+                  <LocalizedText text={' '} />
+                  <span className="font-mono">${usdEquivalent.toFixed(4)}</span>
+                  <LocalizedText
+                    text={
+                      '\n                  , this PO will route to:\n                '
+                    }
+                  />
                 </p>
               </div>
               <div className="px-4 py-2 bg-white rounded-md shadow-sm border border-blue-100 font-semibold text-blue-900 text-sm">
@@ -707,10 +821,15 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => setStep(step - 1)}
+              onClick={() => {
+                setValidationMessage(null);
+                setStep((currentStep) => currentStep - 1);
+              }}
               disabled={isSubmitting}
             >
-              &larr; Previous
+              <LocalizedText
+                text={'\n              &larr; Previous\n            '}
+              />
             </Button>
           ) : (
             <Button
@@ -719,31 +838,48 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
               onClick={onClose}
               disabled={isSubmitting}
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
           )}
 
           {step < 4 ? (
-            <Button type="button" variant="primary" onClick={onNext}>
-              Next Step &rarr;
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => void onNext()}
+              disabled={isSubmitting}
+            >
+              <LocalizedText
+                text={'\n              Next Step &rarr;\n            '}
+              />
             </Button>
           ) : (
             <div className="flex gap-3">
               <Button
                 type="button"
                 variant="secondary"
-                onClick={handleSubmit((d) => onFinalSubmit(d, 'draft'))}
+                onClick={handleSubmit(
+                  (d) => onFinalSubmit(d, 'draft'),
+                  handleInvalidSubmit,
+                )}
                 isLoading={isSubmitting || submitMutation.isPending}
               >
-                Save as Draft
+                <LocalizedText
+                  text={'\n                Save as Draft\n              '}
+                />
               </Button>
               <Button
                 type="button"
                 variant="primary"
-                onClick={handleSubmit((d) => setConfirmSubmit(d))}
+                onClick={handleSubmit((d) => {
+                  setValidationMessage(null);
+                  setConfirmSubmit(d);
+                }, handleInvalidSubmit)}
                 isLoading={isSubmitting || submitMutation.isPending}
               >
-                Submit for Approval
+                <LocalizedText
+                  text={'\n                Submit for Approval\n              '}
+                />
               </Button>
             </div>
           )}
@@ -753,9 +889,11 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
       {confirmSubmit && (
         <ConfirmDialog
           isOpen={true}
-          title="Submit Purchase Order"
-          message="Are you sure you want to route this Purchase Order to the ? You will no longer be able to edit the items once submitted."
-          confirmText="Submit for Approval"
+          title={localize('Submit Purchase Order')}
+          message={localize(
+            'Are you sure you want to route this Purchase Order to the ? You will no longer be able to edit the items once submitted.',
+          )}
+          confirmText={localize('Submit for Approval')}
           isLoading={isSubmitting}
           onConfirm={() => onFinalSubmit(confirmSubmit, 'submit')}
           onClose={() => setConfirmSubmit(null)}

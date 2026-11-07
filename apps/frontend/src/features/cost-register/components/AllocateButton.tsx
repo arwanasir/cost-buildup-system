@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { Button, Modal } from '@/components/ui';
 import {
@@ -14,6 +16,7 @@ export function AllocateButton({
   shipmentId: string;
   isFinalised?: boolean;
 }) {
+  const localize = useUiText();
   const allocateMutation = useAllocateShipmentCosts();
   const { data: entries } = useShipmentCostEntries(shipmentId);
   const updateMutation = useUpdateCostEntry();
@@ -73,39 +76,50 @@ export function AllocateButton({
         isLoading={allocateMutation.isPending || updateMutation.isPending}
         disabled={isFinalised || !entries?.length}
       >
-        Allocate Costs
+        <LocalizedText text={'\n        Allocate Costs\n      '} />
       </Button>
 
       <Modal
         isOpen={showBR12Warning}
         onClose={() => setShowBR12Warning(false)}
-        title="BR12: Missing Measurements"
+        title={localize('BR12: Missing Measurements')}
       >
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 mb-6">
           <p className="font-semibold mb-2">
-            Cannot allocate by weight or volume.
+            <LocalizedText
+              text={
+                '\n            Cannot allocate by weight or volume.\n          '
+              }
+            />
           </p>
           <p className="text-sm mb-4">
-            One or more items in this shipment are missing weight or volume
-            measurements. The system cannot accurately distribute costs assigned
-            as "by_weight" or "by_volume".
+            <LocalizedText
+              text={
+                '\n            One or more items in this shipment are missing weight or volume\n            measurements. The system cannot accurately distribute costs assigned\n            as "by_weight" or "by_volume".\n          '
+              }
+            />
           </p>
           <p className="text-sm">
-            Would you like to automatically switch all physical-based cost
-            entries to "By Value" and retry?
+            <LocalizedText
+              text={
+                '\n            Would you like to automatically switch all physical-based cost\n            entries to "By Value" and retry?\n          '
+              }
+            />
           </p>
         </div>
 
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={() => setShowBR12Warning(false)}>
-            Cancel
+            <LocalizedText text={'\n            Cancel\n          '} />
           </Button>
           <Button
             variant="primary"
             onClick={handleSwitchToByValue}
             isLoading={updateMutation.isPending}
           >
-            Switch to By Value & Retry
+            <LocalizedText
+              text={'\n            Switch to By Value & Retry\n          '}
+            />
           </Button>
         </div>
       </Modal>

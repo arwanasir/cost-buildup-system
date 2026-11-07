@@ -1,8 +1,11 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, inArray, and, gte, lte, ne } from 'drizzle-orm';
 import { ReportFilterDto } from './dto/report-filter.dto';
+
+const inclusiveDateTo = (value?: string) =>
+  value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T23:59:59.999Z` : value;
 
 @Injectable()
 export class ReportsService {
@@ -28,7 +31,10 @@ export class ReportsService {
       );
     if (filters.date_to)
       shipmentConditions.push(
-        lte(schema.importShipments.createdAt, filters.date_to),
+        lte(
+          schema.importShipments.createdAt,
+          inclusiveDateTo(filters.date_to)!,
+        ),
       );
 
     const query = this.db.select().from(schema.importShipments);
@@ -46,6 +52,7 @@ export class ReportsService {
       .select({
         id: schema.importCostEntries.id,
         shipmentId: schema.importCostEntries.shipmentId,
+        costCategoryId: schema.importCostEntries.costCategoryId,
         amountEtb: schema.importCostEntries.amountEtb,
         isEstimated: schema.importCostEntries.isEstimated,
         providerName: schema.importCostEntries.providerName,
@@ -57,7 +64,15 @@ export class ReportsService {
         schema.costCategories,
         eq(schema.importCostEntries.costCategoryId, schema.costCategories.id),
       )
-      .where(inArray(schema.importCostEntries.shipmentId, shipmentIds));
+      .where(
+        and(
+          inArray(schema.importCostEntries.shipmentId, shipmentIds),
+          ne(schema.importCostEntries.source, 'commercial_invoice'),
+          ...(filters.category
+            ? [eq(schema.importCostEntries.costCategoryId, filters.category)]
+            : []),
+        ),
+      );
 
     // 2. Per-Item Allocations and Per-Unit Costs
     const landedCosts = await this.db
@@ -174,7 +189,12 @@ export class ReportsService {
     if (filters.date_from)
       conditions.push(gte(schema.importShipments.createdAt, filters.date_from));
     if (filters.date_to)
-      conditions.push(lte(schema.importShipments.createdAt, filters.date_to));
+      conditions.push(
+        lte(
+          schema.importShipments.createdAt,
+          inclusiveDateTo(filters.date_to)!,
+        ),
+      );
 
     const results = await this.db
       .select({
@@ -273,7 +293,12 @@ export class ReportsService {
     if (filters.date_from)
       conditions.push(gte(schema.importShipments.createdAt, filters.date_from));
     if (filters.date_to)
-      conditions.push(lte(schema.importShipments.createdAt, filters.date_to));
+      conditions.push(
+        lte(
+          schema.importShipments.createdAt,
+          inclusiveDateTo(filters.date_to)!,
+        ),
+      );
     if (filters.status)
       conditions.push(eq(schema.importShipments.status, filters.status as any));
 
@@ -348,7 +373,12 @@ export class ReportsService {
     if (filters.date_from)
       conditions.push(gte(schema.importShipments.createdAt, filters.date_from));
     if (filters.date_to)
-      conditions.push(lte(schema.importShipments.createdAt, filters.date_to));
+      conditions.push(
+        lte(
+          schema.importShipments.createdAt,
+          inclusiveDateTo(filters.date_to)!,
+        ),
+      );
     if (filters.status)
       conditions.push(eq(schema.importShipments.status, filters.status as any));
 
@@ -467,7 +497,12 @@ export class ReportsService {
         gte(schema.lettersOfCredit.openingDate, filters.date_from),
       );
     if (filters.date_to)
-      conditions.push(lte(schema.lettersOfCredit.openingDate, filters.date_to));
+      conditions.push(
+        lte(
+          schema.lettersOfCredit.openingDate,
+          inclusiveDateTo(filters.date_to)!,
+        ),
+      );
 
     const query = this.db
       .select({
@@ -572,7 +607,12 @@ export class ReportsService {
     if (filters.date_from)
       conditions.push(gte(schema.importShipments.createdAt, filters.date_from));
     if (filters.date_to)
-      conditions.push(lte(schema.importShipments.createdAt, filters.date_to));
+      conditions.push(
+        lte(
+          schema.importShipments.createdAt,
+          inclusiveDateTo(filters.date_to)!,
+        ),
+      );
 
     const shipmentsWithDutyVariance = await this.db
       .select({
@@ -625,10 +665,10 @@ export class ReportsService {
       let periodKey = '';
       if (periodType === 'quarter') {
         const quarter = Math.floor(date.getMonth() / 3) + 1;
-        periodKey = `-Q`;
+        periodKey = `${year}-Q${quarter}`;
       } else {
         const month = String(date.getMonth() + 1).padStart(2, '0');
-        periodKey = `-`;
+        periodKey = `${year}-${month}`;
       }
 
       const assessed = Number(sh.assessedDuty || 0);
@@ -721,7 +761,12 @@ export class ReportsService {
     if (filters.date_from)
       conditions.push(gte(schema.importShipments.createdAt, filters.date_from));
     if (filters.date_to)
-      conditions.push(lte(schema.importShipments.createdAt, filters.date_to));
+      conditions.push(
+        lte(
+          schema.importShipments.createdAt,
+          inclusiveDateTo(filters.date_to)!,
+        ),
+      );
 
     const query = this.db
       .select({
@@ -770,8 +815,8 @@ export class ReportsService {
             if (
               now > etaDate &&
               sh.status !== 'received' &&
-              sh.status !== 'customs_cleared' &&
-              sh.status !== 'completed'
+              sh.status !== 'partially_received' &&
+              sh.status !== 'cleared'
             ) {
               isOverdue = true;
               daysOverdue = Math.floor(
@@ -796,6 +841,7 @@ export class ReportsService {
 
   async getCostVarianceReport(filters: ReportFilterDto) {
     const conditions = [];
+    const varianceConditions = [];
     if (filters.shipment_id)
       conditions.push(eq(schema.importShipments.id, filters.shipment_id));
     if (filters.supplier_id)
@@ -803,11 +849,18 @@ export class ReportsService {
         eq(schema.importShipments.supplierId, filters.supplier_id),
       );
     if (filters.status)
-      conditions.push(eq(schema.importShipments.status, filters.status as any));
+      varianceConditions.push(
+        eq(schema.costVariances.status, filters.status as any),
+      );
     if (filters.date_from)
       conditions.push(gte(schema.importShipments.createdAt, filters.date_from));
     if (filters.date_to)
-      conditions.push(lte(schema.importShipments.createdAt, filters.date_to));
+      conditions.push(
+        lte(
+          schema.importShipments.createdAt,
+          inclusiveDateTo(filters.date_to)!,
+        ),
+      );
 
     const rawVariances = await this.db
       .select({
@@ -826,7 +879,11 @@ export class ReportsService {
         schema.importShipments,
         eq(schema.costVariances.shipmentId, schema.importShipments.id),
       )
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
+      .where(
+        conditions.length + varianceConditions.length > 0
+          ? and(...conditions, ...varianceConditions)
+          : undefined,
+      );
 
     const periodType = filters.period || 'month';
 
@@ -840,10 +897,10 @@ export class ReportsService {
       let periodKey = '';
       if (periodType === 'quarter') {
         const quarter = Math.floor(date.getMonth() / 3) + 1;
-        periodKey = `-Q`;
+        periodKey = `${year}-Q${quarter}`;
       } else {
         const month = String(date.getMonth() + 1).padStart(2, '0');
-        periodKey = `-`;
+        periodKey = `${year}-${month}`;
       }
 
       const est = Number(row.estimatedEtb || 0);
@@ -926,7 +983,10 @@ export class ReportsService {
       );
     if (filters.date_to)
       shipmentConditions.push(
-        lte(schema.importShipments.createdAt, filters.date_to),
+        lte(
+          schema.importShipments.createdAt,
+          inclusiveDateTo(filters.date_to)!,
+        ),
       );
     if (filters.status)
       shipmentConditions.push(

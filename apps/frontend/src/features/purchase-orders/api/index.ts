@@ -5,11 +5,17 @@ export type PoStatus =
   | 'draft'
   | 'pending_approval'
   | 'approved'
+  | 'lc_applied'
   | 'rejected'
   | 'processing'
   | 'shipped'
   | 'partially_received'
+  | 'fully_received'
   | 'closed';
+
+export function mapPurchaseOrderStatusFilter(status?: string) {
+  return status === 'processing' ? 'lc_applied' : status;
+}
 
 export type Incoterm = 'FOB' | 'CIF' | 'EXW' | 'CFR' | 'CPT' | 'DAP';
 

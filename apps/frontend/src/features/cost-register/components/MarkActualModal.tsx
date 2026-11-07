@@ -1,9 +1,12 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Modal, Input, Button } from '@/components/ui';
 import { useMarkCostEntryActual, type CostEntry } from '../api';
+import { formatAmount4 } from '@/lib/money';
 
 const formSchema = z.object({
   invoiceNumber: z.string().min(1, 'Invoice number is required'),
@@ -23,6 +26,7 @@ export function MarkActualModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const localize = useUiText();
   const markActualMutation = useMarkCostEntryActual();
 
   const form = useForm<FormData>({
@@ -80,20 +84,25 @@ export function MarkActualModal({
       title={`Mark as Actual: ${entry.costCategory?.name || 'Cost'}`}
     >
       <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-        You are converting an estimated accrual (ETB{' '}
-        {parseFloat(entry.amountEtb).toLocaleString()}) to an actual finalized
-        cost.
+        <LocalizedText
+          text={'\n        You are converting an estimated accrual (ETB'}
+        />
+        <LocalizedText text={' '} />
+        {formatAmount4(entry.amountEtb)}
+        <LocalizedText
+          text={') to an actual finalized\n        cost.\n      '}
+        />
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="Actual Invoice Number *"
+            label={localize('Actual Invoice Number *')}
             {...form.register('invoiceNumber')}
             error={form.formState.errors.invoiceNumber?.message}
           />
           <Input
-            label="Actual Invoice Date *"
+            label={localize('Actual Invoice Date *')}
             type="date"
             {...form.register('invoiceDate')}
             error={form.formState.errors.invoiceDate?.message}
@@ -109,25 +118,30 @@ export function MarkActualModal({
             error={form.formState.errors.amountForeign?.message}
           />
           <Input
-            label="Final FX Rate *"
+            label={localize('Final FX Rate *')}
             type="number"
             step="0.000001"
             {...form.register('fxRate', { valueAsNumber: true })}
             error={form.formState.errors.fxRate?.message}
             disabled={true}
-            title="FX Rate is permanently locked once the estimate is saved (BR10)"
+            title={localize(
+              'FX Rate is permanently locked once the estimate is saved (BR10)',
+            )}
           />
         </div>
 
         <div className="flex items-center justify-between p-4 bg-green-50 border border-green-100 rounded-md">
           <span className="text-sm text-green-800 font-medium">
-            Final ETB Value:
+            <LocalizedText
+              text={'\n            Final ETB Value:\n          '}
+            />
           </span>
           <span className="text-xl font-bold text-green-900">
-            ETB{' '}
+            <LocalizedText text={'\n            ETB'} />
+            <LocalizedText text={' '} />
             {computedEtb.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
+              minimumFractionDigits: 4,
+              maximumFractionDigits: 4,
             })}
           </span>
         </div>
@@ -139,14 +153,14 @@ export function MarkActualModal({
             onClick={onClose}
             disabled={markActualMutation.isPending}
           >
-            Cancel
+            <LocalizedText text={'\n            Cancel\n          '} />
           </Button>
           <Button
             type="submit"
             variant="primary"
             isLoading={markActualMutation.isPending}
           >
-            Confirm Actuals
+            <LocalizedText text={'\n            Confirm Actuals\n          '} />
           </Button>
         </div>
       </form>

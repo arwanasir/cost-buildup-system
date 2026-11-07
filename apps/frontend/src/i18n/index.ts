@@ -13,12 +13,17 @@ i18n
       am: { translation: am },
     },
     fallbackLng: 'en',
+    supportedLngs: ['en', 'am'],
+    load: 'languageOnly',
+    cleanCode: true,
+    nonExplicitSupportedLngs: true,
     interpolation: {
       escapeValue: false, // React already safe from xss
     },
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
+      lookupLocalStorage: 'i18nextLng',
     },
   });
 

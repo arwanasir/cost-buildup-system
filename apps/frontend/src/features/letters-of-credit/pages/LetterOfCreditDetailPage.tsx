@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -12,6 +14,7 @@ import {
   ErrorState,
   DualAmount,
   PermissionGate,
+  Toast,
 } from '@/components/ui';
 import { BankChargesPanel } from '../components/BankChargesPanel';
 import { RequiredDocumentsChecklist } from '../components/RequiredDocumentsChecklist';
@@ -24,6 +27,8 @@ import {
   type LcStatus,
 } from '../api';
 import { useSettings } from '@/features/settings/api';
+import { BackButton } from '@/components/ui/BackButton';
+import { formatAmount4 } from '@/lib/money';
 
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   applied: ['opened'],
@@ -63,6 +68,7 @@ const amendSchema = z.object({
 type AmendFormData = z.infer<typeof amendSchema>;
 
 export function LetterOfCreditDetailPage() {
+  const localize = useUiText();
   const { id } = useParams<{ id: string }>();
   const { data: lcData, isLoading, isError, refetch } = useLetterOfCredit(id!);
   const { data: settingsData } = useSettings();
@@ -73,15 +79,21 @@ export function LetterOfCreditDetailPage() {
   const markDoc = useMarkDocumentReceived();
 
   const [isAmendModalOpen, setAmendModalOpen] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const amendForm = useForm<AmendFormData>({
     resolver: zodResolver(amendSchema),
   });
 
-  const lc = lcData?.data;
+  const lc = lcData;
   if (isLoading) return <Skeleton className="h-[800px] w-full" />;
   if (isError || !lc)
-    return <ErrorState message="Failed to load LC" onRetry={() => refetch()} />;
+    return (
+      <ErrorState
+        message={localize('Failed to load LC')}
+        onRetry={() => refetch()}
+      />
+    );
 
   const settings = settingsData || [];
   const gmThresholdSetting = settings.find(
@@ -97,17 +109,23 @@ export function LetterOfCreditDetailPage() {
   const allowedNext = ALLOWED_TRANSITIONS[lc.status] || [];
 
   const handleAdvanceStatus = async (nextStatus: string) => {
+    setActionError(null);
     try {
       await updateStatus.mutateAsync({
         id: lc.id,
         status: nextStatus as LcStatus,
       });
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      setActionError(
+        e?.response?.data?.message ||
+          e?.message ||
+          'Failed to advance LC status.',
+      );
     }
   };
 
   const handleAmendSubmit = async (data: AmendFormData) => {
+    setActionError(null);
     try {
       await amendLc.mutateAsync({
         id: lc.id,
@@ -123,8 +141,12 @@ export function LetterOfCreditDetailPage() {
       });
       setAmendModalOpen(false);
       amendForm.reset();
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      setActionError(
+        e?.response?.data?.message ||
+          e?.message ||
+          'Failed to submit amendment.',
+      );
     }
   };
 
@@ -134,6 +156,15 @@ export function LetterOfCreditDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-8 space-y-6">
+      <BackButton to="/letters-of-credit" label="Back to letters of credit" />
+      {actionError && (
+        <Toast
+          message={actionError}
+          type="error"
+          duration={6000}
+          onClose={() => setActionError(null)}
+        />
+      )}
       {/* Header */}
       <div className="md:flex md:items-center md:justify-between bg-white p-6 rounded-lg shadow border border-gray-200">
         <div className="min-w-0 flex-1">
@@ -144,9 +175,12 @@ export function LetterOfCreditDetailPage() {
             </Badge>
           </h2>
           <p className="mt-1 text-sm text-gray-500">
-            Issuing Bank:{' '}
-            <span className="font-medium text-gray-900">{lc.issuingBank}</span>{' '}
-            | Type:{' '}
+            <LocalizedText text={'\n            Issuing Bank:'} />
+            <LocalizedText text={' '} />
+            <span className="font-medium text-gray-900">{lc.issuingBank}</span>
+            <LocalizedText text={' '} />
+            <LocalizedText text={'\n            | Type:'} />
+            <LocalizedText text={' '} />
             <span className="font-medium text-gray-900 uppercase">
               {lc.lcType}
             </span>
@@ -160,7 +194,9 @@ export function LetterOfCreditDetailPage() {
                 isLoading={gmApprove.isPending}
                 variant="warning"
               >
-                GM Approve
+                <LocalizedText
+                  text={'\n                GM Approve\n              '}
+                />
               </Button>
             </PermissionGate>
           )}
@@ -174,7 +210,11 @@ export function LetterOfCreditDetailPage() {
                     variant="secondary"
                     onClick={() => setAmendModalOpen(true)}
                   >
-                    Amend LC
+                    <LocalizedText
+                      text={
+                        '\n                    Amend LC\n                  '
+                      }
+                    />
                   </Button>
                 </PermissionGate>
               ) : (
@@ -184,7 +224,8 @@ export function LetterOfCreditDetailPage() {
                     onClick={() => handleAdvanceStatus(next)}
                     isLoading={updateStatus.isPending}
                   >
-                    Advance to {next.replace('_', ' ').toUpperCase()}
+                    <LocalizedText text={'\n                    Advance to '} />
+                    {next.replace('_', ' ').toUpperCase()}
                   </Button>
                 </PermissionGate>
               ),
@@ -195,9 +236,9 @@ export function LetterOfCreditDetailPage() {
       {/* 11-Step Timeline */}
       <div className="bg-white p-6 rounded-lg shadow border border-gray-200 overflow-x-auto">
         <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-          Lifecycle Timeline
+          <LocalizedText text={'\n          Lifecycle Timeline\n        '} />
         </h3>
-        <nav aria-label="Progress">
+        <nav aria-label={localize('Progress')}>
           <ol role="list" className="flex items-center">
             {STATUS_PIPELINE.map((step, stepIdx) => {
               const isActive = lc.status === step;
@@ -259,14 +300,20 @@ export function LetterOfCreditDetailPage() {
           <div className="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
             <div className="px-4 py-5 sm:px-6 flex justify-between">
               <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Financial Value
+                <LocalizedText
+                  text={'\n                Financial Value\n              '}
+                />
               </h3>
             </div>
             <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
               <dl className="sm:divide-y sm:divide-gray-200">
                 <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                   <dt className="text-sm font-medium text-gray-500">
-                    LC Amount
+                    <LocalizedText
+                      text={
+                        '\n                    LC Amount\n                  '
+                      }
+                    />
                   </dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                     <DualAmount
@@ -277,14 +324,20 @@ export function LetterOfCreditDetailPage() {
                   </dd>
                 </div>
                 <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">FX Rate</dt>
+                  <dt className="text-sm font-medium text-gray-500">
+                    <LocalizedText text={'FX Rate'} />
+                  </dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-mono">
                     {lc.fxRate}
                   </dd>
                 </div>
                 <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                   <dt className="text-sm font-medium text-gray-500">
-                    Expiry Date
+                    <LocalizedText
+                      text={
+                        '\n                    Expiry Date\n                  '
+                      }
+                    />
                   </dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                     {new Date(lc.expiryDate).toLocaleDateString()}
@@ -292,7 +345,11 @@ export function LetterOfCreditDetailPage() {
                 </div>
                 <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                   <dt className="text-sm font-medium text-gray-500">
-                    Last Shipment Date
+                    <LocalizedText
+                      text={
+                        '\n                    Last Shipment Date\n                  '
+                      }
+                    />
                   </dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                     {lc.lastShipmentDate
@@ -302,18 +359,30 @@ export function LetterOfCreditDetailPage() {
                 </div>
                 <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                   <dt className="text-sm font-medium text-gray-500">
-                    GM Approval Status
+                    <LocalizedText
+                      text={
+                        '\n                    GM Approval Status\n                  '
+                      }
+                    />
                   </dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                     {needsGmApproval ? (
                       lc.gmApprovedBy ? (
-                        <Badge variant="success">Approved</Badge>
+                        <Badge variant="success">
+                          <LocalizedText text={'Approved'} />
+                        </Badge>
                       ) : (
-                        <Badge variant="warning">Pending Approval</Badge>
+                        <Badge variant="warning">
+                          <LocalizedText text={'Pending Approval'} />
+                        </Badge>
                       )
                     ) : (
                       <span className="text-gray-500">
-                        Not Required (Below Threshold)
+                        <LocalizedText
+                          text={
+                            '\n                        Not Required (Below Threshold)\n                      '
+                          }
+                        />
                       </span>
                     )}
                   </dd>
@@ -325,13 +394,19 @@ export function LetterOfCreditDetailPage() {
           <div className="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
             <div className="px-4 py-5 sm:px-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Amendments Tracking
+                <LocalizedText
+                  text={'\n                Amendments Tracking\n              '}
+                />
               </h3>
             </div>
             <div className="border-t border-gray-200 px-4 py-5">
               {lc.amendments?.length === 0 ? (
                 <p className="text-sm text-gray-500">
-                  No amendments have been made.
+                  <LocalizedText
+                    text={
+                      '\n                  No amendments have been made.\n                '
+                    }
+                  />
                 </p>
               ) : (
                 <ul className="space-y-4">
@@ -351,15 +426,23 @@ export function LetterOfCreditDetailPage() {
                       <div className="mt-2 text-sm text-gray-700 flex gap-4">
                         {amd.amountDelta && (
                           <span>
-                            Amount Delta:{' '}
+                            <LocalizedText
+                              text={
+                                '\n                            Amount Delta:'
+                              }
+                            />
+                            <LocalizedText text={' '} />
                             <span className="font-mono">
-                              {parseFloat(amd.amountDelta).toLocaleString()}
+                              {formatAmount4(amd.amountDelta)}
                             </span>
                           </span>
                         )}
                         {amd.newExpiryDate && (
                           <span>
-                            New Expiry:{' '}
+                            <LocalizedText
+                              text={'\n                            New Expiry:'}
+                            />
+                            <LocalizedText text={' '} />
                             {new Date(amd.newExpiryDate).toLocaleDateString()}
                           </span>
                         )}
@@ -384,36 +467,36 @@ export function LetterOfCreditDetailPage() {
       <Modal
         isOpen={isAmendModalOpen}
         onClose={() => setAmendModalOpen(false)}
-        title="Amend Letter of Credit"
+        title={localize('Amend Letter of Credit')}
       >
         <form
           onSubmit={amendForm.handleSubmit(handleAmendSubmit)}
           className="space-y-4 mt-4"
         >
           <Input
-            label="Reason for Amendment *"
+            label={localize('Reason for Amendment *')}
             {...amendForm.register('description')}
             error={amendForm.formState.errors.description?.message}
           />
           <Input
-            label="Amount Delta (Foreign)"
+            label={localize('Amount Delta (Foreign)')}
             type="number"
             step="0.01"
             {...amendForm.register('amountDelta', { valueAsNumber: true })}
           />
           <Input
-            label="Amendment Fee (ETB)"
+            label={localize('Amendment Fee (ETB)')}
             type="number"
             step="0.01"
             {...amendForm.register('amendmentFeeEtb', { valueAsNumber: true })}
           />
           <Input
-            label="New Expiry Date"
+            label={localize('New Expiry Date')}
             type="date"
             {...amendForm.register('newExpiryDate')}
           />
           <Input
-            label="New Last Shipment Date"
+            label={localize('New Last Shipment Date')}
             type="date"
             {...amendForm.register('newLastShipmentDate')}
           />
@@ -425,7 +508,7 @@ export function LetterOfCreditDetailPage() {
               onClick={() => setAmendModalOpen(false)}
               className="w-full"
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
             <Button
               type="submit"
@@ -433,7 +516,9 @@ export function LetterOfCreditDetailPage() {
               className="w-full"
               isLoading={amendLc.isPending}
             >
-              Submit Amendment
+              <LocalizedText
+                text={'\n              Submit Amendment\n            '}
+              />
             </Button>
           </div>
         </form>

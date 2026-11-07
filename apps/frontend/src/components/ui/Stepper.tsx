@@ -1,3 +1,4 @@
+import { useUiText } from '@/lib/ui-text';
 import React from 'react';
 
 interface Step {
@@ -12,8 +13,9 @@ interface StepperProps {
 }
 
 export function Stepper({ steps, currentStepIndex = 0 }: StepperProps) {
+  const localize = useUiText();
   return (
-    <nav aria-label="Progress">
+    <nav aria-label={localize('Progress')}>
       <ol className="flex items-center">
         {steps.map((step, index) => {
           const isCompleted = index < currentStepIndex;

@@ -4,9 +4,9 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, ne } from 'drizzle-orm';
 import { OnEvent } from '@nestjs/event-emitter';
 import Decimal from 'decimal.js';
 
@@ -55,6 +55,7 @@ export class VariancesService {
           and(
             eq(schema.importCostEntries.shipmentId, shipmentId),
             eq(schema.importCostEntries.isEstimated, false),
+            ne(schema.importCostEntries.source, 'commercial_invoice'),
           ),
         );
 
@@ -63,12 +64,14 @@ export class VariancesService {
       let actualOther = new Decimal(0);
 
       for (const entry of costEntries) {
-        const code = catMap.get(entry.costCategoryId);
+        const code = String(
+          catMap.get(entry.costCategoryId) || '',
+        ).toUpperCase();
         const amount = new Decimal(String(entry.amountEtb));
 
-        if (code === 'freight') {
+        if (code === 'FREIGHT') {
           actualFreight = actualFreight.plus(amount);
-        } else if (code === 'duty') {
+        } else if (code === 'DUTY' || code === 'CUSTOMS_DUTY') {
           actualDuty = actualDuty.plus(amount);
         } else {
           actualOther = actualOther.plus(amount);
@@ -134,14 +137,38 @@ export class VariancesService {
       const rowFreight = buildRow('freight', estimatedFreight, actualFreight);
       const rowDuty = buildRow('duty', estimatedDuty, actualDuty);
       const rowOther = buildRow('other', estimatedOtherTotal, actualOther);
+      const rows = [rowPrice, rowExchange, rowFreight, rowDuty, rowOther];
 
-      // 5. Delete existing variances
+      const existingRows = await tx
+        .select()
+        .from(schema.costVariances)
+        .where(eq(schema.costVariances.shipmentId, shipmentId));
+
+      for (const row of rows) {
+        const previous = existingRows.find(
+          (existing: any) => existing.varianceType === row.varianceType,
+        );
+        if (
+          previous &&
+          new Decimal(String(previous.estimatedEtb)).equals(row.estimatedEtb) &&
+          new Decimal(String(previous.actualEtb)).equals(row.actualEtb)
+        ) {
+          Object.assign(row, {
+            id: previous.id,
+            status: previous.status,
+            approverId: previous.approverId,
+            decidedAt: previous.decidedAt,
+            comment: previous.comment,
+          });
+        }
+      }
+
+      // 5. Replace recalculated rows while retaining unchanged decisions.
       await tx
         .delete(schema.costVariances)
         .where(eq(schema.costVariances.shipmentId, shipmentId));
 
       // 6. Insert new variances
-      const rows = [rowPrice, rowExchange, rowFreight, rowDuty, rowOther];
       const insertedRows = await tx
         .insert(schema.costVariances)
         .values(rows)
@@ -149,7 +176,17 @@ export class VariancesService {
 
       // 7. Notification (BR07) for pending_approval rows
       const pendingRows = insertedRows.filter(
-        (r: any) => r.status === 'pending_approval',
+        (r: any) =>
+          r.status === 'pending_approval' &&
+          !existingRows.some(
+            (previous: any) =>
+              previous.varianceType === r.varianceType &&
+              previous.status === 'pending_approval' &&
+              new Decimal(String(previous.estimatedEtb)).equals(
+                r.estimatedEtb,
+              ) &&
+              new Decimal(String(previous.actualEtb)).equals(r.actualEtb),
+          ),
       );
       if (pendingRows.length > 0) {
         const financeManagers = await tx
@@ -179,7 +216,10 @@ export class VariancesService {
     });
   }
   async approve(varianceId: string, actor: any, comment?: string) {
-    if (actor.role !== 'finance_manager' && actor.role !== 'general_manager') {
+    if (
+      actor?.role !== 'finance_manager' &&
+      actor?.role !== 'general_manager'
+    ) {
       throw new ForbiddenException(
         'Only Finance Manager or General Manager can approve variances',
       );
@@ -202,7 +242,10 @@ export class VariancesService {
   }
 
   async reject(varianceId: string, actor: any, comment?: string) {
-    if (actor.role !== 'finance_manager' && actor.role !== 'general_manager') {
+    if (
+      actor?.role !== 'finance_manager' &&
+      actor?.role !== 'general_manager'
+    ) {
       throw new ForbiddenException(
         'Only Finance Manager or General Manager can reject variances',
       );

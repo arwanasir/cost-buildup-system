@@ -36,6 +36,7 @@ import { ErpSyncModule } from './erp-sync/erp-sync.module';
 import { VariancesModule } from './variances/variances.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReportsModule } from './reports/reports.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { ReportsModule } from './reports/reports.module';
     EventEmitterModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['.env', '../.env'],
       load: [configuration],
       validationSchema: envValidationSchema,
       validationOptions: {
@@ -80,6 +82,7 @@ import { ReportsModule } from './reports/reports.module';
     VariancesModule,
     NotificationsModule,
     ReportsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [

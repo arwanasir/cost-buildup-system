@@ -12,15 +12,17 @@ import { AuthGuard } from '@nestjs/passport';
 import { PermissionGuard } from '../auth/guards/permissions.guards';
 import { RequiredPermission } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/permissions';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { InventoryPostingService } from './inventory-posting.service';
 import { FinancePostingService } from './finance-posting.service';
+import { Audited } from '@/audit/audited.decorator';
 
 @ApiTags('ErpSync')
 @ApiBearerAuth()
 @Controller('erp-sync')
+@Audited('erpSyncLog')
 @UseGuards(AuthGuard('jwt'), PermissionGuard)
 export class ErpSyncController {
   constructor(

@@ -67,9 +67,12 @@ export class HealthController {
   private async checkMinio(): Promise<boolean> {
     const host = this.configService.get<string>('minio.endpoint');
     const port = this.configService.get<number>('minio.port');
-    const useSSL = this.configService.get<boolean>('minio.useSSl');
+    const useSSL = this.configService.get<boolean>('minio.useSSL');
     const protocol = useSSL ? 'https' : 'http';
-    const url = `${protocol}://${host}:${port}/minio/health/live`;
+    const baseUrl = host?.startsWith('http')
+      ? host
+      : `${protocol}://${host}:${port}`;
+    const url = `${baseUrl}/minio/health/live`;
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
       return res.ok;

@@ -10,7 +10,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { CreatePurchaseOrderDto } from './dto/create-purchase-order.dto';
-import { DRIZZLE, DrizzleDB } from '@/db';
+import { DRIZZLE, DrizzleDB } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { NumberingService } from '@/core/numbering/numbering.service';
 import { PoCalculationService } from './po-calculation.service';
@@ -212,9 +212,9 @@ export class PurchaseOrdersService {
       where: eq(schema.importPurchaseOrders.id, id),
       with: {
         suppliers: true,
-        poLines: true,
+        poLines: { with: { item: true } },
         poApprovals: true,
-        lettersOfCredit: true,
+        lc: true,
         shipments: true,
       },
     });
@@ -648,6 +648,31 @@ export class PurchaseOrdersService {
 
     return approvals;
   }
+
+  async findOutstanding() {
+    const pos = await this.db.query.importPurchaseOrders.findMany({
+      where: inArray(schema.importPurchaseOrders.status, [
+        'approved',
+        'lc_applied',
+        'shipped',
+        'partially_received',
+      ] as any),
+      orderBy: (po, { desc }) => [desc(po.createdAt)],
+      with: {
+        suppliers: true,
+        poLines: { with: { item: true } },
+      },
+    });
+
+    return pos.filter((po: any) =>
+      (po.poLines || []).some((line: any) => {
+        const ordered = new Decimal(line.quantity);
+        const received = new Decimal(line.receivedQuantity || 0);
+        return ordered.greaterThan(received);
+      }),
+    );
+  }
+
   async getOutstandingQuantities(poId: string) {
     const po = await this.db.query.importPurchaseOrders.findFirst({
       where: eq(schema.importPurchaseOrders.id, poId),

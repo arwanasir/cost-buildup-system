@@ -6,6 +6,7 @@ export const envValidationSchema = joi.object({
     .valid('development', 'test', 'production', 'provision')
     .default('development'),
   PORT: joi.number().port().default(3000),
+  FRONTEND_URL: joi.string().uri().default('http://localhost:5173'),
   POSTGRES_HOST: joi.string().required(),
   POSTGRES_PORT: joi.number().default(5432),
   POSTGRES_USER: joi.string().required(),
@@ -19,6 +20,7 @@ export const envValidationSchema = joi.object({
   JWT_REFRESH_EXPIRATION: joi.string().default('7d'),
 
   MINIO_ENDPOINT: joi.string().default('localhost'),
+  MINIO_PUBLIC_ENDPOINT: joi.string().uri().optional(),
   MINIO_PORT: joi.number().port().default(9000),
   MINIO_USE_SSL: joi.boolean().default(false),
   MINIO_ROOT_USER: joi.string().required(),
@@ -29,7 +31,7 @@ export const envValidationSchema = joi.object({
   SMTP_PORT: joi.number().port().default(1025),
   SMTP_USER: joi.string().allow('').optional(),
   SMTP_PASS: joi.string().allow('').optional(),
-  SMTP_FROM: joi.string().email().default('noreply@costbuildup.local'),
+  SMTP_FROM: joi.string().email().default('noreply@example.com'),
 
   ERP_BASE_URL: joi.string().uri().default('http://localhost:3001'),
   ERP_API_KEY: joi.string().required(),

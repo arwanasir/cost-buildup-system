@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,7 +22,9 @@ import {
   ErrorState,
   Badge,
   FormError,
+  PermissionGate,
 } from '@/components/ui';
+import { useTariffs } from '@/features/tariffs/api';
 
 const itemSchema = z.object({
   itemCode: z.string().min(1, 'Item Code is required'),
@@ -33,6 +37,7 @@ const itemSchema = z.object({
 type ItemFormData = z.infer<typeof itemSchema>;
 
 export function ItemsListPage() {
+  const localize = useUiText();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [isActiveFilter, setIsActiveFilter] = useState<
@@ -54,6 +59,12 @@ export function ItemsListPage() {
   const createMutation = useCreateItem();
   const updateMutation = useUpdateItem();
   const deactivateMutation = useDeactivateItem();
+  const { data: tariffs = [] } = useTariffs();
+  const hsCodeOptions = Array.from(
+    new Set(tariffs.map((tariff) => tariff.hsCode)),
+  )
+    .sort()
+    .map((hsCode) => ({ label: hsCode, value: hsCode }));
 
   const {
     register,
@@ -124,7 +135,7 @@ export function ItemsListPage() {
       header: 'Status',
       accessor: (row: Item) => (
         <Badge variant={row.isActive ? 'success' : 'danger'}>
-          {row.isActive ? 'Active' : 'Inactive'}
+          <LocalizedText text={row.isActive ? 'Active' : 'Inactive'} />
         </Badge>
       ),
     },
@@ -132,19 +143,25 @@ export function ItemsListPage() {
       header: 'Actions',
       accessor: (row: Item) => (
         <div className="flex gap-2">
-          <button
-            onClick={() => openEdit(row)}
-            className="text-blue-600 hover:text-blue-900 font-medium text-sm"
-          >
-            Edit
-          </button>
-          {row.isActive && (
+          <PermissionGate permission="items:write">
             <button
-              onClick={() => setDeactivateItem(row)}
-              className="text-red-600 hover:text-red-900 font-medium text-sm"
+              onClick={() => openEdit(row)}
+              className="text-blue-600 hover:text-blue-900 font-medium text-sm"
             >
-              Deactivate
+              <LocalizedText text={'\n            Edit\n          '} />
             </button>
+          </PermissionGate>
+          {row.isActive && (
+            <PermissionGate permission="items:write">
+              <button
+                onClick={() => setDeactivateItem(row)}
+                className="text-red-600 hover:text-red-900 font-medium text-sm"
+              >
+                <LocalizedText
+                  text={'\n              Deactivate\n            '}
+                />
+              </button>
+            </PermissionGate>
           )}
         </div>
       ),
@@ -156,21 +173,31 @@ export function ItemsListPage() {
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            Materials & Products
+            <LocalizedText
+              text={'\n            Materials & Products\n          '}
+            />
           </h1>
           <p className="mt-2 text-sm text-gray-700">
-            Master data for purchasable inventory items.
+            <LocalizedText
+              text={
+                '\n            Master data for purchasable inventory items.\n          '
+              }
+            />
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
-          <Button onClick={openCreate}>Add Item</Button>
+          <PermissionGate permission="items:write">
+            <Button onClick={openCreate}>
+              <LocalizedText text={'Add Item'} />
+            </Button>
+          </PermissionGate>
         </div>
       </div>
 
       <div className="bg-white p-4 shadow sm:rounded-lg border border-gray-200 flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <Input
-            placeholder="Search by name or code..."
+            placeholder={localize('Search by name or code...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -194,7 +221,10 @@ export function ItemsListPage() {
       {isLoading ? (
         <Skeleton className="h-[600px] w-full" />
       ) : isError ? (
-        <ErrorState message="Failed to load items" onRetry={() => refetch()} />
+        <ErrorState
+          message={localize('Failed to load items')}
+          onRetry={() => refetch()}
+        />
       ) : (
         <div className="space-y-4">
           <Table columns={columns} data={data?.data || []} />
@@ -203,33 +233,49 @@ export function ItemsListPage() {
             <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  Showing{' '}
-                  <span className="font-medium">{(page - 1) * 10 + 1}</span> to{' '}
+                  <LocalizedText text={'\n                  Showing'} />
+                  <LocalizedText text={' '} />
+                  <span className="font-medium">
+                    {(page - 1) * 10 + 1}
+                  </span>{' '}
+                  <LocalizedText text={' to'} />
+                  <LocalizedText text={' '} />
                   <span className="font-medium">
                     {Math.min(page * 10, data?.total || 0)}
-                  </span>{' '}
-                  of <span className="font-medium">{data?.total || 0}</span>{' '}
-                  results
+                  </span>
+                  <LocalizedText text={' '} />
+                  <LocalizedText text={'\n                  of '} />
+                  <span className="font-medium">{data?.total || 0}</span>
+                  <LocalizedText text={' '} />
+                  <LocalizedText
+                    text={'\n                  results\n                '}
+                  />
                 </p>
               </div>
               <div>
                 <nav
                   className="isolate inline-flex -space-x-px rounded-md shadow-sm"
-                  aria-label="Pagination"
+                  aria-label={localize('Pagination')}
                 >
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
                     className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                   >
-                    Previous
+                    <LocalizedText
+                      text={
+                        '\n                    Previous\n                  '
+                      }
+                    />
                   </button>
                   <button
                     onClick={() => setPage((p) => p + 1)}
                     disabled={page * 10 >= (data?.total || 0)}
                     className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                   >
-                    Next
+                    <LocalizedText
+                      text={'\n                    Next\n                  '}
+                    />
                   </button>
                 </nav>
               </div>
@@ -247,30 +293,35 @@ export function ItemsListPage() {
           <FormError error={createMutation.error || updateMutation.error} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Item Code *"
+              label={localize('Item Code *')}
               {...register('itemCode')}
               error={errors.itemCode?.message}
             />
             <Input
-              label="Name *"
+              label={localize('Name *')}
               {...register('name')}
               error={errors.name?.message}
             />
             <Input
-              label="Unit of Measure *"
+              label={localize('Unit of Measure *')}
               {...register('unitOfMeasure')}
               error={errors.unitOfMeasure?.message}
-              placeholder="e.g. PCS, KG, L"
+              placeholder={localize('e.g. PCS, KG, L')}
             />
-            <Input
-              label="Default HS Code"
+            <Select
+              label={localize('Default HS Code')}
+              options={[
+                { label: localize('Select HS Code'), value: '' },
+                ...hsCodeOptions,
+              ]}
               {...register('defaultHsCode')}
               error={errors.defaultHsCode?.message}
-              placeholder="e.g. 8471.30.00"
             />
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
+                <LocalizedText
+                  text={'\n                Description\n              '}
+                />
               </label>
               <textarea
                 className="appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300"
@@ -286,7 +337,9 @@ export function ItemsListPage() {
               isLoading={createMutation.isPending || updateMutation.isPending}
               className="w-full sm:ml-3 sm:w-auto"
             >
-              {editingItem ? 'Save Changes' : 'Create Item'}
+              <LocalizedText
+                text={editingItem ? 'Save Changes' : 'Create Item'}
+              />
             </Button>
             <Button
               type="button"
@@ -294,7 +347,7 @@ export function ItemsListPage() {
               onClick={() => setIsFormOpen(false)}
               className="mt-3 w-full sm:mt-0 sm:w-auto"
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
           </div>
         </form>
@@ -303,9 +356,9 @@ export function ItemsListPage() {
       {deactivateItem && (
         <ConfirmDialog
           isOpen={true}
-          title="Deactivate Item"
+          title={localize('Deactivate Item')}
           message={`Are you sure you want to deactivate ${deactivateItem.itemCode}? It will no longer appear in active dropdowns for new Purchase Orders.`}
-          confirmText="Deactivate"
+          confirmText={localize('Deactivate')}
           isDestructive
           isLoading={deactivateMutation.isPending}
           onConfirm={() =>

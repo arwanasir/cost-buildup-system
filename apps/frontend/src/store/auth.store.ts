@@ -12,6 +12,7 @@ interface AuthState {
   user: User | null;
   permissions: string[];
   accessToken: string | null;
+  initialized: boolean;
 
   login: (
     user: User,
@@ -22,28 +23,43 @@ interface AuthState {
   logout: () => void;
   hasPermission: (permission: string) => boolean;
   setAccessToken: (token: string, refreshToken?: string) => void;
+  completeInitialization: () => void;
+  restore: (
+    user: User,
+    permissions: string[],
+    accessToken: string,
+    refreshToken: string,
+  ) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   permissions: [],
   accessToken: null,
+  initialized: false,
 
   login: (user, permissions, accessToken, refreshToken) => {
     sessionStorage.setItem('refreshToken', refreshToken);
-    set({ user, permissions: Array.isArray(permissions) ? permissions : [], accessToken });
+    set({
+      user,
+      permissions: Array.isArray(permissions) ? permissions : [],
+      accessToken,
+      initialized: true,
+    });
   },
 
   logout: () => {
     sessionStorage.removeItem('refreshToken');
-    set({ user: null, permissions: [], accessToken: null });
+    set({ user: null, permissions: [], accessToken: null, initialized: true });
   },
 
   hasPermission: (permission: string) => {
     const { permissions, user } = get();
 
-    if (user?.role === 'ADMIN_ALL' || user?.role === 'system_admin') return true;
-    if (permissions.includes('admin:all') || permissions.includes('*')) return true;
+    if (user?.role === 'ADMIN_ALL' || user?.role === 'system_admin')
+      return true;
+    if (permissions.includes('admin:all') || permissions.includes('*'))
+      return true;
     return permissions.includes(permission);
   },
 
@@ -52,5 +68,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       sessionStorage.setItem('refreshToken', refreshToken);
     }
     set({ accessToken: token });
+  },
+
+  completeInitialization: () => set({ initialized: true }),
+
+  restore: (user, permissions, accessToken, refreshToken) => {
+    sessionStorage.setItem('refreshToken', refreshToken);
+    set({
+      user,
+      permissions: Array.isArray(permissions) ? permissions : [],
+      accessToken,
+      initialized: true,
+    });
   },
 }));

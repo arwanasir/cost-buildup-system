@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
-import { DRIZZLE, DrizzleDB } from '@/db';
+import { DRIZZLE, DrizzleDB } from '@/db/db.token';
 import { nbeExchangeRates } from '@/db/schema';
 import { CreateExchangeRateDto } from './dto/exchange-rate.dto';
 import { desc, eq } from 'drizzle-orm';

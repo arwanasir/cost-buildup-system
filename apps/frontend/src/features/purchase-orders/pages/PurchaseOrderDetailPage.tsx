@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Decimal from 'decimal.js';
@@ -17,13 +19,23 @@ import {
   DualAmount,
   Modal,
   Input,
+  Toast,
+  ConfirmDialog,
 } from '@/components/ui';
 import { useAuthStore } from '@/store/auth.store';
+import { BackButton } from '@/components/ui/BackButton';
+import { formatAmount4 } from '@/lib/money';
 
 export function PurchaseOrderDetailPage() {
+  const localize = useUiText();
   const { id } = useParams<{ id: string }>();
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isConfirmApproveOpen, setIsConfirmApproveOpen] = useState(false);
   const [rejectComment, setRejectComment] = useState('');
+  const [actionFeedback, setActionFeedback] = useState<{
+    message: string;
+    type: 'success' | 'error';
+  } | null>(null);
 
   const { data: po, isLoading, isError, refetch } = usePurchaseOrder(id!);
   const approveMutation = useApprovePo();
@@ -35,7 +47,7 @@ export function PurchaseOrderDetailPage() {
   if (isError || !po)
     return (
       <ErrorState
-        message="Failed to load Purchase Order"
+        message={localize('Failed to load Purchase Order')}
         onRetry={() => refetch()}
       />
     );
@@ -43,39 +55,102 @@ export function PurchaseOrderDetailPage() {
   const getStatusBadge = (status: PoStatus) => {
     switch (status) {
       case 'draft':
-        return <Badge variant="secondary">Draft</Badge>;
+        return (
+          <Badge variant="secondary">
+            <LocalizedText text={'Draft'} />
+          </Badge>
+        );
       case 'pending_approval':
-        return <Badge variant="warning">Pending Approval</Badge>;
+        return (
+          <Badge variant="warning">
+            <LocalizedText text={'Pending Approval'} />
+          </Badge>
+        );
       case 'approved':
-        return <Badge variant="success">Approved</Badge>;
+        return (
+          <Badge variant="success">
+            <LocalizedText text={'Approved'} />
+          </Badge>
+        );
       case 'rejected':
-        return <Badge variant="danger">Rejected</Badge>;
+        return (
+          <Badge variant="danger">
+            <LocalizedText text={'Rejected'} />
+          </Badge>
+        );
+      case 'lc_applied':
       case 'processing':
-        return <Badge variant="info">Processing</Badge>;
+        return (
+          <Badge variant="info">
+            <LocalizedText text={'LC Applied'} />
+          </Badge>
+        );
       case 'shipped':
-        return <Badge variant="info">Shipped</Badge>;
+        return (
+          <Badge variant="info">
+            <LocalizedText text={'Shipped'} />
+          </Badge>
+        );
       case 'partially_received':
-        return <Badge variant="warning">Partial Receipt</Badge>;
+        return (
+          <Badge variant="warning">
+            <LocalizedText text={'Partial Receipt'} />
+          </Badge>
+        );
       case 'closed':
-        return <Badge variant="secondary">Closed</Badge>;
+        return (
+          <Badge variant="secondary">
+            <LocalizedText text={'Closed'} />
+          </Badge>
+        );
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
-  const handleApprove = async () => {
-    if (
-      window.confirm('Are you sure you want to approve this Purchase Order?')
-    ) {
+  const handleApprove = () => {
+    setIsConfirmApproveOpen(true);
+  };
+
+  const handleConfirmApprove = async () => {
+    try {
       await approveMutation.mutateAsync({ id: po.id });
+      setIsConfirmApproveOpen(false);
+      setActionFeedback({
+        message: 'Purchase Order approved successfully',
+        type: 'success',
+      });
+    } catch (error: any) {
+      setIsConfirmApproveOpen(false);
+      setActionFeedback({
+        message:
+          error.response?.data?.message ||
+          error.message ||
+          'Failed to approve Purchase Order',
+        type: 'error',
+      });
     }
   };
 
   const handleReject = async () => {
     if (!rejectComment.trim()) return;
-    await rejectMutation.mutateAsync({ id: po.id, comment: rejectComment });
-    setIsRejectModalOpen(false);
-    setRejectComment('');
+    try {
+      await rejectMutation.mutateAsync({ id: po.id, comment: rejectComment });
+      setIsRejectModalOpen(false);
+      setRejectComment('');
+      setActionFeedback({
+        message: 'Purchase Order rejected',
+        type: 'success',
+      });
+    } catch (error: any) {
+      setActionFeedback({
+        message:
+          error.response?.data?.message ||
+          error.message ||
+          'Failed to reject Purchase Order',
+        type: 'error',
+      });
+    }
   };
 
   const pendingApprovalRecord = po.poApprovals?.find(
@@ -86,7 +161,8 @@ export function PurchaseOrderDetailPage() {
   // A user can approve if the PO is pending_approval, and they hold the required role (or they are ADMIN_ALL).
   const canApprove =
     po.status === 'pending_approval' &&
-    (currentUser?.role === requiredRole || currentUser?.role === 'system_admin');
+    (currentUser?.role === requiredRole ||
+      currentUser?.role === 'system_admin');
 
   const lineColumns = [
     { header: 'Item', accessor: (row: any) => row.item?.name || row.itemId },
@@ -94,7 +170,7 @@ export function PurchaseOrderDetailPage() {
     {
       header: 'Unit Price',
       accessor: (row: any) =>
-        `${parseFloat(row.unitPrice).toLocaleString()} ${po.currency}`,
+        `${formatAmount4(row.unitPrice)} ${po.currency}`,
     },
     {
       header: 'Ordered',
@@ -134,7 +210,7 @@ export function PurchaseOrderDetailPage() {
       header: 'Line Total',
       accessor: (row: any) => (
         <span className="font-mono">
-          {parseFloat(row.totalLineValue || '0').toLocaleString()} {po.currency}
+          {formatAmount4(row.totalLineValue || '0')} {po.currency}
         </span>
       ),
     },
@@ -142,6 +218,14 @@ export function PurchaseOrderDetailPage() {
 
   return (
     <div className="space-y-6 pb-12">
+      <BackButton to="/purchase-orders" label="Back to purchase orders" />
+      {actionFeedback && (
+        <Toast
+          message={actionFeedback.message}
+          type={actionFeedback.type}
+          onClose={() => setActionFeedback(null)}
+        />
+      )}
       {/* Header section */}
       <div className="sm:flex sm:items-center sm:justify-between bg-white p-6 shadow sm:rounded-lg border border-gray-200">
         <div>
@@ -150,7 +234,10 @@ export function PurchaseOrderDetailPage() {
             {getStatusBadge(po.status)}
           </div>
           <p className="mt-1 text-sm text-gray-500">
-            Created on {format(new Date(po.poDate), 'PPP')} • Supplier:{' '}
+            <LocalizedText text={'\n            Created on '} />
+            {format(new Date(po.poDate), 'PPP')}{' '}
+            <LocalizedText text={' • Supplier:'} />
+            <LocalizedText text={' '} />
             <span className="font-medium text-gray-900">
               {po.supplier?.name || po.supplierId}
             </span>
@@ -164,14 +251,18 @@ export function PurchaseOrderDetailPage() {
                 onClick={() => setIsRejectModalOpen(true)}
                 isLoading={rejectMutation.isPending}
               >
-                Reject PO
+                <LocalizedText
+                  text={'\n                Reject PO\n              '}
+                />
               </Button>
               <Button
                 variant="success"
                 onClick={handleApprove}
                 isLoading={approveMutation.isPending}
               >
-                Approve PO
+                <LocalizedText
+                  text={'\n                Approve PO\n              '}
+                />
               </Button>
             </>
           )}
@@ -184,12 +275,18 @@ export function PurchaseOrderDetailPage() {
           {/* Financial Summary */}
           <div className="bg-white shadow sm:rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-              Financial Summary
+              <LocalizedText
+                text={'\n              Financial Summary\n            '}
+              />
             </h3>
             <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-500">
-                  Total Purchase Value (FOB)
+                  <LocalizedText
+                    text={
+                      '\n                  Total Purchase Value (FOB)\n                '
+                    }
+                  />
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900">
                   <DualAmount
@@ -201,22 +298,33 @@ export function PurchaseOrderDetailPage() {
               </div>
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-500">
-                  Estimated Duty Liability
+                  <LocalizedText
+                    text={
+                      '\n                  Estimated Duty Liability\n                '
+                    }
+                  />
                 </dt>
                 <dd className="mt-1 text-lg font-bold font-mono text-red-600">
-                  {parseFloat(po.estimatedDutyEtb || '0').toLocaleString()} ETB
+                  {formatAmount4(po.estimatedDutyEtb || '0')}{' '}
+                  <LocalizedText text={' ETB\n                '} />
                 </dd>
               </div>
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-500">
-                  Exchange Rate applied
+                  <LocalizedText
+                    text={
+                      '\n                  Exchange Rate applied\n                '
+                    }
+                  />
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900 font-mono">
                   {po.fxRate}
                 </dd>
               </div>
               <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Incoterm</dt>
+                <dt className="text-sm font-medium text-gray-500">
+                  <LocalizedText text={'Incoterm'} />
+                </dt>
                 <dd className="mt-1 text-sm text-gray-900">{po.incoterm}</dd>
               </div>
             </dl>
@@ -226,7 +334,9 @@ export function PurchaseOrderDetailPage() {
           <div className="bg-white shadow sm:rounded-lg border border-gray-200">
             <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
               <h3 className="text-lg font-medium leading-6 text-gray-900">
-                Line Items
+                <LocalizedText
+                  text={'\n                Line Items\n              '}
+                />
               </h3>
             </div>
             <div className="p-4 overflow-x-auto">
@@ -240,7 +350,9 @@ export function PurchaseOrderDetailPage() {
           {/* Approval History */}
           <div className="bg-white shadow sm:rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-              Workflow History
+              <LocalizedText
+                text={'\n              Workflow History\n            '}
+              />
             </h3>
             <div className="flow-root">
               <ul className="-mb-8">
@@ -294,11 +406,15 @@ export function PurchaseOrderDetailPage() {
                         <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
                           <div>
                             <p className="text-sm text-gray-500">
-                              {approval.decision === 'approved'
-                                ? 'Approved by '
-                                : approval.decision === 'rejected'
-                                  ? 'Rejected by '
-                                  : 'Pending approval from '}
+                              <LocalizedText
+                                text={
+                                  approval.decision === 'approved'
+                                    ? 'Approved by '
+                                    : approval.decision === 'rejected'
+                                      ? 'Rejected by '
+                                      : 'Pending approval from '
+                                }
+                              />
                               <span className="font-medium text-gray-900">
                                 {approval.approver?.fullName ||
                                   approval.requiredRole}
@@ -325,7 +441,11 @@ export function PurchaseOrderDetailPage() {
                 ))}
                 {(!po.poApprovals || po.poApprovals.length === 0) && (
                   <p className="text-sm text-gray-500 italic">
-                    No workflow history available.
+                    <LocalizedText
+                      text={
+                        '\n                    No workflow history available.\n                  '
+                      }
+                    />
                   </p>
                 )}
               </ul>
@@ -335,12 +455,18 @@ export function PurchaseOrderDetailPage() {
           {/* Relations */}
           <div className="bg-white shadow sm:rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-              Linked Documents
+              <LocalizedText
+                text={'\n              Linked Documents\n            '}
+              />
             </h3>
             <div className="space-y-4">
               <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-2">
-                  Letter of Credit
+                  <LocalizedText
+                    text={
+                      '\n                  Letter of Credit\n                '
+                    }
+                  />
                 </h4>
                 {po.lettersOfCredit && po.lettersOfCredit.length > 0 ? (
                   <ul className="divide-y divide-gray-200 border border-gray-200 rounded-md">
@@ -361,14 +487,20 @@ export function PurchaseOrderDetailPage() {
                   </ul>
                 ) : (
                   <p className="text-sm text-gray-500 italic">
-                    No Letter of Credit linked.
+                    <LocalizedText
+                      text={
+                        '\n                    No Letter of Credit linked.\n                  '
+                      }
+                    />
                   </p>
                 )}
               </div>
 
               <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-2">
-                  Shipments
+                  <LocalizedText
+                    text={'\n                  Shipments\n                '}
+                  />
                 </h4>
                 {po.shipments && po.shipments.length > 0 ? (
                   <ul className="divide-y divide-gray-200 border border-gray-200 rounded-md">
@@ -389,7 +521,11 @@ export function PurchaseOrderDetailPage() {
                   </ul>
                 ) : (
                   <p className="text-sm text-gray-500 italic">
-                    No Shipments recorded yet.
+                    <LocalizedText
+                      text={
+                        '\n                    No Shipments recorded yet.\n                  '
+                      }
+                    />
                   </p>
                 )}
               </div>
@@ -402,25 +538,30 @@ export function PurchaseOrderDetailPage() {
       <Modal
         isOpen={isRejectModalOpen}
         onClose={() => setIsRejectModalOpen(false)}
-        title="Reject Purchase Order"
+        title={localize('Reject Purchase Order')}
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Please provide a reason for rejecting this purchase order. This
-            comment will be visible in the workflow history.
+            <LocalizedText
+              text={
+                '\n            Please provide a reason for rejecting this purchase order. This\n            comment will be visible in the workflow history.\n          '
+              }
+            />
           </p>
           <Input
-            label="Rejection Reason *"
+            label={localize('Rejection Reason *')}
             value={rejectComment}
             onChange={(e) => setRejectComment(e.target.value)}
-            placeholder="e.g. Unit price exceeds budget allocation..."
+            placeholder={localize(
+              'e.g. Unit price exceeds budget allocation...',
+            )}
           />
           <div className="flex justify-end gap-3 mt-6">
             <Button
               variant="secondary"
               onClick={() => setIsRejectModalOpen(false)}
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
             <Button
               variant="danger"
@@ -428,11 +569,26 @@ export function PurchaseOrderDetailPage() {
               disabled={!rejectComment.trim()}
               isLoading={rejectMutation.isPending}
             >
-              Submit Rejection
+              <LocalizedText
+                text={'\n              Submit Rejection\n            '}
+              />
             </Button>
           </div>
         </div>
       </Modal>
+
+      {/* Approve Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isConfirmApproveOpen}
+        title={localize('Approve Purchase Order')}
+        message={localize(
+          'Are you sure you want to approve this Purchase Order? This action will advance the PO workflow.',
+        )}
+        confirmText={localize('Approve')}
+        isLoading={approveMutation.isPending}
+        onConfirm={handleConfirmApprove}
+        onClose={() => setIsConfirmApproveOpen(false)}
+      />
     </div>
   );
 }

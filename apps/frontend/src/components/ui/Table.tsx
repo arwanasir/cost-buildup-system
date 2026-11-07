@@ -1,3 +1,4 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React from 'react';
 
 interface Column<T> {
@@ -65,7 +66,11 @@ export function Table<T>({
                       <div className="flex items-center gap-1">
                         {col.header}
                         {col.sortable && sortKey === col.accessor && (
-                          <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                          <span>
+                            <LocalizedText
+                              text={sortOrder === 'asc' ? '↑' : '↓'}
+                            />
+                          </span>
                         )}
                       </div>
                     </th>

@@ -17,12 +17,14 @@ import { CostEntriesService } from './cost-entries.service';
 import { AllocationService } from '@/allocation/allocation.service';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionGuard } from '@/auth/guards/permissions.guards';
+import { RequiredPermission } from '@/auth/decorators/permissions.decorator';
+import { Permission } from '@/auth/permissions';
 import { ImmutabilityGuard } from '@/common/guards/immutability.guard';
 import { UpdateCostEntryDto } from './dto/update-cost-entry.dto';
 import { MarkActualCostEntryDto } from './dto/mark-actual-cost-entry.dto';
 import { ReverseCostEntryDto } from './dto/reverse-cost-entry.dto';
 import { StorageService } from '@/storage/storage.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -31,6 +33,7 @@ import { eq } from 'drizzle-orm';
 @ApiBearerAuth()
 @Controller('cost-entries')
 @UseGuards(AuthGuard('jwt'), PermissionGuard, ImmutabilityGuard)
+@RequiredPermission(Permission.COST_READ)
 export class CostEntriesController {
   constructor(
     private readonly costEntriesService: CostEntriesService,
@@ -40,29 +43,33 @@ export class CostEntriesController {
   ) {}
 
   @Patch(':id')
+  @RequiredPermission(Permission.COST_WRITE)
   async updateEntry(@Param('id') id: string, @Body() dto: UpdateCostEntryDto) {
     return this.costEntriesService.update(id, dto);
   }
 
   @Post(':id/mark-actual')
+  @RequiredPermission(Permission.COST_WRITE)
   async markActual(
     @Param('id') id: string,
     @Body() dto: MarkActualCostEntryDto,
     @Req() req: any,
   ) {
-    return this.costEntriesService.markActual(id, dto, req.user.id);
+    return this.costEntriesService.markActual(id, dto, req.user.userId);
   }
 
   @Post(':id/reverse')
+  @RequiredPermission(Permission.COST_WRITE)
   async reverseEntry(
     @Param('id') id: string,
     @Body() dto: ReverseCostEntryDto,
     @Req() req: any,
   ) {
-    return this.costEntriesService.reverse(id, dto, req.user.id);
+    return this.costEntriesService.reverse(id, dto, req.user.userId);
   }
 
   @Delete(':id')
+  @RequiredPermission(Permission.COST_WRITE)
   async deleteEntry(@Param('id') id: string) {
     return this.costEntriesService.delete(id);
   }

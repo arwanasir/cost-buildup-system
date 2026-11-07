@@ -4,7 +4,7 @@ import { ApprovalRoutingService } from './approval-routing.service';
 import { PoStatusService } from './po-status.service';
 import { PoCalculationService } from './po-calculation.service';
 import { NumberingService } from '@/core/numbering/numbering.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import { BadRequestException } from '@nestjs/common';
 
 describe('Purchase Orders Workflow', () => {

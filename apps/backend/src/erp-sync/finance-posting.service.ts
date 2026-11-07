@@ -2,7 +2,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { FinanceClient } from './clients/finance.client';
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, inArray, and } from 'drizzle-orm';
 import Decimal from 'decimal.js';
@@ -197,7 +197,12 @@ export class FinancePostingService {
         .where(
           and(
             eq(schema.goodsReceipts.shipmentId, payload.shipmentId),
-            eq(schema.goodsReceipts.status, 'flagged_for_adjustment'),
+            inArray(schema.goodsReceipts.status, [
+              'flagged_for_adjustment',
+              'posting_failed',
+              'posted',
+            ]),
+            eq(schema.goodsReceipts.usesEstimatedCost, true),
           ),
         );
 

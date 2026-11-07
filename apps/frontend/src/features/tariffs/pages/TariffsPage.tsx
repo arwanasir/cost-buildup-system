@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import {
   useTariffs,
@@ -21,6 +23,7 @@ import {
   ErrorState,
   Badge,
   FormError,
+  PermissionGate,
 } from '@/components/ui';
 
 const DUTY_STRUCTURES = [
@@ -63,6 +66,7 @@ const tariffSchema = z
 type TariffFormData = z.infer<typeof tariffSchema>;
 
 export function TariffsPage() {
+  const localize = useUiText();
   const queryClient = useQueryClient();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTariff, setEditingTariff] = useState<Tariff | null>(null);
@@ -143,7 +147,11 @@ export function TariffsPage() {
       header: 'Duty Structure',
       accessor: (row: Tariff) => (
         <Badge variant="info">
-          {row.dutyStructure === 'ad_valorem' ? 'Ad Valorem' : 'Specific'}
+          <LocalizedText
+            text={
+              row.dutyStructure === 'ad_valorem' ? 'Ad Valorem' : 'Specific'
+            }
+          />
         </Badge>
       ),
     },
@@ -171,12 +179,14 @@ export function TariffsPage() {
     {
       header: 'Actions',
       accessor: (row: Tariff) => (
-        <button
-          onClick={() => openEdit(row)}
-          className="text-blue-600 hover:text-blue-900 font-medium text-sm"
-        >
-          Edit
-        </button>
+        <PermissionGate permission="tariffs:write">
+          <button
+            onClick={() => openEdit(row)}
+            className="text-blue-600 hover:text-blue-900 font-medium text-sm"
+          >
+            <LocalizedText text={'\n          Edit\n        '} />
+          </button>
+        </PermissionGate>
       ),
     },
   ];
@@ -184,7 +194,10 @@ export function TariffsPage() {
   if (isLoading) return <Skeleton className="h-[600px] w-full" />;
   if (isError)
     return (
-      <ErrorState message="Failed to load tariffs" onRetry={() => refetch()} />
+      <ErrorState
+        message={localize('Failed to load tariffs')}
+        onRetry={() => refetch()}
+      />
     );
 
   return (
@@ -192,16 +205,25 @@ export function TariffsPage() {
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            Customs Tariffs Book
+            <LocalizedText
+              text={'\n            Customs Tariffs Book\n          '}
+            />
           </h1>
           <p className="mt-2 text-sm text-gray-700">
-            Manage HS Codes, structure definitions, and statutory rates for
-            landed cost calculation.
+            <LocalizedText
+              text={
+                '\n            Manage HS Codes, structure definitions, and statutory rates for\n            landed cost calculation.\n          '
+              }
+            />
           </p>
         </div>
-        <div className="mt-4 sm:mt-0">
-          <Button onClick={openCreate}>Add HS Code</Button>
-        </div>
+        <PermissionGate permission="tariffs:write">
+          <div className="mt-4 sm:mt-0">
+            <Button onClick={openCreate}>
+              <LocalizedText text={'Add HS Code'} />
+            </Button>
+          </div>
+        </PermissionGate>
       </div>
 
       <Table columns={columns} data={tariffs || []} />
@@ -215,26 +237,26 @@ export function TariffsPage() {
           <FormError error={createMutation.error || updateMutation.error} />
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="HS Code"
+              label={localize('HS Code')}
               {...register('hsCode')}
               error={errors.hsCode?.message}
               disabled={!!editingTariff} // Cannot edit HS code once created
             />
             <DatePicker
-              label="Effective From"
+              label={localize('Effective From')}
               {...register('effectiveFrom')}
               error={errors.effectiveFrom?.message}
             />
           </div>
 
           <Input
-            label="Description"
+            label={localize('Description')}
             {...register('description')}
             error={errors.description?.message}
           />
 
           <Select
-            label="Duty Structure"
+            label={localize('Duty Structure')}
             options={DUTY_STRUCTURES}
             {...register('dutyStructure')}
             error={errors.dutyStructure?.message}
@@ -243,7 +265,7 @@ export function TariffsPage() {
           <div className="grid grid-cols-2 gap-4">
             {selectedStructure === 'ad_valorem' ? (
               <Input
-                label="Duty Rate (%)"
+                label={localize('Duty Rate (%)')}
                 type="number"
                 step="0.01"
                 {...register('dutyRate', { valueAsNumber: true })}
@@ -251,7 +273,7 @@ export function TariffsPage() {
               />
             ) : (
               <Input
-                label="Specific Duty (ETB/unit)"
+                label={localize('Specific Duty (ETB/unit)')}
                 type="number"
                 step="0.01"
                 {...register('specificDutyPerUnit', { valueAsNumber: true })}
@@ -260,7 +282,7 @@ export function TariffsPage() {
             )}
 
             <Input
-              label="Excise Rate (%)"
+              label={localize('Excise Rate (%)')}
               type="number"
               step="0.01"
               {...register('exciseRate', { valueAsNumber: true })}
@@ -269,7 +291,7 @@ export function TariffsPage() {
           </div>
 
           <Input
-            label="Withholding Rate (%)"
+            label={localize('Withholding Rate (%)')}
             type="number"
             step="0.01"
             {...register('withholdingRate', { valueAsNumber: true })}
@@ -282,7 +304,9 @@ export function TariffsPage() {
               isLoading={createMutation.isPending || updateMutation.isPending}
               className="w-full sm:ml-3 sm:w-auto"
             >
-              {editingTariff ? 'Save Changes' : 'Create HS Code'}
+              <LocalizedText
+                text={editingTariff ? 'Save Changes' : 'Create HS Code'}
+              />
             </Button>
             <Button
               type="button"
@@ -290,7 +314,7 @@ export function TariffsPage() {
               onClick={() => setIsFormOpen(false)}
               className="mt-3 w-full sm:mt-0 sm:w-auto"
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
           </div>
         </form>

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LcAlertScheduler } from './lc-alert.scheduler';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import { Logger } from '@nestjs/common';
 import * as schema from '@/db/schema';
 import { NotificationsService } from '@/notifications/notifications.service';
@@ -22,6 +22,7 @@ describe('LcAlertScheduler', () => {
   let mockWherePO: jest.Mock;
   let mockInsert: jest.Mock;
   let mockValues: jest.Mock;
+  let mockNotifyRoles: jest.Mock;
 
   beforeEach(async () => {
     mockWhereLC = jest.fn().mockResolvedValue([]);
@@ -34,6 +35,7 @@ describe('LcAlertScheduler', () => {
 
     mockValues = jest.fn().mockResolvedValue([]);
     mockInsert = jest.fn(() => ({ values: mockValues }));
+    mockNotifyRoles = jest.fn().mockResolvedValue(undefined);
 
     mockDb = {
       select: jest.fn(() => ({ from: mockFrom })),
@@ -47,7 +49,10 @@ describe('LcAlertScheduler', () => {
       providers: [
         LcAlertScheduler,
         { provide: DRIZZLE, useValue: mockDb },
-        { provide: NotificationsService, useValue: { notifyRoles: jest.fn() } },
+        {
+          provide: NotificationsService,
+          useValue: { notifyRoles: mockNotifyRoles },
+        },
       ],
     }).compile();
 
@@ -99,8 +104,7 @@ describe('LcAlertScheduler', () => {
       val: '2026-09-23',
     });
 
-    // Ensure no notifications are inserted if DB returns nothing
-    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockNotifyRoles).not.toHaveBeenCalled();
   });
 
   it('should create notifications for LCs matching the boundaries and unshipped POs', async () => {
@@ -142,21 +146,36 @@ describe('LcAlertScheduler', () => {
 
     await scheduler.checkLcAlerts();
 
-    expect(mockInsert).toHaveBeenCalledTimes(3);
-
-    const firstNotification = mockValues.mock.calls[0][0];
-    expect(firstNotification.entityId).toBe('lc-expiry');
-    expect(firstNotification.type).toBe('lc_expiry');
-    expect(firstNotification.titleEn).toContain('30 days'); // asserts 30 boundary
-
-    const secondNotification = mockValues.mock.calls[1][0];
-    expect(secondNotification.entityId).toBe('lc-shipment');
-    expect(secondNotification.type).toBe('lc_last_shipment');
-    expect(secondNotification.titleEn).toContain('3 days'); // asserts 3 boundary
-
-    const thirdNotification = mockValues.mock.calls[2][0];
-    expect(thirdNotification.entityId).toBe('lc-docs');
-    expect(thirdNotification.type).toBe('lc_presentation');
+    expect(mockNotifyRoles).toHaveBeenCalledTimes(3);
+    expect(mockNotifyRoles).toHaveBeenNthCalledWith(
+      1,
+      'lc_expiry',
+      { type: 'letter_of_credit', id: 'lc-expiry' },
+      expect.objectContaining({
+        lcNumber: 'LC001',
+        expiryDate: '2026-10-20',
+        days: 30,
+      }),
+    );
+    expect(mockNotifyRoles).toHaveBeenNthCalledWith(
+      2,
+      'lc_last_shipment',
+      { type: 'letter_of_credit', id: 'lc-shipment' },
+      expect.objectContaining({
+        lcNumber: 'LC002',
+        lastShipmentDate: '2026-09-23',
+        days: 3,
+      }),
+    );
+    expect(mockNotifyRoles).toHaveBeenNthCalledWith(
+      3,
+      'lc_presentation',
+      { type: 'letter_of_credit', id: 'lc-docs' },
+      expect.objectContaining({
+        lcNumber: 'LC003',
+        presentationDate: '2026-10-11',
+      }),
+    );
   });
 
   it('should NOT create lc_expiry notification if all POs are shipped', async () => {
@@ -182,6 +201,6 @@ describe('LcAlertScheduler', () => {
 
     await scheduler.checkLcAlerts();
 
-    expect(mockInsert).not.toHaveBeenCalled(); // No notifications created!
+    expect(mockNotifyRoles).not.toHaveBeenCalled(); // Shipped POs need no expiry alert.
   });
 });

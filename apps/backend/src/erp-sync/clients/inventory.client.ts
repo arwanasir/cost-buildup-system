@@ -12,9 +12,17 @@ export class InventoryClient {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
+    const erpBaseUrl =
+      this.configService.get<string>('ERP_BASE_URL') || 'http://localhost:3001';
+    const configuredUrl = this.configService.get<string>('ERP_INVENTORY_URL');
+    const baseUsesContainerNetwork =
+      !/localhost|127\.0\.0\.1|\[::1\]/i.test(erpBaseUrl);
+    const configuredUrlUsesLocalhost =
+      configuredUrl && /localhost|127\.0\.0\.1|\[::1\]/i.test(configuredUrl);
     this.baseUrl =
-      this.configService.get<string>('ERP_INVENTORY_URL') ||
-      'http://erp-system.internal/api/v1/inventory/receipts';
+      configuredUrl && !(baseUsesContainerNetwork && configuredUrlUsesLocalhost)
+        ? configuredUrl
+        : `${erpBaseUrl.replace(/\/+$/, '')}/inventory/postings`;
   }
 
   async postReceipt(payloads: any[]): Promise<any> {

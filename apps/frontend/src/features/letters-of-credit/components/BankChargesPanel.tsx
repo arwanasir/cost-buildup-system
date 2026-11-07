@@ -1,8 +1,11 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useLcCharges, useAddLcCharge, type LetterOfCredit } from '../api';
+import { formatAmount4 } from '@/lib/money';
 import {
   Button,
   Input,
@@ -28,6 +31,7 @@ const chargeSchema = z.object({
 type ChargeFormData = z.infer<typeof chargeSchema>;
 
 export function BankChargesPanel({ lc }: { lc: LetterOfCredit }) {
+  const localize = useUiText();
   const {
     data: chargesData,
     isLoading,
@@ -37,6 +41,7 @@ export function BankChargesPanel({ lc }: { lc: LetterOfCredit }) {
   const addCharge = useAddLcCharge();
 
   const [showAddForm, setShowAddForm] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
@@ -53,12 +58,15 @@ export function BankChargesPanel({ lc }: { lc: LetterOfCredit }) {
   const charges = chargesData?.data || [];
 
   const onSubmit = async (data: ChargeFormData) => {
+    setSubmitError(null);
     try {
       await addCharge.mutateAsync({ id: lc.id, data });
       reset();
       setShowAddForm(false);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      setSubmitError(
+        e?.response?.data?.message || e?.message || 'Failed to save bank charge. Please try again.',
+      );
     }
   };
 
@@ -80,19 +88,24 @@ export function BankChargesPanel({ lc }: { lc: LetterOfCredit }) {
   if (isLoading) return <Skeleton className="h-[200px]" />;
   if (isError)
     return (
-      <ErrorState message="Failed to load charges" onRetry={() => refetch()} />
+      <ErrorState
+        message={localize('Failed to load charges')}
+        onRetry={() => refetch()}
+      />
     );
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
       <div className="px-4 py-5 sm:px-6 flex justify-between items-center border-b border-gray-200">
         <h3 className="text-lg leading-6 font-medium text-gray-900">
-          Bank Charges & Fees
+          <LocalizedText text={'\n          Bank Charges & Fees\n        '} />
         </h3>
         <PermissionGate permission="lc:write">
           {!showAddForm && (
             <Button variant="secondary" onClick={() => setShowAddForm(true)}>
-              Record Charge
+              <LocalizedText
+                text={'\n              Record Charge\n            '}
+              />
             </Button>
           )}
         </PermissionGate>
@@ -103,26 +116,26 @@ export function BankChargesPanel({ lc }: { lc: LetterOfCredit }) {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Select
-                label="Charge Type *"
+                label={localize('Charge Type *')}
                 options={allowedChargeTypes}
                 {...register('chargeType')}
                 error={errors.chargeType?.message}
               />
               <Input
-                label="Amount (ETB) *"
+                label={localize('Amount (ETB) *')}
                 type="number"
                 step="0.01"
                 {...register('amountEtb', { valueAsNumber: true })}
                 error={errors.amountEtb?.message}
               />
               <Input
-                label="Date *"
+                label={localize('Date *')}
                 type="date"
                 {...register('chargeDate')}
                 error={errors.chargeDate?.message}
               />
               <Input
-                label="Bank Reference"
+                label={localize('Bank Reference')}
                 {...register('bankReference')}
                 error={errors.bankReference?.message}
               />
@@ -133,19 +146,27 @@ export function BankChargesPanel({ lc }: { lc: LetterOfCredit }) {
                 variant="secondary"
                 onClick={() => {
                   setShowAddForm(false);
+                  setSubmitError(null);
                   reset();
                 }}
               >
-                Cancel
+                <LocalizedText
+                  text={'\n                Cancel\n              '}
+                />
               </Button>
               <Button
                 type="submit"
                 variant="primary"
                 isLoading={addCharge.isPending}
               >
-                Save Charge
+                <LocalizedText
+                  text={'\n                Save Charge\n              '}
+                />
               </Button>
             </div>
+            {submitError && (
+              <p className="text-sm text-red-600 mt-2">{submitError}</p>
+            )}
           </form>
         </div>
       )}
@@ -153,7 +174,9 @@ export function BankChargesPanel({ lc }: { lc: LetterOfCredit }) {
       <div className="px-4 py-5 sm:p-0">
         {charges.length === 0 ? (
           <p className="p-4 text-sm text-gray-500">
-            No bank charges recorded yet.
+            <LocalizedText
+              text={'\n            No bank charges recorded yet.\n          '}
+            />
           </p>
         ) : (
           <ul className="divide-y divide-gray-200">
@@ -169,18 +192,24 @@ export function BankChargesPanel({ lc }: { lc: LetterOfCredit }) {
                     </p>
                     {charge.registerEntryId && (
                       <Badge variant="success" className="text-xs">
-                        Linked to Accounting
+                        <LocalizedText
+                          text={
+                            '\n                        Linked to Accounting\n                      '
+                          }
+                        />
                       </Badge>
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Date: {new Date(charge.chargeDate).toLocaleDateString()}
+                    <LocalizedText text={'\n                    Date: '} />
+                    {new Date(charge.chargeDate).toLocaleDateString()}
                     {charge.bankReference && ` | Ref: ${charge.bankReference}`}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-gray-900">
-                    {parseFloat(charge.amountEtb).toLocaleString()} ETB
+                    {formatAmount4(charge.amountEtb)}{' '}
+                    <LocalizedText text={' ETB\n                  '} />
                   </p>
                 </div>
               </li>

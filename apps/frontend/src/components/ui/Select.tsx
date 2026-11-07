@@ -1,5 +1,7 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { forwardRef, useId } from 'react';
 import type { SelectHTMLAttributes } from 'react';
+import { useUiText } from '@/lib/ui-text';
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
@@ -9,6 +11,7 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   ({ label, error, options, className = '', ...props }, ref) => {
+    const localize = useUiText();
     const generatedId = useId();
     const id = props.id ?? generatedId;
     return (
@@ -18,7 +21,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             htmlFor={id}
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            {label}
+            {localize(label)}
           </label>
         )}
         <select
@@ -28,15 +31,19 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           {...props}
         >
           <option value="" disabled>
-            Select an option
+            <LocalizedText
+              text={'\n            Select an option\n          '}
+            />
           </option>
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {opt.label}
+              {localize(opt.label)}
             </option>
           ))}
         </select>
-        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+        {error && (
+          <p className="mt-1 text-sm text-red-600">{localize(error)}</p>
+        )}
       </div>
     );
   },

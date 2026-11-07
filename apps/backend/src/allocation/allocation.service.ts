@@ -9,7 +9,7 @@ import {
   AllocationMethod,
 } from './allocation-basis.service';
 import Decimal from 'decimal.js';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, and, isNull, inArray } from 'drizzle-orm';
 
@@ -105,6 +105,13 @@ export class AllocationService {
         .where(eq(schema.importCostEntries.id, entryId));
       if (!entry) throw new NotFoundException('Cost entry not found');
 
+      if (entry.source === 'commercial_invoice') {
+        await tx
+          .delete(schema.costAllocations)
+          .where(eq(schema.costAllocations.costEntryId, entryId));
+        return [];
+      }
+
       // 2. Fetch shipment items
       const items = await tx
         .select()
@@ -185,10 +192,19 @@ export class AllocationService {
 
       if (entries.length === 0) return [];
 
+      const entryIds = entries.map((entry: any) => entry.id);
+      await tx
+        .delete(schema.costAllocations)
+        .where(inArray(schema.costAllocations.costEntryId, entryIds));
+
+      const allocatableEntries = entries.filter(
+        (entry: any) => entry.source !== 'commercial_invoice',
+      );
+
       const allInsertData: any[] = [];
 
       // 3. Independent allocation logic per entry (FR-07.2)
-      for (const entry of entries) {
+      for (const entry of allocatableEntries) {
         let results: AllocationResult[] = [];
 
         if (
@@ -226,13 +242,7 @@ export class AllocationService {
         });
       }
 
-      // 4. Wipe all previous allocations for these entries to maintain idempotency
-      const entryIds = entries.map((e: any) => e.id);
-      await tx
-        .delete(schema.costAllocations)
-        .where(inArray(schema.costAllocations.costEntryId, entryIds));
-
-      // 5. Bulk insert the entirely freshly computed matrix
+      // 4. Insert the freshly computed matrix after clearing stale allocations.
       if (allInsertData.length > 0) {
         await tx.insert(schema.costAllocations).values(allInsertData);
       }

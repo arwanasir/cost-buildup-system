@@ -1,7 +1,7 @@
 import { NotificationsService } from '../notifications/notifications.service';
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { DRIZZLE, DrizzleDB } from '@/db';
+import { DRIZZLE, DrizzleDB } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, or, and, sql } from 'drizzle-orm';
 
@@ -61,14 +61,11 @@ export class LcAlertScheduler {
       const notShipped = pos.some((po) => !shippedStatuses.includes(po.status));
       if (notShipped) {
         const days = lc.expiryDate === expiry30 ? 30 : 7;
-        await this.db.insert(schema.notifications).values({
-          userId: lc.createdBy!,
-          type: 'lc_expiry' as const,
-          titleEn: `LC Expiring in ${days} days`,
-          bodyEn: `Letter of Credit ${lc.lcNumber} expires on ${lc.expiryDate} and has unshipped Purchase Orders.`,
-          entityType: 'letter_of_credit',
-          entityId: lc.id,
-        });
+        await this.notificationsService.notifyRoles(
+          'lc_expiry',
+          { type: 'letter_of_credit', id: lc.id },
+          { lcNumber: lc.lcNumber, expiryDate: lc.expiryDate, days },
+        );
         this.logger.log(`Created lc_expiry notification for LC ${lc.id}`);
       }
     }
@@ -86,14 +83,11 @@ export class LcAlertScheduler {
 
     for (const lc of lcsForShipment) {
       const days = lc.lastShipmentDate === shipment14 ? 14 : 3;
-      await this.db.insert(schema.notifications).values({
-        userId: lc.createdBy!,
-        type: 'lc_last_shipment' as const,
-        titleEn: `LC Last Shipment in ${days} days`,
-        bodyEn: `Letter of Credit ${lc.lcNumber} last shipment date is approaching on ${lc.lastShipmentDate}.`,
-        entityType: 'letter_of_credit',
-        entityId: lc.id,
-      });
+      await this.notificationsService.notifyRoles(
+        'lc_last_shipment',
+        { type: 'letter_of_credit', id: lc.id },
+        { lcNumber: lc.lcNumber, lastShipmentDate: lc.lastShipmentDate, days },
+      );
       this.logger.log(`Created lc_last_shipment notification for LC ${lc.id}`);
     }
 
@@ -114,14 +108,18 @@ export class LcAlertScheduler {
       });
 
       if (!recentNote) {
-        await this.db.insert(schema.notifications).values({
-          userId: lc.createdBy!,
-          type: 'lc_presentation' as const,
-          titleEn: `LC Documents Received`,
-          bodyEn: `Letter of Credit ${lc.lcNumber} has received documents. Please review them for presentation.`,
-          entityType: 'letter_of_credit',
-          entityId: lc.id,
-        });
+        const presentationDate = addDays(
+          new Date(lc.updatedAt || today),
+          lc.presentationPeriodDays || 21,
+        );
+        await this.notificationsService.notifyRoles(
+          'lc_presentation',
+          { type: 'letter_of_credit', id: lc.id },
+          {
+            lcNumber: lc.lcNumber,
+            presentationDate: formatYMD(presentationDate),
+          },
+        );
         this.logger.log(`Created lc_presentation notification for LC ${lc.id}`);
       }
     }

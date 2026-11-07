@@ -3,14 +3,16 @@ import { LandedCostService } from './landed-cost.service';
 import { AllocationService } from '@/allocation/allocation.service';
 import { FinalisationGuardService } from './finalisation-guard.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 
 describe('LandedCostService (TC-COST01, AC05)', () => {
   let service: LandedCostService;
   let txMock: any;
   let dbMock: any;
+  let allocateShipmentMock: jest.Mock;
 
   beforeEach(async () => {
+    allocateShipmentMock = jest.fn().mockResolvedValue(true);
     txMock = {
       select: jest.fn().mockReturnThis(),
       from: jest.fn().mockReturnThis(),
@@ -33,7 +35,7 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
         LandedCostService,
         {
           provide: AllocationService,
-          useValue: { allocateShipment: jest.fn().mockResolvedValue(true) },
+          useValue: { allocateShipment: allocateShipmentMock },
         },
         {
           provide: FinalisationGuardService,
@@ -47,7 +49,7 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
     service = module.get<LandedCostService>(LandedCostService);
   });
 
-  it('computes landed cost across all allocation methods with exact 4.1.4 schema and 6dp rounding', async () => {
+  it('computes landed cost across all allocation methods with SRS 4dp monetary precision', async () => {
     // 1. Mock 5 Shipment Items
     const mockItems = [
       {
@@ -84,6 +86,12 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
 
     // 2. Mock Cross-Matrix Allocations (Balanced perfectly for Reconciliation)
     const mockAllocations = [
+      ...mockItems.map((item) => ({
+        shipmentItemId: item.id,
+        allocatedEtb: item.ciValueEtb,
+        categoryCode: 'FOB',
+        source: 'commercial_invoice',
+      })),
       ...['FREIGHT', 'INSURANCE', 'PORT', 'BANK'].flatMap((category) => [
         {
           shipmentItemId: 'item-1',
@@ -161,15 +169,32 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
       { amountEtb: '500.0000' },
       { amountEtb: '750.0000' },
       { amountEtb: '750.0000' },
+      { amountEtb: '15000.0000', source: 'commercial_invoice' },
     ];
 
     let whereCount = 0;
+    dbMock.where.mockResolvedValueOnce([{ isFinalised: false }]);
     txMock.where.mockImplementation(() => {
       whereCount++;
       if (whereCount === 1) return Promise.resolve(mockItems); // shipmentItems
-      if (whereCount === 2) return Promise.resolve([]); // GRN (fallback to BL qty)
-      if (whereCount === 3) return Promise.resolve(mockAllocations); // costAllocations
-      if (whereCount === 4) return Promise.resolve(mockActiveEntries); // activeEntries check
+      if (whereCount === 2)
+        return Promise.resolve([
+          {
+            id: 'grn-1',
+            status: 'flagged_for_adjustment',
+            shipmentId: 'ship-1',
+          },
+        ]); // GRN uses accepted quantities, excluding rejected units
+      if (whereCount === 3)
+        return Promise.resolve([
+          {
+            shipmentItemId: 'item-1',
+            acceptedQuantity: '4',
+            receivedQuantity: '5',
+          },
+        ]);
+      if (whereCount === 4) return Promise.resolve(mockAllocations); // costAllocations
+      if (whereCount === 5) return Promise.resolve(mockActiveEntries); // activeEntries check
       return Promise.resolve(true); // delete
     });
 
@@ -183,6 +208,7 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
     // Assert Item 1: Complete 4.1.4 Mapping with Item-Specific Duty
     const item1 = results.find((r: any) => r.shipmentItemId === 'item-1');
     expect(item1).toBeDefined();
+    expect(item1.quantityReceived).toBe('4.0000');
     expect(item1.ciValueEtb).toBe('1000.0000');
     expect(item1.customsDutyEtb).toBe('750.0000'); // Explicit item-specific duty
     expect(item1.importVatEtb).toBe('0.0000');
@@ -194,8 +220,8 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
     expect(item1.otherChargesAllocatedEtb).toBe('100.0000');
     // Total = 1000 + 4*100 + 2*100 + 750 = 2350
     expect(item1.totalLandedCostEtb).toBe('2350.0000');
-    // Per unit = 2350 / 10 = 235.000000
-    expect(item1.perUnitLandedCostEtb).toBe('235.000000');
+    // Per unit uses accepted units only, not the rejected received unit.
+    expect(item1.perUnitLandedCostEtb).toBe('587.5000');
 
     // Assert Item 2: Mixed Mapping with Item-Specific VAT
     const item2 = results.find((r: any) => r.shipmentItemId === 'item-2');
@@ -206,13 +232,23 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
     // Total = 2000 + 4*200 + 2*100 + 750 = 3750
     expect(item2.totalLandedCostEtb).toBe('3750.0000');
     // Per unit = 3750 / 20 = 187.500000
-    expect(item2.perUnitLandedCostEtb).toBe('187.500000');
+    expect(item2.perUnitLandedCostEtb).toBe('187.5000');
 
     // Assert Item 5: Perfect math resolution up to 6dp precision
     const item5 = results.find((r: any) => r.shipmentItemId === 'item-5');
     // Total = 5000 + 4*500 + 2*100 = 7200
     expect(item5.totalLandedCostEtb).toBe('7200.0000');
     // Per unit = 7200 / 50 = 144.000000
-    expect(item5.perUnitLandedCostEtb).toBe('144.000000');
+    expect(item5.perUnitLandedCostEtb).toBe('144.0000');
+  });
+
+  it('does not allocate or recompute after landed cost finalisation', async () => {
+    dbMock.where.mockResolvedValueOnce([{ isFinalised: true }]);
+
+    await expect(service.computeDraft('ship-final')).rejects.toThrow(
+      'Finalised landed costs are locked',
+    );
+    expect(allocateShipmentMock).not.toHaveBeenCalled();
+    expect(dbMock.transaction).not.toHaveBeenCalled();
   });
 });

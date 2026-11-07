@@ -5,7 +5,7 @@ import { ImportShipmentsService } from './import-shipments.service';
 import { ShipmentStatusService } from './shipment-status.service';
 import { ShipmentQuantityService } from './shipment-quantity.service';
 import { NumberingService } from '@/core/numbering/numbering.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 
 describe('Import Shipments Services', () => {
   let shipmentsService: ImportShipmentsService;
@@ -36,6 +36,7 @@ describe('Import Shipments Services', () => {
         importPurchaseOrders: { findFirst: jest.fn() },
         poLines: { findMany: jest.fn() },
         costCategories: { findFirst: jest.fn(), findMany: jest.fn() },
+        importCostEntries: { findMany: jest.fn() },
         users: { findFirst: jest.fn() },
         importShipments: { findFirst: jest.fn() },
       },
@@ -149,11 +150,32 @@ describe('Import Shipments Services', () => {
         (c: any) => c.isEstimated === true && c.source === 'po_estimate',
       );
       expect(estimatedEntries.length).toBeGreaterThan(0);
-
-      const actualFobEntry = costEntryValues[0].find(
-        (c: any) => c.costCategoryId === 'fob-cat' && c.isEstimated === false,
+      expect(costEntryValues[0].every((entry: any) => entry.createdBy === 'user-1')).toBe(
+        true,
       );
-      expect(actualFobEntry).toBeDefined();
+
+      expect(
+        costEntryValues[0].some(
+          (entry: any) => entry.source === 'commercial_invoice',
+        ),
+      ).toBe(false);
+    });
+  });
+
+  describe('Cost Entry Categories', () => {
+    it('includes the category relation when listing shipment cost entries', async () => {
+      const costCategory = { id: 'category-1', name: 'Freight' };
+      mockDb.query.importCostEntries.findMany.mockResolvedValue([
+        { id: 'entry-1', costCategoryId: costCategory.id, costCategory },
+      ]);
+
+      const entries = await shipmentsService.getCostEntries('shipment-1');
+
+      expect(mockDb.query.importCostEntries.findMany).toHaveBeenCalledWith({
+        where: expect.anything(),
+        with: { costCategory: true },
+      });
+      expect((entries[0] as any).costCategory.name).toBe('Freight');
     });
   });
 

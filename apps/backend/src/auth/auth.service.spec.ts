@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
-import { DRIZZLE } from '../db/db.module';
+import { DRIZZLE } from '../db/db.token';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 jest.mock('bcrypt', () => ({

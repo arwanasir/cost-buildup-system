@@ -1,5 +1,7 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Button,
   Table,
@@ -8,8 +10,14 @@ import {
   Skeleton,
   ErrorState,
   Input,
+  PermissionGate,
 } from '@/components/ui';
-import { usePurchaseOrders, type PurchaseOrder, type PoStatus } from '../api';
+import {
+  mapPurchaseOrderStatusFilter,
+  usePurchaseOrders,
+  type PurchaseOrder,
+  type PoStatus,
+} from '../api';
 import { useSuppliers } from '@/features/suppliers/api';
 import { PurchaseOrderWizard } from '../components/PurchaseOrderWizard';
 import { format } from 'date-fns';
@@ -20,16 +28,25 @@ const STATUS_TABS = [
   { id: 'pending_approval', label: 'Pending Approval' },
   { id: 'approved', label: 'Approved' },
   { id: 'rejected', label: 'Rejected' },
-  { id: 'processing', label: 'Processing' },
+  { id: 'lc_applied', label: 'LC Applied' },
   { id: 'shipped', label: 'Shipped' },
   { id: 'partially_received', label: 'Partially Received' },
   { id: 'closed', label: 'Closed' },
 ];
 
 export function PurchaseOrdersListPage() {
+  const localize = useUiText();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState(() => {
+    const requestedStatus = searchParams.get('status');
+    const normalizedStatus =
+      requestedStatus === 'processing' ? 'lc_applied' : requestedStatus;
+    return STATUS_TABS.some((tab) => tab.id === normalizedStatus)
+      ? normalizedStatus!
+      : 'all';
+  });
   const [supplierId, setSupplierId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -43,7 +60,8 @@ export function PurchaseOrdersListPage() {
   const { data, isLoading, isError, refetch } = usePurchaseOrders({
     page,
     limit: 10,
-    status: activeTab === 'all' ? undefined : activeTab,
+    status:
+      activeTab === 'all' ? undefined : mapPurchaseOrderStatusFilter(activeTab),
     supplierId: supplierId || undefined,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
@@ -52,21 +70,60 @@ export function PurchaseOrdersListPage() {
   const getStatusBadge = (status: PoStatus) => {
     switch (status) {
       case 'draft':
-        return <Badge variant="secondary">Draft</Badge>;
+        return (
+          <Badge variant="secondary">
+            <LocalizedText text={'Draft'} />
+          </Badge>
+        );
       case 'pending_approval':
-        return <Badge variant="warning">Pending Approval</Badge>;
+        return (
+          <Badge variant="warning">
+            <LocalizedText text={'Pending Approval'} />
+          </Badge>
+        );
       case 'approved':
-        return <Badge variant="success">Approved</Badge>;
+        return (
+          <Badge variant="success">
+            <LocalizedText text={'Approved'} />
+          </Badge>
+        );
       case 'rejected':
-        return <Badge variant="danger">Rejected</Badge>;
+        return (
+          <Badge variant="danger">
+            <LocalizedText text={'Rejected'} />
+          </Badge>
+        );
+      case 'lc_applied':
       case 'processing':
-        return <Badge variant="info">Processing</Badge>;
+        return (
+          <Badge variant="info">
+            <LocalizedText text={'LC Applied'} />
+          </Badge>
+        );
       case 'shipped':
-        return <Badge variant="info">Shipped</Badge>;
+        return (
+          <Badge variant="info">
+            <LocalizedText text={'Shipped'} />
+          </Badge>
+        );
       case 'partially_received':
-        return <Badge variant="warning">Partial Receipt</Badge>;
+        return (
+          <Badge variant="warning">
+            <LocalizedText text={'Partial Receipt'} />
+          </Badge>
+        );
+      case 'fully_received':
+        return (
+          <Badge variant="success">
+            <LocalizedText text={'Fully Received'} />
+          </Badge>
+        );
       case 'closed':
-        return <Badge variant="secondary">Closed</Badge>;
+        return (
+          <Badge variant="secondary">
+            <LocalizedText text={'Closed'} />
+          </Badge>
+        );
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -98,9 +155,10 @@ export function PurchaseOrdersListPage() {
       accessor: (row: PurchaseOrder) => (
         <span className="font-mono">
           {parseFloat(row.totalAmount).toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}{' '}
+            minimumFractionDigits: 4,
+            maximumFractionDigits: 4,
+          })}
+          <LocalizedText text={' '} />
           {row.currency}
         </span>
       ),
@@ -116,14 +174,22 @@ export function PurchaseOrdersListPage() {
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            Purchase Orders
+            <LocalizedText text={'\n            Purchase Orders\n          '} />
           </h1>
           <p className="mt-2 text-sm text-gray-700">
-            Track and manage import purchase orders and approvals.
+            <LocalizedText
+              text={
+                '\n            Track and manage import purchase orders and approvals.\n          '
+              }
+            />
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
-          <Button onClick={() => setIsFormOpen(true)}>Create PO</Button>
+          <PermissionGate permission="po:write">
+            <Button onClick={() => setIsFormOpen(true)}>
+              <LocalizedText text={'Create PO'} />
+            </Button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -131,7 +197,7 @@ export function PurchaseOrdersListPage() {
       <div className="border-b border-gray-200">
         <nav
           className="-mb-px flex space-x-6 overflow-x-auto"
-          aria-label="Tabs"
+          aria-label={localize('Tabs')}
         >
           {STATUS_TABS.map((tab) => (
             <button
@@ -139,6 +205,7 @@ export function PurchaseOrdersListPage() {
               onClick={() => {
                 setActiveTab(tab.id);
                 setPage(1);
+                setSearchParams(tab.id === 'all' ? {} : { status: tab.id });
               }}
               className={`${
                 activeTab === tab.id
@@ -156,7 +223,7 @@ export function PurchaseOrdersListPage() {
       <div className="bg-white p-4 shadow sm:rounded-lg border border-gray-200 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
         <div>
           <Select
-            label="Supplier Filter"
+            label={localize('Supplier Filter')}
             value={supplierId}
             onChange={(e) => {
               setSupplierId(e.target.value);
@@ -174,7 +241,7 @@ export function PurchaseOrdersListPage() {
         <div>
           <Input
             type="date"
-            label="From Date"
+            label={localize('From Date')}
             value={startDate}
             onChange={(e) => {
               setStartDate(e.target.value);
@@ -186,7 +253,7 @@ export function PurchaseOrdersListPage() {
           <div className="flex-1">
             <Input
               type="date"
-              label="To Date"
+              label={localize('To Date')}
               value={endDate}
               onChange={(e) => {
                 setEndDate(e.target.value);
@@ -204,7 +271,7 @@ export function PurchaseOrdersListPage() {
                 setPage(1);
               }}
             >
-              Clear
+              <LocalizedText text={'\n              Clear\n            '} />
             </Button>
           )}
         </div>
@@ -214,7 +281,7 @@ export function PurchaseOrdersListPage() {
         <Skeleton className="h-[600px] w-full" />
       ) : isError ? (
         <ErrorState
-          message="Failed to load purchase orders"
+          message={localize('Failed to load purchase orders')}
           onRetry={() => refetch()}
         />
       ) : (
@@ -225,33 +292,49 @@ export function PurchaseOrdersListPage() {
             <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  Showing{' '}
-                  <span className="font-medium">{(page - 1) * 10 + 1}</span> to{' '}
+                  <LocalizedText text={'\n                  Showing'} />
+                  <LocalizedText text={' '} />
+                  <span className="font-medium">
+                    {(page - 1) * 10 + 1}
+                  </span>{' '}
+                  <LocalizedText text={' to'} />
+                  <LocalizedText text={' '} />
                   <span className="font-medium">
                     {Math.min(page * 10, data?.total || 0)}
-                  </span>{' '}
-                  of <span className="font-medium">{data?.total || 0}</span>{' '}
-                  results
+                  </span>
+                  <LocalizedText text={' '} />
+                  <LocalizedText text={'\n                  of '} />
+                  <span className="font-medium">{data?.total || 0}</span>
+                  <LocalizedText text={' '} />
+                  <LocalizedText
+                    text={'\n                  results\n                '}
+                  />
                 </p>
               </div>
               <div>
                 <nav
                   className="isolate inline-flex -space-x-px rounded-md shadow-sm"
-                  aria-label="Pagination"
+                  aria-label={localize('Pagination')}
                 >
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
                     className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                   >
-                    Previous
+                    <LocalizedText
+                      text={
+                        '\n                    Previous\n                  '
+                      }
+                    />
                   </button>
                   <button
                     onClick={() => setPage((p) => p + 1)}
                     disabled={page * 10 >= (data?.total || 0)}
                     className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                   >
-                    Next
+                    <LocalizedText
+                      text={'\n                    Next\n                  '}
+                    />
                   </button>
                 </nav>
               </div>

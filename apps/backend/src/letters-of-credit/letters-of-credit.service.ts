@@ -4,8 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DRIZZLE } from '@/db';
-import { DrizzleDB } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
+import { DrizzleDB } from '@/db/db.token';
 import { CreateLcDto } from './dto/create-lc.dto';
 import { AmendLcDto } from './dto/amend-lc.dto';
 import * as schema from '@/db/schema';
@@ -257,6 +257,14 @@ export class LettersOfCreditService {
 
     return this.db.query.lettersOfCredit.findMany({
       where: conditions.length > 0 ? (and as any)(...conditions) : undefined,
+      with: {
+        supplier: {
+          columns: { id: true, name: true, country: true },
+        },
+        pos: {
+          columns: { id: true, poNumber: true },
+        },
+      },
     });
   }
 

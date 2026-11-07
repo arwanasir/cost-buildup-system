@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,6 +27,7 @@ export function ReleaseForm({
   onSubmit,
   isLoading,
 }: ReleaseFormProps) {
+  const localize = useUiText();
   const form = useForm<ReleaseFormData>({
     resolver: zodResolver(releaseSchema),
     defaultValues: {
@@ -47,21 +50,25 @@ export function ReleaseForm({
   }, [isOpen, reset]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Log Customs Release">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={localize('Log Customs Release')}
+    >
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <Input
-          label="Release Date *"
+          label={localize('Release Date *')}
           type="date"
           {...form.register('releaseDate')}
           error={form.formState.errors.releaseDate?.message}
         />
         <Input
-          label="Release Reference / Document # *"
+          label={localize('Release Reference / Document # *')}
           {...form.register('releaseReference')}
           error={form.formState.errors.releaseReference?.message}
         />
         <Input
-          label="Customs Officer Name (Optional)"
+          label={localize('Customs Officer Name (Optional)')}
           {...form.register('customsOfficer')}
           error={form.formState.errors.customsOfficer?.message}
         />
@@ -72,10 +79,10 @@ export function ReleaseForm({
             onClick={onClose}
             disabled={isLoading}
           >
-            Cancel
+            <LocalizedText text={'\n            Cancel\n          '} />
           </Button>
           <Button type="submit" variant="primary" isLoading={isLoading}>
-            Confirm Release
+            <LocalizedText text={'\n            Confirm Release\n          '} />
           </Button>
         </div>
       </form>

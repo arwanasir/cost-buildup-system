@@ -1,5 +1,7 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { Button } from '@/components/ui';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   useShipmentCostEntries,
   useDeleteCostEntry,
@@ -32,10 +34,25 @@ export function CostRegister({
 
   const deleteMutation = useDeleteCostEntry();
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Delete this cost entry?')) {
-      await deleteMutation.mutateAsync(id);
-    }
+  // FIX: Replaced browser-native confirm() with the existing <ConfirmDialog>
+  // component. confirm() is a blocking synchronous call that:
+  //  - Cannot be styled, localized, or made bilingual
+  //  - Is blocked by default in many embedded browser environments
+  //  - Violates the project's UI/UX consistency requirements
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+
+  const handleDeleteRequest = (id: string) => {
+    setDeleteTargetId(id);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return;
+    await deleteMutation.mutateAsync(deleteTargetId);
+    setDeleteTargetId(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteTargetId(null);
   };
 
   const [activeForm, setActiveForm] = useState<
@@ -47,25 +64,31 @@ export function CostRegister({
   const [reverseEntry, setReverseEntry] = useState<CostEntry | null>(null);
 
   if (loadingEntries || loadingSummary) {
-    return <div className="p-4">Loading Cost Register...</div>;
+    return (
+      <div className="p-4">
+        <LocalizedText text={'Loading Cost Register...'} />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Cost Register (AC04)</h2>
+        <h2 className="text-xl font-bold">
+          <LocalizedText text={'Cost Register (AC04)'} />
+        </h2>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setActiveForm('clearing')}>
-            + Clearing Invoice
+            <LocalizedText text={'+ Clearing Invoice'} />
           </Button>
           <Button variant="outline" onClick={() => setActiveForm('port')}>
-            + Port Charges
+            <LocalizedText text={'+ Port Charges'} />
           </Button>
           <Button variant="outline" onClick={() => setActiveForm('storage')}>
-            + Storage Charges
+            <LocalizedText text={'+ Storage Charges'} />
           </Button>
           <Button variant="outline" onClick={() => setActiveForm('general')}>
-            + Other Cost
+            <LocalizedText text={'+ Other Cost'} />
           </Button>
           <AllocateButton shipmentId={shipmentId} isFinalised={isFinalised} />
         </div>
@@ -74,15 +97,30 @@ export function CostRegister({
       {summary && <CostSummaryBar summary={summary} />}
 
       <div>
-        <h3 className="text-lg font-semibold mb-4">Cost Entries Ledger</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          <LocalizedText text={'Cost Entries Ledger'} />
+        </h3>
         <CostEntriesTable
           entries={entries || []}
-          onDelete={handleDelete}
+          onDelete={handleDeleteRequest}
           onMarkActual={setMarkActualEntry}
           onReverse={setReverseEntry}
           isFinalised={isFinalised}
         />
       </div>
+
+      {/* Styled confirmation dialog replacing the browser native confirm() */}
+      <ConfirmDialog
+        isOpen={!!deleteTargetId}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Cost Entry"
+        message="Are you sure you want to delete this cost entry? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDestructive={true}
+        isLoading={deleteMutation.isPending}
+      />
 
       <ClearingAgentInvoiceForm
         isOpen={activeForm === 'clearing'}

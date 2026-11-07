@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -16,8 +18,11 @@ import {
   Skeleton,
   DualAmount,
 } from '@/components/ui';
+import { BackButton } from '@/components/ui/BackButton';
+import { formatAmount4 } from '@/lib/money';
 
 export function CustomsDeclarationDetailPage() {
+  const localize = useUiText();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: declaration, isLoading } = useCustomsDeclaration(id!);
@@ -53,7 +58,11 @@ export function CustomsDeclarationDetailPage() {
       </div>
     );
   if (!declaration)
-    return <div className="p-8 text-red-500">Declaration not found</div>;
+    return (
+      <div className="p-8 text-red-500">
+        <LocalizedText text={'Declaration not found'} />
+      </div>
+    );
 
   const handleOverrideSubmit = async (reason: string, newRate: string) => {
     if (!selectedItemId) return;
@@ -82,6 +91,9 @@ export function CustomsDeclarationDetailPage() {
       console.error(e);
     }
   };
+  const assessError = assessMutation.error as any;
+  const assessErrorMessage =
+    assessError?.response?.data?.message || assessError?.message;
 
   const handlePaymentSubmit = async (data: any) => {
     try {
@@ -112,12 +124,14 @@ export function CustomsDeclarationDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-8">
+      <BackButton to="/customs" label="Back to customs declarations" />
       {/* Header section */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-              Declaration {declaration.declarationNumber}
+              <LocalizedText text={'\n              Declaration '} />
+              {declaration.declarationNumber}
               <Badge
                 variant={
                   declaration.status === 'released'
@@ -133,7 +147,9 @@ export function CustomsDeclarationDetailPage() {
               </Badge>
             </h1>
             <p className="text-gray-500 mt-1">
-              Date: {declaration.declarationDate} | Agent:{' '}
+              <LocalizedText text={'\n              Date: '} />
+              {declaration.declarationDate} <LocalizedText text={' | Agent:'} />
+              <LocalizedText text={' '} />
               {declaration.clearingAgent || 'N/A'}
             </p>
           </div>
@@ -145,7 +161,9 @@ export function CustomsDeclarationDetailPage() {
                   onClick={() => setAssessConfirmOpen(true)}
                   isLoading={assessMutation.isPending}
                 >
-                  Assess Duty
+                  <LocalizedText
+                    text={'\n                  Assess Duty\n                '}
+                  />
                 </Button>
               </PermissionGate>
             )}
@@ -155,7 +173,11 @@ export function CustomsDeclarationDetailPage() {
                   variant="primary"
                   onClick={() => setPaymentModalOpen(true)}
                 >
-                  Record Payment
+                  <LocalizedText
+                    text={
+                      '\n                  Record Payment\n                '
+                    }
+                  />
                 </Button>
               </PermissionGate>
             )}
@@ -165,7 +187,11 @@ export function CustomsDeclarationDetailPage() {
                   variant="success"
                   onClick={() => setReleaseModalOpen(true)}
                 >
-                  Release Shipment
+                  <LocalizedText
+                    text={
+                      '\n                  Release Shipment\n                '
+                    }
+                  />
                 </Button>
               </PermissionGate>
             )}
@@ -174,33 +200,45 @@ export function CustomsDeclarationDetailPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
           <div>
-            <p className="text-sm font-medium text-gray-500">Total CIF Value</p>
-            <p className="mt-1 text-lg font-semibold">
-              {parseFloat(declaration.cifValueEtb).toLocaleString()} ETB
+            <p className="text-sm font-medium text-gray-500">
+              <LocalizedText text={'Total CIF Value'} />
             </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-500">Total Duty</p>
             <p className="mt-1 text-lg font-semibold">
-              {parseFloat(declaration.totalDutyEtb).toLocaleString()} ETB
+              {formatAmount4(declaration.cifValueEtb)}{' '}
+              <LocalizedText text={' ETB\n            '} />
             </p>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">
-              Total Taxes (VAT + Exc)
+              <LocalizedText text={'Total Duty'} />
             </p>
             <p className="mt-1 text-lg font-semibold">
-              {(
+              {formatAmount4(declaration.totalDutyEtb)}{' '}
+              <LocalizedText text={' ETB\n            '} />
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">
+              <LocalizedText
+                text={'\n              Total Taxes (VAT + Exc)\n            '}
+              />
+            </p>
+            <p className="mt-1 text-lg font-semibold">
+              {formatAmount4(
                 parseFloat(declaration.totalVatEtb) +
                 parseFloat(declaration.totalExciseEtb)
-              ).toLocaleString()}{' '}
-              ETB
+              )}
+              <LocalizedText text={' '} />
+              <LocalizedText text={'\n              ETB\n            '} />
             </p>
           </div>
           <div className="bg-blue-50 p-3 rounded-md">
-            <p className="text-sm font-bold text-blue-800">Total Assessment</p>
+            <p className="text-sm font-bold text-blue-800">
+              <LocalizedText text={'Total Assessment'} />
+            </p>
             <p className="mt-1 text-xl font-bold text-blue-900">
-              {parseFloat(declaration.totalAssessmentEtb).toLocaleString()} ETB
+              {formatAmount4(declaration.totalAssessmentEtb)}{' '}
+              <LocalizedText text={' ETB\n            '} />
             </p>
           </div>
         </div>
@@ -210,7 +248,9 @@ export function CustomsDeclarationDetailPage() {
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
           <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Declaration Items
+            <LocalizedText
+              text={'\n            Declaration Items\n          '}
+            />
           </h3>
         </div>
         <div className="overflow-x-auto">
@@ -218,22 +258,38 @@ export function CustomsDeclarationDetailPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Item / HS Code
+                  <LocalizedText
+                    text={
+                      '\n                  Item / HS Code\n                '
+                    }
+                  />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  CIF Value
+                  <LocalizedText
+                    text={'\n                  CIF Value\n                '}
+                  />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Duty Rate
+                  <LocalizedText
+                    text={'\n                  Duty Rate\n                '}
+                  />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Duty (ETB)
+                  <LocalizedText
+                    text={'\n                  Duty (ETB)\n                '}
+                  />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  VAT / Exc / WHT (ETB)
+                  <LocalizedText
+                    text={
+                      '\n                  VAT / Exc / WHT (ETB)\n                '
+                    }
+                  />
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  <LocalizedText
+                    text={'\n                  Actions\n                '}
+                  />
                 </th>
               </tr>
             </thead>
@@ -259,7 +315,11 @@ export function CustomsDeclarationDetailPage() {
                       </div>
                       {item.isRateOverridden && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 mt-1">
-                          Manual Rate
+                          <LocalizedText
+                            text={
+                              '\n                          Manual Rate\n                        '
+                            }
+                          />
                         </span>
                       )}
                     </td>
@@ -271,20 +331,24 @@ export function CustomsDeclarationDetailPage() {
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.dutyStructure === 'ad_valorem'
-                        ? `${parseFloat(item.dutyRate)}%`
-                        : 'Specific'}
+                      <LocalizedText
+                        text={
+                          item.dutyStructure === 'ad_valorem'
+                            ? `${parseFloat(item.dutyRate)}%`
+                            : 'Specific'
+                        }
+                      />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                      {parseFloat(item.dutyEtb).toLocaleString()}
+                      {formatAmount4(item.dutyEtb)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div>V: {parseFloat(item.vatEtb).toLocaleString()}</div>
+                      <div>V: {formatAmount4(item.vatEtb)}</div>
                       <div>
-                        E: {parseFloat(item.exciseEtb).toLocaleString()}
+                        E: {formatAmount4(item.exciseEtb)}
                       </div>
                       <div>
-                        W: {parseFloat(item.withholdingEtb).toLocaleString()}
+                        W: {formatAmount4(item.withholdingEtb)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -296,7 +360,11 @@ export function CustomsDeclarationDetailPage() {
                           }}
                           className="text-primary-600 hover:text-primary-900"
                         >
-                          Override Rate
+                          <LocalizedText
+                            text={
+                              '\n                          Override Rate\n                        '
+                            }
+                          />
                         </button>
                       )}
                     </td>
@@ -312,23 +380,28 @@ export function CustomsDeclarationDetailPage() {
       <Modal
         isOpen={overrideModalOpen}
         onClose={() => setOverrideModalOpen(false)}
-        title="Override HS Duty Rate (BR07)"
+        title={localize('Override HS Duty Rate (BR07)')}
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-500">
-            Customs often disputes HS codes. Provide the official reason and the
-            new overridden rate.
+            <LocalizedText
+              text={
+                '\n            Customs often disputes HS codes. Provide the official reason and the\n            new overridden rate.\n          '
+              }
+            />
           </p>
           <Input
-            label="New Duty Rate (%)"
+            label={localize('New Duty Rate (%)')}
             type="number"
             step="0.01"
             value={dutyRateOverride}
             onChange={(e) => setDutyRateOverride(e.target.value)}
           />
           <Input
-            label="Override Reason"
-            placeholder="e.g. Disputed at port, official decree #..."
+            label={localize('Override Reason')}
+            placeholder={localize(
+              'e.g. Disputed at port, official decree #...',
+            )}
             value={overrideReason}
             onChange={(e) => setOverrideReason(e.target.value)}
           />
@@ -337,15 +410,19 @@ export function CustomsDeclarationDetailPage() {
               variant="secondary"
               onClick={() => setOverrideModalOpen(false)}
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
             <Button
               variant="primary"
-              onClick={() => handleOverrideSubmit(overrideReason, dutyRateOverride)}
+              onClick={() =>
+                handleOverrideSubmit(overrideReason, dutyRateOverride)
+              }
               isLoading={overrideMutation.isPending}
               disabled={!overrideReason}
             >
-              Apply Override
+              <LocalizedText
+                text={'\n              Apply Override\n            '}
+              />
             </Button>
           </div>
         </div>
@@ -354,24 +431,24 @@ export function CustomsDeclarationDetailPage() {
       <Modal
         isOpen={paymentModalOpen}
         onClose={() => setPaymentModalOpen(false)}
-        title="Record Duty Payment"
+        title={localize('Record Duty Payment')}
       >
         <div className="space-y-4">
           <Input
-            label="Payment Date"
+            label={localize('Payment Date')}
             type="date"
             value={paymentDate}
             onChange={(e) => setPaymentDate(e.target.value)}
           />
           <Input
-            label="Amount Paid (ETB)"
+            label={localize('Amount Paid (ETB)')}
             type="number"
             step="0.01"
             value={amountPaidEtb}
             onChange={(e) => setAmountPaidEtb(e.target.value)}
           />
           <Input
-            label="Receipt Number / CPO"
+            label={localize('Receipt Number / CPO')}
             value={receiptNumber}
             onChange={(e) => setReceiptNumber(e.target.value)}
           />
@@ -380,7 +457,7 @@ export function CustomsDeclarationDetailPage() {
               variant="secondary"
               onClick={() => setPaymentModalOpen(false)}
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
             <Button
               variant="primary"
@@ -393,7 +470,9 @@ export function CustomsDeclarationDetailPage() {
               }
               isLoading={paymentMutation.isPending}
             >
-              Save Payment
+              <LocalizedText
+                text={'\n              Save Payment\n            '}
+              />
             </Button>
           </div>
         </div>
@@ -402,17 +481,17 @@ export function CustomsDeclarationDetailPage() {
       <Modal
         isOpen={releaseModalOpen}
         onClose={() => setReleaseModalOpen(false)}
-        title="Log Customs Release"
+        title={localize('Log Customs Release')}
       >
         <div className="space-y-4">
           <Input
-            label="Release Date"
+            label={localize('Release Date')}
             type="date"
             value={releaseDate}
             onChange={(e) => setReleaseDate(e.target.value)}
           />
           <Input
-            label="Release Reference / Document #"
+            label={localize('Release Reference / Document #')}
             value={releaseReference}
             onChange={(e) => setReleaseReference(e.target.value)}
           />
@@ -421,7 +500,7 @@ export function CustomsDeclarationDetailPage() {
               variant="secondary"
               onClick={() => setReleaseModalOpen(false)}
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
             <Button
               variant="primary"
@@ -433,7 +512,9 @@ export function CustomsDeclarationDetailPage() {
               }
               isLoading={releaseMutation.isPending}
             >
-              Confirm Release
+              <LocalizedText
+                text={'\n              Confirm Release\n            '}
+              />
             </Button>
           </div>
         </div>
@@ -442,37 +523,55 @@ export function CustomsDeclarationDetailPage() {
       <Modal
         isOpen={assessConfirmOpen}
         onClose={() => setAssessConfirmOpen(false)}
-        title="Confirm Duty Assessment"
+        title={localize('Confirm Duty Assessment')}
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-700">
-            Are you sure you want to assess this declaration? This action will
-            formally lock the duty calculations.
+            <LocalizedText
+              text={
+                '\n            Are you sure you want to assess this declaration? This action will\n            formally lock the duty calculations.\n          '
+              }
+            />
           </p>
           <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mt-4">
             <div className="flex">
               <div className="ml-3">
                 <p className="text-sm text-blue-700">
-                  <strong>System Note:</strong> Upon successful assessment, the
-                  total duty, excise, VAT, and withholding entries will be
-                  permanently written to the Cost Register (AC04).
+                  <strong>
+                    <LocalizedText text={'System Note:'} />
+                  </strong>{' '}
+                  <LocalizedText
+                    text={
+                      ' Upon successful assessment, the\n                  total duty, excise, VAT, and withholding entries will be\n                  permanently written to the Cost Register (AC04).\n                '
+                    }
+                  />
                 </p>
               </div>
             </div>
           </div>
+          {assessErrorMessage && (
+            <p role="alert" className="text-sm text-red-700">
+              <LocalizedText text={'Assessment failed:'} />{' '}
+              {Array.isArray(assessErrorMessage)
+                ? assessErrorMessage.join(', ')
+                : assessErrorMessage}
+            </p>
+          )}
           <div className="flex justify-end gap-2 pt-4">
             <Button
               variant="secondary"
               onClick={() => setAssessConfirmOpen(false)}
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
             <Button
               variant="primary"
               onClick={handleAssessSubmit}
               isLoading={assessMutation.isPending}
             >
-              Confirm Assessment
+              <LocalizedText
+                text={'\n              Confirm Assessment\n            '}
+              />
             </Button>
           </div>
         </div>

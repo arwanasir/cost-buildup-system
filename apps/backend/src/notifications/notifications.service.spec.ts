@@ -3,7 +3,7 @@ import { NotificationsService } from './notifications.service';
 import { EmailChannel } from './channels/email.channel';
 import { TelegramChannel } from './channels/telegram.channel';
 import { ConfigService } from '@nestjs/config';
-import { DRIZZLE } from '../db';
+import { DRIZZLE } from '../db/db.token';
 import * as http from 'http';
 
 describe('NotificationsService Integration', () => {
@@ -90,10 +90,10 @@ describe('NotificationsService Integration', () => {
       ]),
     );
 
-    // 4. Telegram Stub No-Op
+    // 4. Telegram No-Op when token is unset
     expect(telegramLoggerSpy).toHaveBeenCalledWith(
       expect.stringContaining(
-        'TELEGRAM_BOT_TOKEN is unset. Stubbing telegram notification',
+        'TELEGRAM_BOT_TOKEN is unset. Skipping Telegram notification for type:',
       ),
     );
 
@@ -119,9 +119,7 @@ describe('NotificationsService Integration', () => {
       );
       expect(msg).toBeDefined();
       // Since preferredLanguage is 'am', Subject should be the Amharic title
-      expect(msg.Subject).toBe(
-        'Ã¡â€¹Â¨ERP Ã¡Ë†â€ºÃ¡Ë†ÂµÃ¡â€°Â°Ã¡Ë†â€¹Ã¡Ë†Ë†Ã¡ÂÂ Ã¡Å Â Ã¡Ë†ÂÃ¡â€°Â°Ã¡Ë†Â³Ã¡Å Â«Ã¡Ë†Â',
-      );
+      expect(msg.Subject).toBe('የERP ማስተላለፍ አልተሳካም');
     } catch (e: any) {
       if (e.code === 'ECONNREFUSED') {
         console.warn(
@@ -131,5 +129,5 @@ describe('NotificationsService Integration', () => {
         throw e;
       }
     }
-  });
+  }, 15000);
 });

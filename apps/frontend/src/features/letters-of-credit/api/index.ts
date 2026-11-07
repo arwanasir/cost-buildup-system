@@ -39,22 +39,40 @@ export interface LetterOfCredit {
   amendments?: any[];
 }
 
+export function normalizeLettersOfCreditResponse(value: any): {
+  data: LetterOfCredit[];
+  total: number;
+} {
+  const data = Array.isArray(value)
+    ? value
+    : Array.isArray(value?.data)
+      ? value.data
+      : [];
+
+  return {
+    data,
+    total: Array.isArray(value)
+      ? data.length
+      : (value?.total ?? value?.meta?.total ?? data.length),
+  };
+}
+
 export const useLettersOfCredit = () => {
   return useQuery<{ data: LetterOfCredit[]; total: number }>({
     queryKey: ['lettersOfCredit'],
     queryFn: async () => {
       const res = await api.get('/letters-of-credit');
-      return res.data;
+      return normalizeLettersOfCreditResponse(res.data);
     },
   });
 };
 
 export const useLetterOfCredit = (id: string) => {
-  return useQuery<{ data: LetterOfCredit }>({
+  return useQuery<LetterOfCredit>({
     queryKey: ['lettersOfCredit', id],
     queryFn: async () => {
       const res = await api.get(`/letters-of-credit/${id}`);
-      return res.data;
+      return res.data?.data ?? res.data;
     },
     enabled: !!id,
   });

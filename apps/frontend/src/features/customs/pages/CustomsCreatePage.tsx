@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -18,6 +20,7 @@ const createDeclarationSchema = z.object({
 type FormData = z.infer<typeof createDeclarationSchema>;
 
 export function CustomsCreatePage() {
+  const localize = useUiText();
   const navigate = useNavigate();
   const createMutation = useCreateDeclaration();
 
@@ -55,16 +58,24 @@ export function CustomsCreatePage() {
       console.error('Failed to create declaration:', err);
     }
   };
+  const createError = createMutation.error as any;
+  const createErrorMessage =
+    createError?.response?.data?.message || createError?.message;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">
-          Create Customs Declaration
+          <LocalizedText
+            text={'\n          Create Customs Declaration\n        '}
+          />
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Register a new customs declaration for a shipment that has arrived at
-          customs.
+          <LocalizedText
+            text={
+              '\n          Register a new customs declaration for a shipment that has arrived at\n          customs.\n        '
+            }
+          />
         </p>
       </div>
 
@@ -74,7 +85,9 @@ export function CustomsCreatePage() {
             {/* Shipment Selection */}
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Select Shipment
+                <LocalizedText
+                  text={'\n                Select Shipment\n              '}
+                />
               </label>
               <select
                 {...form.register('shipmentId')}
@@ -85,11 +98,21 @@ export function CustomsCreatePage() {
                 }`}
                 disabled={loadingShipments}
               >
-                <option value="">-- Select a Shipment --</option>
+                <option value="">
+                  <LocalizedText text={'-- Select a Shipment --'} />
+                </option>
                 {shipments.map((shipment) => (
                   <option key={shipment.id} value={shipment.id}>
-                    {shipment.blNumber ? `B/L: ${shipment.blNumber} ` : ''}(ID:{' '}
-                    {shipment.id.substring(0, 8)}) - Status:{' '}
+                    <LocalizedText
+                      text={
+                        shipment.blNumber ? `B/L: ${shipment.blNumber} ` : ''
+                      }
+                    />
+                    <LocalizedText text={'(ID:'} />
+                    <LocalizedText text={' '} />
+                    {shipment.id.substring(0, 8)}
+                    <LocalizedText text={') - Status:'} />
+                    <LocalizedText text={' '} />
                     {shipment.status.replace('_', ' ').toUpperCase()}
                   </option>
                 ))}
@@ -102,28 +125,28 @@ export function CustomsCreatePage() {
             </div>
 
             <Input
-              label="Declaration Number"
-              placeholder="e.g. DEC-2026-001"
+              label={localize('Declaration Number')}
+              placeholder={localize('e.g. DEC-2026-001')}
               {...form.register('declarationNumber')}
               error={form.formState.errors.declarationNumber?.message}
             />
 
             <Input
-              label="Declaration Date"
+              label={localize('Declaration Date')}
               type="date"
               {...form.register('declarationDate')}
               error={form.formState.errors.declarationDate?.message}
             />
 
             <Input
-              label="Clearing Agent (Optional)"
-              placeholder="Agent Name"
+              label={localize('Clearing Agent (Optional)')}
+              placeholder={localize('Agent Name')}
               {...form.register('clearingAgent')}
               error={form.formState.errors.clearingAgent?.message}
             />
 
             <Input
-              label="FX Rate (to ETB)"
+              label={localize('FX Rate (to ETB)')}
               type="number"
               step="0.000001"
               {...form.register('fxRate', { valueAsNumber: true })}
@@ -132,8 +155,12 @@ export function CustomsCreatePage() {
           </div>
 
           <div className="pt-4 border-t border-gray-200 flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => navigate('/customs')}>
-              Cancel
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => navigate('/customs')}
+            >
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
             <PermissionGate permission="customs:write">
               <Button
@@ -141,10 +168,20 @@ export function CustomsCreatePage() {
                 variant="primary"
                 isLoading={createMutation.isPending}
               >
-                Create Declaration
+                <LocalizedText
+                  text={'\n                Create Declaration\n              '}
+                />
               </Button>
             </PermissionGate>
           </div>
+          {createErrorMessage && (
+            <p role="alert" className="text-sm text-red-700">
+              <LocalizedText text={'Could not create declaration:'} />{' '}
+              {Array.isArray(createErrorMessage)
+                ? createErrorMessage.join(', ')
+                : createErrorMessage}
+            </p>
+          )}
         </form>
       </div>
     </div>

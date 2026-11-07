@@ -7,6 +7,7 @@ import {
   IsNumber,
   IsPositive,
   IsBoolean,
+  Min,
   ValidateNested,
   ValidateIf,
 } from 'class-validator';
@@ -32,6 +33,12 @@ export class DeclarationItemOverrideDto {
   @IsPositive()
   @ApiProperty()
   dutyRate?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @ApiProperty({ required: false })
+  specificDutyPerUnit?: number;
 
   @IsNumber()
   @IsOptional()

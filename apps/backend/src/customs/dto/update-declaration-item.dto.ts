@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsPositive,
   ValidateIf,
+  Min,
 } from 'class-validator';
 
 export class UpdateDeclarationItemDto {
@@ -23,6 +24,12 @@ export class UpdateDeclarationItemDto {
   @IsPositive()
   @ApiProperty()
   dutyRate?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @ApiProperty({ required: false })
+  specificDutyPerUnit?: number;
 
   @IsNumber()
   @IsOptional()

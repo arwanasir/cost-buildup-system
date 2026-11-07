@@ -34,33 +34,33 @@ export class CustomsController {
   ) {}
 
   @Post()
-  @RequiredPermission(Permission.SHIPMENT_WRITE)
+  @RequiredPermission(Permission.CUSTOMS_WRITE)
   async createDeclaration(@Body() dto: CreateDeclarationDto, @Req() req: any) {
     return this.customsService.createDeclaration(
       dto.shipmentId,
       dto,
-      req.user.id,
+      req.user.userId,
     );
   }
 
   @Post(':id/assess')
-  @RequiredPermission(Permission.SHIPMENT_WRITE)
+  @RequiredPermission(Permission.CUSTOMS_WRITE)
   async assessDeclaration(@Param('id') declarationId: string, @Req() req: any) {
-    return this.customsService.assessDeclaration(declarationId, req.user.id);
+    return this.customsService.assessDeclaration(declarationId, req.user.userId);
   }
 
   @Post(':id/payments')
-  @RequiredPermission(Permission.SHIPMENT_WRITE)
+  @RequiredPermission(Permission.CUSTOMS_WRITE)
   async recordPayment(
     @Param('id') declarationId: string,
     @Body() dto: CreateDutyPaymentDto,
     @Req() req: any,
   ) {
-    return this.dutyPaymentsService.record(declarationId, dto, req.user.id);
+    return this.dutyPaymentsService.record(declarationId, dto, req.user.userId);
   }
 
   @Post(':id/release')
-  @RequiredPermission(Permission.SHIPMENT_WRITE)
+  @RequiredPermission(Permission.CUSTOMS_WRITE)
   async releaseDeclaration(
     @Param('id') declarationId: string,
     @Body() dto: CreateReleaseDto,
@@ -69,12 +69,12 @@ export class CustomsController {
     return this.customsService.releaseDeclaration(
       declarationId,
       dto,
-      req.user.id,
+      req.user.userId,
     );
   }
 
   @Get()
-  @RequiredPermission(Permission.SHIPMENT_READ)
+  @RequiredPermission(Permission.CUSTOMS_READ)
   async findAll(
     @Query('status') status?: string,
     @Query('shipmentId') shipmentId?: string,
@@ -83,30 +83,30 @@ export class CustomsController {
   }
 
   @Get('tariff/:hsCode')
-  @RequiredPermission(Permission.SHIPMENT_READ)
+  @RequiredPermission(Permission.CUSTOMS_READ)
   async getTariffByHsCode(@Param('hsCode') hsCode: string) {
     return this.customsService.getTariffByHsCode(hsCode);
   }
 
   @Get(':id')
-  @RequiredPermission(Permission.SHIPMENT_READ)
+  @RequiredPermission(Permission.CUSTOMS_READ)
   async findOne(@Param('id') id: string) {
     return this.customsService.findOne(id);
   }
 
   @Patch(':id/items/:itemId')
-  @RequiredPermission(Permission.SHIPMENT_WRITE)
+  @RequiredPermission(Permission.CUSTOMS_WRITE)
   async overrideItemRate(
     @Param('id') id: string,
     @Param('itemId') itemId: string,
     @Body() dto: UpdateDeclarationItemDto,
     @Req() req: any,
   ) {
-    return this.customsService.overrideItemRate(id, itemId, dto, req.user.id);
+    return this.customsService.overrideItemRate(id, itemId, dto, req.user.userId);
   }
 
   @Get(':id/payments')
-  @RequiredPermission(Permission.SHIPMENT_READ)
+  @RequiredPermission(Permission.CUSTOMS_READ)
   async getPayments(@Param('id') id: string) {
     return this.customsService.getPayments(id);
   }

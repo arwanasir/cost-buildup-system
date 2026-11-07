@@ -12,9 +12,17 @@ export class FinanceClient {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
+    const erpBaseUrl =
+      this.configService.get<string>('ERP_BASE_URL') || 'http://localhost:3001';
+    const configuredUrl = this.configService.get<string>('ERP_FINANCE_URL');
+    const baseUsesContainerNetwork =
+      !/localhost|127\.0\.0\.1|\[::1\]/i.test(erpBaseUrl);
+    const configuredUrlUsesLocalhost =
+      configuredUrl && /localhost|127\.0\.0\.1|\[::1\]/i.test(configuredUrl);
     this.baseUrl =
-      this.configService.get<string>('ERP_FINANCE_URL') ||
-      'http://erp-system.internal/api/v1/finance/journal-entries';
+      configuredUrl && !(baseUsesContainerNetwork && configuredUrlUsesLocalhost)
+        ? configuredUrl
+        : `${erpBaseUrl.replace(/\/+$/, '')}/finance/journal-entries`;
   }
 
   async postJournalEntry(

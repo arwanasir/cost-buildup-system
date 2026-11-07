@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ItemsService } from './items.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 import { ConflictException } from '@nestjs/common';
 
 describe('ItemsService', () => {

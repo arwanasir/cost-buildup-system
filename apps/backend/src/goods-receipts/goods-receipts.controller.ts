@@ -27,7 +27,7 @@ export class GoodsReceiptsController {
   @Post()
   @RequiredPermission(Permission.GRN_WRITE)
   async createGrn(@Body() dto: CreateGrnDto, @Req() req: any) {
-    return this.goodsReceiptsService.createGrn(dto, req.user.id);
+    return this.goodsReceiptsService.createGrn(dto, req.user.userId);
   }
 
   @Get()
@@ -51,7 +51,7 @@ export class GoodsReceiptsController {
   @Post(':id/confirm')
   @RequiredPermission(Permission.GRN_WRITE)
   async confirmGrn(@Param('id') id: string, @Req() req: any) {
-    return this.goodsReceiptsService.confirmGrn(id, req.user.id);
+    return this.goodsReceiptsService.confirmGrn(id, req.user.userId);
   }
 
   @Post(':id/post')

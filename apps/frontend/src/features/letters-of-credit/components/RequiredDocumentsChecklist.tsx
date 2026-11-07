@@ -1,3 +1,4 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React from 'react';
 import { type LetterOfCredit, useMarkDocumentReceived } from '../api';
 import { Badge, PermissionGate } from '@/components/ui';
@@ -17,7 +18,9 @@ export function RequiredDocumentsChecklist({ lc }: { lc: LetterOfCredit }) {
     <div className="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
       <div className="px-4 py-5 sm:px-6 flex justify-between items-center border-b border-gray-200">
         <h3 className="text-lg leading-6 font-medium text-gray-900">
-          Customs & Shipping Documents
+          <LocalizedText
+            text={'\n          Customs & Shipping Documents\n        '}
+          />
         </h3>
       </div>
       <div className="px-4 py-5">
@@ -34,7 +37,9 @@ export function RequiredDocumentsChecklist({ lc }: { lc: LetterOfCredit }) {
                 permission="lc:write"
                 fallback={
                   <Badge variant={doc.isReceived ? 'success' : 'warning'}>
-                    {doc.isReceived ? 'Received' : 'Pending'}
+                    <LocalizedText
+                      text={doc.isReceived ? 'Received' : 'Pending'}
+                    />
                   </Badge>
                 }
               >
@@ -42,7 +47,9 @@ export function RequiredDocumentsChecklist({ lc }: { lc: LetterOfCredit }) {
                   <span
                     className={`text-xs font-medium ${doc.isReceived ? 'text-green-600' : 'text-gray-500'}`}
                   >
-                    {doc.isReceived ? 'RECEIVED' : 'PENDING'}
+                    <LocalizedText
+                      text={doc.isReceived ? 'RECEIVED' : 'PENDING'}
+                    />
                   </span>
                   <button
                     onClick={() => toggleDoc(doc.id, doc.isReceived)}
@@ -58,7 +65,11 @@ export function RequiredDocumentsChecklist({ lc }: { lc: LetterOfCredit }) {
           ))}
           {(!lc.documents || lc.documents.length === 0) && (
             <p className="text-sm text-gray-500 text-center py-4">
-              No customs documents strictly required for this instrument.
+              <LocalizedText
+                text={
+                  '\n              No customs documents strictly required for this instrument.\n            '
+                }
+              />
             </p>
           )}
         </ul>

@@ -1,7 +1,9 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { Table, Button } from '@/components/ui';
 import { type LandedCostResult } from '../api';
 import { ItemDrilldownDrawer } from './ItemDrilldownDrawer';
+import { formatAmount4 } from '@/lib/money';
 
 export function LandedCostResultsTable({ data }: { data: LandedCostResult[] }) {
   const [selectedItem, setSelectedItem] = useState<LandedCostResult | null>(
@@ -16,46 +18,66 @@ export function LandedCostResultsTable({ data }: { data: LandedCostResult[] }) {
         <thead>
           <tr className="bg-gray-50 border-b">
             <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-              Item ID
+              <LocalizedText text={'\n              Item ID\n            '} />
             </th>
             <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-              Qty Recv
+              <LocalizedText text={'\n              Qty Recv\n            '} />
             </th>
             <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-              CI Value (ETB)
+              <LocalizedText
+                text={'\n              CI Value (ETB)\n            '}
+              />
             </th>
             <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-              Duty (ETB)
+              <LocalizedText
+                text={'\n              Duty (ETB)\n            '}
+              />
             </th>
             <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-              VAT (ETB)
+              <LocalizedText text={'\n              VAT (ETB)\n            '} />
             </th>
             <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-              Freight (ETB)
+              <LocalizedText
+                text={'\n              Freight (ETB)\n            '}
+              />
             </th>
             <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-              Ins. (ETB)
+              <LocalizedText
+                text={'\n              Ins. (ETB)\n            '}
+              />
             </th>
             <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-              Bank (ETB)
+              <LocalizedText
+                text={'\n              Bank (ETB)\n            '}
+              />
             </th>
             <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-              Port (ETB)
+              <LocalizedText
+                text={'\n              Port (ETB)\n            '}
+              />
             </th>
             <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-              Clearing (ETB)
+              <LocalizedText
+                text={'\n              Clearing (ETB)\n            '}
+              />
             </th>
             <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-              Other (ETB)
+              <LocalizedText
+                text={'\n              Other (ETB)\n            '}
+              />
             </th>
             <th className="px-3 py-3 text-right text-xs font-bold text-gray-800 uppercase">
-              Total LC (ETB)
+              <LocalizedText
+                text={'\n              Total LC (ETB)\n            '}
+              />
             </th>
             <th className="px-3 py-3 text-right text-xs font-bold text-blue-800 uppercase">
-              Unit LC (ETB)
+              <LocalizedText
+                text={'\n              Unit LC (ETB)\n            '}
+              />
             </th>
             <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">
-              Drilldown
+              <LocalizedText text={'\n              Drilldown\n            '} />
             </th>
           </tr>
         </thead>
@@ -69,44 +91,43 @@ export function LandedCostResultsTable({ data }: { data: LandedCostResult[] }) {
                 {parseFloat(item.quantityReceived).toLocaleString()}
               </td>
               <td className="px-3 py-2 text-sm text-right text-gray-600">
-                {parseFloat(item.ciValueEtb).toLocaleString()}
+                {formatAmount4(item.ciValueEtb)}
               </td>
               <td className="px-3 py-2 text-sm text-right text-gray-600">
-                {parseFloat(item.customsDutyEtb).toLocaleString()}
+                {formatAmount4(item.customsDutyEtb)}
               </td>
               <td className="px-3 py-2 text-sm text-right text-gray-600">
-                {parseFloat(item.importVatEtb).toLocaleString()}
+                {formatAmount4(item.importVatEtb)}
               </td>
               <td className="px-3 py-2 text-sm text-right text-gray-600">
-                {parseFloat(item.freightAllocatedEtb).toLocaleString()}
+                {formatAmount4(item.freightAllocatedEtb)}
               </td>
               <td className="px-3 py-2 text-sm text-right text-gray-600">
-                {parseFloat(item.insuranceAllocatedEtb).toLocaleString()}
+                {formatAmount4(item.insuranceAllocatedEtb)}
               </td>
               <td className="px-3 py-2 text-sm text-right text-gray-600">
-                {parseFloat(item.bankChargesAllocatedEtb).toLocaleString()}
+                {formatAmount4(item.bankChargesAllocatedEtb)}
               </td>
               <td className="px-3 py-2 text-sm text-right text-gray-600">
-                {parseFloat(item.portChargesAllocatedEtb).toLocaleString()}
+                {formatAmount4(item.portChargesAllocatedEtb)}
               </td>
               <td className="px-3 py-2 text-sm text-right text-gray-600">
-                {parseFloat(item.clearingFeeAllocatedEtb).toLocaleString()}
+                {formatAmount4(item.clearingFeeAllocatedEtb)}
               </td>
               <td className="px-3 py-2 text-sm text-right text-gray-600">
-                {parseFloat(item.otherChargesAllocatedEtb).toLocaleString()}
+                {formatAmount4(item.otherChargesAllocatedEtb)}
               </td>
               <td className="px-3 py-2 text-sm text-right font-bold text-gray-900">
-                {parseFloat(item.totalLandedCostEtb).toLocaleString()}
+                {formatAmount4(item.totalLandedCostEtb)}
               </td>
               <td className="px-3 py-2 text-sm text-right font-black text-blue-700">
-                {parseFloat(item.perUnitLandedCostEtb).toLocaleString(
-                  undefined,
-                  { minimumFractionDigits: 6, maximumFractionDigits: 6 },
-                )}
+                {formatAmount4(item.perUnitLandedCostEtb)}
               </td>
               <td className="px-3 py-2 text-center">
                 <Button variant="outline" onClick={() => setSelectedItem(item)}>
-                  Trace
+                  <LocalizedText
+                    text={'\n                  Trace\n                '}
+                  />
                 </Button>
               </td>
             </tr>

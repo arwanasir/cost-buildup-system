@@ -83,7 +83,7 @@ export class LettersOfCreditController {
     @Body() updateLcDto: UpdateLcDto,
     @Req() req: any,
   ) {
-    return this.lettersOfCreditService.update(id, updateLcDto, req.user.id);
+    return this.lettersOfCreditService.update(id, updateLcDto, req.user.userId);
   }
 
   @Get(':id/charges')
@@ -99,7 +99,7 @@ export class LettersOfCreditController {
     @Body() dto: AddBankChargeDto,
     @Req() req: any,
   ) {
-    return this.lettersOfCreditService.addCharge(id, dto, req.user.id);
+    return this.lettersOfCreditService.addCharge(id, dto, req.user.userId);
   }
 
   @Patch(':id/documents/:docId')

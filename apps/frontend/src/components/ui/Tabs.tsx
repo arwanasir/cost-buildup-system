@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useUiText } from '@/lib/ui-text';
 
 interface Tab {
   id: string;
@@ -14,6 +15,7 @@ interface TabsProps {
 }
 
 export function Tabs({ tabs, defaultTab, activeTab, onChange }: TabsProps) {
+  const localize = useUiText();
   const [internalActiveTab, setInternalActiveTab] = useState(
     defaultTab || tabs[0]?.id,
   );
@@ -26,7 +28,7 @@ export function Tabs({ tabs, defaultTab, activeTab, onChange }: TabsProps) {
   return (
     <div>
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+        <nav className="-mb-px flex space-x-8" aria-label={localize('Tabs')}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -37,7 +39,7 @@ export function Tabs({ tabs, defaultTab, activeTab, onChange }: TabsProps) {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              {tab.label}
+              {localize(tab.label)}
             </button>
           ))}
         </nav>

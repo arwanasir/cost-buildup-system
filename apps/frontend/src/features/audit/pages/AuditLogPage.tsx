@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -38,6 +40,7 @@ const ENTITY_TYPES = [
 ];
 
 export function AuditLogPage() {
+  const localize = useUiText();
   const [filters, setFilters] = useState({
     entity_type: '',
     entity_id: '',
@@ -130,7 +133,7 @@ export function AuditLogPage() {
           onClick={() => setSelectedLog(row)}
           className="text-blue-600 hover:text-blue-900 font-medium text-sm underline"
         >
-          View Diff
+          <LocalizedText text={'\n          View Diff\n        '} />
         </button>
       ),
     },
@@ -141,11 +144,16 @@ export function AuditLogPage() {
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            System Audit Log
+            <LocalizedText
+              text={'\n            System Audit Log\n          '}
+            />
           </h1>
           <p className="mt-2 text-sm text-gray-700">
-            Immutable ledger of all critical system mutations. Restricted to
-            System Admin and Finance Manager.
+            <LocalizedText
+              text={
+                '\n            Immutable ledger of all critical system mutations. Restricted to\n            System Admin and Finance Manager.\n          '
+              }
+            />
           </p>
         </div>
       </div>
@@ -156,7 +164,7 @@ export function AuditLogPage() {
           className="p-4 space-y-4 sm:space-y-0 sm:flex sm:gap-4 sm:items-end"
         >
           <Select
-            label="Entity Type"
+            label={localize('Entity Type')}
             options={ENTITY_TYPES}
             value={filters.entity_type}
             onChange={(e) =>
@@ -164,39 +172,41 @@ export function AuditLogPage() {
             }
           />
           <Input
-            label="Entity ID"
-            placeholder="UUID..."
+            label={localize('Entity ID')}
+            placeholder={localize('UUID...')}
             value={filters.entity_id}
             onChange={(e) =>
               setFilters({ ...filters, entity_id: e.target.value })
             }
           />
           <Input
-            label="Actor ID"
-            placeholder="UUID..."
+            label={localize('Actor ID')}
+            placeholder={localize('UUID...')}
             value={filters.actor_id}
             onChange={(e) =>
               setFilters({ ...filters, actor_id: e.target.value })
             }
           />
           <DatePicker
-            label="From Date"
+            label={localize('From Date')}
             value={filters.from}
             onChange={(e) => setFilters({ ...filters, from: e.target.value })}
           />
           <DatePicker
-            label="To Date"
+            label={localize('To Date')}
             value={filters.to}
             onChange={(e) => setFilters({ ...filters, to: e.target.value })}
           />
           <div className="flex gap-2">
-            <Button type="submit">Filter</Button>
+            <Button type="submit">
+              <LocalizedText text={'Filter'} />
+            </Button>
             <Button
               type="button"
               variant="secondary"
               onClick={handleClearFilters}
             >
-              Clear
+              <LocalizedText text={'\n              Clear\n            '} />
             </Button>
           </div>
         </form>
@@ -206,7 +216,9 @@ export function AuditLogPage() {
         <Skeleton className="h-[600px] w-full" />
       ) : isError ? (
         <ErrorState
-          message="Failed to load audit logs. Ensure you have the correct permissions."
+          message={localize(
+            'Failed to load audit logs. Ensure you have the correct permissions.',
+          )}
           onRetry={() => refetch()}
         />
       ) : (
@@ -223,7 +235,9 @@ export function AuditLogPage() {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <h4 className="text-sm font-medium text-gray-700 mb-2 border-b pb-1">
-                  Before State
+                  <LocalizedText
+                    text={'\n                  Before State\n                '}
+                  />
                 </h4>
                 <div className="bg-gray-50 p-4 rounded-md border border-gray-200 overflow-x-auto max-h-96 overflow-y-auto">
                   <pre className="text-xs font-mono text-red-700">
@@ -235,7 +249,9 @@ export function AuditLogPage() {
               </div>
               <div className="flex-1">
                 <h4 className="text-sm font-medium text-gray-700 mb-2 border-b pb-1">
-                  After State
+                  <LocalizedText
+                    text={'\n                  After State\n                '}
+                  />
                 </h4>
                 <div className="bg-gray-50 p-4 rounded-md border border-gray-200 overflow-x-auto max-h-96 overflow-y-auto">
                   <pre className="text-xs font-mono text-green-700">
@@ -249,7 +265,9 @@ export function AuditLogPage() {
 
             <div className="mt-5 sm:mt-6">
               <Button onClick={() => setSelectedLog(null)} className="w-full">
-                Close Viewer
+                <LocalizedText
+                  text={'\n                Close Viewer\n              '}
+                />
               </Button>
             </div>
           </div>

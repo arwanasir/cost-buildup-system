@@ -1,3 +1,5 @@
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useShipments } from '../api';
@@ -24,6 +26,7 @@ const TABS = [
 ];
 
 export function ShipmentsListPage() {
+  const localize = useUiText();
   const [statusTab, setStatusTab] = useState<string>('');
   const [supplierId, setSupplierId] = useState<string>('');
   const [poId, setPoId] = useState<string>('');
@@ -66,16 +69,24 @@ export function ShipmentsListPage() {
       <div className="sm:flex sm:items-center sm:justify-between bg-white p-6 rounded-lg shadow border border-gray-200">
         <div>
           <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-            Import Shipments
+            <LocalizedText
+              text={'\n            Import Shipments\n          '}
+            />
           </h2>
           <p className="mt-1 text-sm text-gray-500">
-            Track and manage incoming sea and air freight manifests.
+            <LocalizedText
+              text={
+                '\n            Track and manage incoming sea and air freight manifests.\n          '
+              }
+            />
           </p>
         </div>
         <div className="mt-4 sm:mt-0 sm:ml-4 flex gap-3">
           <PermissionGate permission="shipment:write">
             <Link to="/shipments/new">
-              <Button variant="primary">Create Shipment</Button>
+              <Button variant="primary">
+                <LocalizedText text={'Create Shipment'} />
+              </Button>
             </Link>
           </PermissionGate>
         </div>
@@ -87,7 +98,7 @@ export function ShipmentsListPage() {
         <div className="border-b border-gray-200">
           <nav
             className="-mb-px flex space-x-8 overflow-x-auto"
-            aria-label="Tabs"
+            aria-label={localize('Tabs')}
           >
             {TABS.map((tab) => (
               <button
@@ -111,25 +122,25 @@ export function ShipmentsListPage() {
         {/* Filter Bar */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Select
-            label="Supplier"
+            label={localize('Supplier')}
             options={supplierOptions}
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
           />
           <Select
-            label="Purchase Order"
+            label={localize('Purchase Order')}
             options={poOptions}
             value={poId}
             onChange={(e) => setPoId(e.target.value)}
           />
           <Input
-            label="ETA From"
+            label={localize('ETA From')}
             type="date"
             value={etaStart}
             onChange={(e) => setEtaStart(e.target.value)}
           />
           <Input
-            label="ETA To"
+            label={localize('ETA To')}
             type="date"
             value={etaEnd}
             onChange={(e) => setEtaEnd(e.target.value)}
@@ -143,12 +154,16 @@ export function ShipmentsListPage() {
           <Skeleton className="h-[400px]" />
         ) : isError ? (
           <ErrorState
-            message="Failed to load shipments."
+            message={localize('Failed to load shipments.')}
             onRetry={() => refetch()}
           />
         ) : shipments.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            No shipments found matching the selected criteria.
+            <LocalizedText
+              text={
+                '\n            No shipments found matching the selected criteria.\n          '
+              }
+            />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -159,28 +174,42 @@ export function ShipmentsListPage() {
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Shipment No (B/L)
+                    <LocalizedText
+                      text={
+                        '\n                    Shipment No (B/L)\n                  '
+                      }
+                    />
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Supplier
+                    <LocalizedText
+                      text={
+                        '\n                    Supplier\n                  '
+                      }
+                    />
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    ETA
+                    <LocalizedText
+                      text={'\n                    ETA\n                  '}
+                    />
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Status
+                    <LocalizedText
+                      text={'\n                    Status\n                  '}
+                    />
                   </th>
                   <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">View</span>
+                    <span className="sr-only">
+                      <LocalizedText text={'View'} />
+                    </span>
                   </th>
                 </tr>
               </thead>
@@ -224,7 +253,11 @@ export function ShipmentsListPage() {
                         </div>
                         {isOverdue && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
-                            OVERDUE
+                            <LocalizedText
+                              text={
+                                '\n                            OVERDUE\n                          '
+                              }
+                            />
                           </span>
                         )}
                       </td>
@@ -247,7 +280,11 @@ export function ShipmentsListPage() {
                           to={`/shipments/${shipment.id}`}
                           className="text-blue-600 hover:text-blue-900"
                         >
-                          View Details
+                          <LocalizedText
+                            text={
+                              '\n                          View Details\n                          '
+                            }
+                          />
                           <span className="sr-only">
                             , {shipment.shipmentNumber}
                           </span>

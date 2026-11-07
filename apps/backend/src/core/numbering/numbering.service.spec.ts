@@ -8,7 +8,7 @@ import {
   jest,
 } from '@jest/globals';
 import { NumberingService } from './numbering.service';
-import { DRIZZLE } from '@/db';
+import { DRIZZLE } from '@/db/db.token';
 
 describe('NumberingService', () => {
   let service: NumberingService;

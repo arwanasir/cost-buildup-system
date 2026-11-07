@@ -8,6 +8,7 @@ export const roleEnum = pgEnum('role_enum', [
   'customs_officer',
   'warehouse_manager',
   'general_manager',
+  'auditor',
   'system_admin',
 ]);
 

@@ -1,6 +1,9 @@
+import { LocalizedText } from '@/components/ui/LocalizedText';
 import React from 'react';
 import { useShipmentAllocations, useShipmentCostEntries } from '../api';
+import { useCostCategories } from '@/features/cost-categories/api';
 import { Table, Badge } from '@/components/ui';
+import { formatAmount4 } from '@/lib/money';
 
 export function AllocationDrawer({
   shipmentId,
@@ -13,6 +16,7 @@ export function AllocationDrawer({
 }) {
   const { data: allocations, isLoading } = useShipmentAllocations(shipmentId);
   const { data: entries } = useShipmentCostEntries(shipmentId);
+  const { data: categories } = useCostCategories();
 
   if (!isOpen) return null;
 
@@ -38,21 +42,29 @@ export function AllocationDrawer({
       />
       <div className="fixed inset-y-0 right-0 w-[600px] bg-white shadow-xl z-50 flex flex-col transform transition-transform duration-300">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-xl font-bold">Allocation Results</h2>
+          <h2 className="text-xl font-bold">
+            <LocalizedText text={'Allocation Results'} />
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-800 text-2xl leading-none"
           >
-            &times;
+            <LocalizedText text={'\n            &times;\n          '} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
           {isLoading ? (
-            <p className="text-center text-gray-500">Loading allocations...</p>
+            <p className="text-center text-gray-500">
+              <LocalizedText text={'Loading allocations...'} />
+            </p>
           ) : allocations?.length === 0 ? (
             <p className="text-center text-gray-500">
-              No allocations found. Run the allocation engine first.
+              <LocalizedText
+                text={
+                  '\n              No allocations found. Run the allocation engine first.\n            '
+                }
+              />
             </p>
           ) : (
             <div className="space-y-6">
@@ -67,32 +79,56 @@ export function AllocationDrawer({
                         <h4 className="font-bold text-gray-800">{itemId}</h4>
                         <div className="text-xs text-gray-500 mt-1 flex space-x-3">
                           <span>
-                            CI:{' '}
-                            {parseFloat(
-                              group.itemDetail.ciValueEtb,
-                            ).toLocaleString()}{' '}
-                            ETB
+                            <LocalizedText
+                              text={'\n                            CI:'}
+                            />
+                            <LocalizedText text={' '} />
+                            {formatAmount4(group.itemDetail.ciValueEtb)}
+                            <LocalizedText text={' '} />
+                            <LocalizedText
+                              text={
+                                '\n                            ETB\n                          '
+                              }
+                            />
                           </span>
                           {group.itemDetail.weightKg && (
-                            <span>Wt: {group.itemDetail.weightKg} kg</span>
+                            <span>
+                              <LocalizedText text={'Wt: '} />
+                              {group.itemDetail.weightKg}{' '}
+                              <LocalizedText text={' kg'} />
+                            </span>
                           )}
                           {group.itemDetail.volumeCbm && (
-                            <span>Vol: {group.itemDetail.volumeCbm} cbm</span>
+                            <span>
+                              <LocalizedText text={'Vol: '} />
+                              {group.itemDetail.volumeCbm}{' '}
+                              <LocalizedText text={' cbm'} />
+                            </span>
                           )}
                           {group.itemDetail.quantity && (
-                            <span>Qty: {group.itemDetail.quantity}</span>
+                            <span>
+                              <LocalizedText text={'Qty: '} />
+                              {group.itemDetail.quantity}
+                            </span>
                           )}
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-xs text-gray-500 uppercase tracking-wider">
-                          Total Allocated
+                          <LocalizedText
+                            text={
+                              '\n                          Total Allocated\n                        '
+                            }
+                          />
                         </div>
                         <div className="font-bold text-blue-700">
-                          ETB{' '}
+                          <LocalizedText
+                            text={'\n                          ETB'}
+                          />
+                          <LocalizedText text={' '} />
                           {group.totalAllocated.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
+                            minimumFractionDigits: 4,
+                            maximumFractionDigits: 4,
                           })}
                         </div>
                       </div>
@@ -102,13 +138,25 @@ export function AllocationDrawer({
                       <thead>
                         <tr>
                           <th className="px-3 py-2 text-left text-xs text-gray-500">
-                            Cost Entry
+                            <LocalizedText
+                              text={
+                                '\n                            Cost Entry\n                          '
+                              }
+                            />
                           </th>
                           <th className="px-3 py-2 text-left text-xs text-gray-500">
-                            Method
+                            <LocalizedText
+                              text={
+                                '\n                            Method\n                          '
+                              }
+                            />
                           </th>
                           <th className="px-3 py-2 text-right text-xs text-gray-500">
-                            Allocated (ETB)
+                            <LocalizedText
+                              text={
+                                '\n                            Allocated (ETB)\n                          '
+                              }
+                            />
                           </th>
                         </tr>
                       </thead>
@@ -118,7 +166,12 @@ export function AllocationDrawer({
                             (e) => e.id === alloc.costEntryId,
                           );
                           const categoryName =
-                            entry?.costCategory?.name || 'Unknown Cost';
+                            entry?.costCategory?.name ||
+                            categories?.find(
+                              (category) =>
+                                category.id === entry?.costCategoryId,
+                            )?.name ||
+                            'Unknown Cost';
 
                           return (
                             <tr key={alloc.id} className="hover:bg-gray-50">
@@ -129,7 +182,11 @@ export function AllocationDrawer({
                                     variant="warning"
                                     className="ml-2 text-[10px]"
                                   >
-                                    Residual
+                                    <LocalizedText
+                                      text={
+                                        '\n                                    Residual\n                                  '
+                                      }
+                                    />
                                   </Badge>
                                 )}
                               </td>

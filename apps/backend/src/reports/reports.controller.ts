@@ -9,6 +9,7 @@ import {
   Req,
   ForbiddenException,
   Inject,
+  BadRequestException,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { Role } from '../auth/permissions';
@@ -20,7 +21,7 @@ import { PermissionGuard } from '../auth/guards/permissions.guards';
 import { RequiredPermission } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/permissions';
 import { Audited } from '../audit/audited.decorator';
-import { DRIZZLE, DrizzleDB } from '../db';
+import { DRIZZLE, DrizzleDB } from '../db/db.token';
 import * as schema from '../db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -37,21 +38,66 @@ export class ReportsController {
   ) {}
 
   private formatResponse(data: any) {
-    let rows = Array.isArray(data) ? data : data;
-    let columns: string[] = [];
+    const flatten = (value: any, prefix = ''): Record<string, any> => {
+      if (!value || typeof value !== 'object' || Array.isArray(value))
+        return {};
+      return Object.entries(value).reduce(
+        (result, [key, nested]) => {
+          const column = prefix ? `${prefix}.${key}` : key;
+          if (Array.isArray(nested)) {
+            result[column] = JSON.stringify(nested);
+          } else if (nested && typeof nested === 'object') {
+            Object.assign(result, flatten(nested, column));
+          } else {
+            result[column] = nested;
+          }
+          return result;
+        },
+        {} as Record<string, any>,
+      );
+    };
 
-    // For nested response structures, extract keys
-    if (!Array.isArray(data) && typeof data === 'object' && data !== null) {
-      rows = [data]; // wrap to provide a unified 'rows' array
+    let sourceRows: any[];
+    let sectioned = false;
+    if (Array.isArray(data)) {
+      sourceRows = data;
+    } else if (data && typeof data === 'object') {
+      const groups = Object.entries(data).filter(
+        ([, value]) =>
+          Array.isArray(value) &&
+          (value.length === 0 ||
+            value.every((row) => row && typeof row === 'object')),
+      );
+      if (groups.length > 0) {
+        sectioned = true;
+        sourceRows = groups.flatMap(([section, values]) =>
+          (values as any[]).map((row) => ({ ...row, reportSection: section })),
+        );
+      } else {
+        sourceRows = [data];
+      }
+    } else {
+      sourceRows = [];
     }
 
-    if (Array.isArray(rows) && rows.length > 0 && typeof rows[0] === 'object') {
-      columns = Object.keys(rows[0]);
+    const flatRows = sourceRows.map((row) => ({ ...row, ...flatten(row) }));
+    const columns = Array.from(
+      new Set(
+        flatRows.flatMap((row) =>
+          Object.keys(row).filter((key) => {
+            const value = row[key];
+            return value === null || typeof value !== 'object';
+          }),
+        ),
+      ),
+    );
+    if (sectioned && !columns.includes('reportSection')) {
+      columns.unshift('reportSection');
     }
 
     return {
       columns,
-      rows,
+      rows: flatRows,
       totals: {},
       generated_at: new Date().toISOString(),
     };
@@ -121,14 +167,18 @@ export class ReportsController {
     return this.formatResponse(data);
   }
 
-  @Get(':reportKey/export')
+  @Get(':reportKey/export/:format')
   async exportReport(
     @Param('reportKey') reportKey: string,
     @Query() filters: ReportFilterDto,
-    @Query('format') format: string,
+    @Param('format') format: string,
     @Req() req: Request & { user?: { role?: Role } },
     @Res() res: Response,
   ) {
+    if (!['pdf', 'excel', 'xlsx'].includes(format)) {
+      throw new BadRequestException('format must be pdf, excel, or xlsx');
+    }
+
     const userRole = req.user?.role;
     if (!userRole) throw new ForbiddenException('User role not found');
     let permissions: Permission[] = [];

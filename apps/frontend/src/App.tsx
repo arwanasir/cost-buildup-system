@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router-dom';
 import { router } from './app/router';
 import { useThemeStore } from './store/theme.store';
+import { initializeAuthSession } from './store/auth-session';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,6 +20,7 @@ function App() {
 
   useEffect(() => {
     initializeTheme();
+    void initializeAuthSession();
   }, [initializeTheme]);
 
   return (

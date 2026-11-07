@@ -16,6 +16,7 @@ import {
   RefreshDto,
   ResetPasswordDto,
   ChangePasswordDto,
+  ForgotPasswordDto,
 } from './dto/auth.dto';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Request } from 'express';
@@ -89,8 +90,8 @@ export class AuthController {
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 3, ttl: 60000 } })
-  async forgotPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    return this.authService.resetPassword(resetPasswordDto);
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto);
   }
 
   @Post('reset-password')

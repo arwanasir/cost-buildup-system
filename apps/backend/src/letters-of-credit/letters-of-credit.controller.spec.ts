@@ -3,7 +3,7 @@ import { LettersOfCreditController } from './letters-of-credit.controller';
 import { LettersOfCreditService } from './letters-of-credit.service';
 import { LcStatusService } from './lc-status.service';
 import { LcAlertScheduler } from './lc-alert.scheduler';
-import { DRIZZLE } from '../db/db.module';
+import { DRIZZLE } from '../db/db.token';
 
 describe('LettersOfCreditController', () => {
   let controller: LettersOfCreditController;

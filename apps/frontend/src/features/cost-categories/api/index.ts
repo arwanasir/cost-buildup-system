@@ -11,9 +11,10 @@ export interface CostCategory {
   sortOrder: number;
 }
 
-export const useCostCategories = () => {
+export const useCostCategories = (enabled = true) => {
   return useQuery<CostCategory[]>({
     queryKey: ['costCategories'],
+    enabled,
     queryFn: async () => {
       const res = await api.get('/cost-categories');
       return res.data.data || res.data;

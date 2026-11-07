@@ -1,4 +1,6 @@
-import React, { useEffect } from 'react';
+import { useUiText } from '@/lib/ui-text';
+import { LocalizedText } from '@/components/ui/LocalizedText';
+import React, { useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,6 +17,7 @@ import { useSuppliers } from '@/features/suppliers/api';
 import { usePurchaseOrders } from '@/features/purchase-orders/api';
 import { useLatestExchangeRate } from '@/features/exchange-rates/api';
 import { useCreateLetterOfCredit } from '../api';
+import { formatAmount4 } from '@/lib/money';
 
 const DOC_TYPES = [
   { id: 'bl', label: 'Bill of Lading' },
@@ -70,6 +73,7 @@ const lcSchema = z
 type LcFormData = z.infer<typeof lcSchema>;
 
 export function LetterOfCreditForm() {
+  const localize = useUiText();
   const navigate = useNavigate();
   const createMutation = useCreateLetterOfCredit();
 
@@ -90,6 +94,7 @@ export function LetterOfCreditForm() {
     defaultValues: {
       lcType: 'sight',
       currency: 'USD',
+      poIds: [],
       fxRate: 1,
       partialShipmentAllowed: true,
       transhipmentAllowed: false,
@@ -110,6 +115,7 @@ export function LetterOfCreditForm() {
   const watchSupplierId = watch('supplierId');
   const watchCurrency = watch('currency');
   const watchPoIds = watch('poIds') || [];
+  const watchAmountForeign = watch('amountForeign');
 
   // Fetch approved POs for the selected supplier
   const { data: poData, isLoading: isLoadingPos } = usePurchaseOrders({
@@ -127,7 +133,10 @@ export function LetterOfCreditForm() {
   }, [latestRate, setValue]);
 
   // BR08: Only show POs that DO NOT have an LC attached yet
-  const availablePos = (poData?.data || []).filter((po) => po.lcId === null);
+  const availablePos = useMemo(
+    () => (poData?.data || []).filter((po) => po.lcId === null),
+    [poData?.data],
+  );
 
   // Auto-calculate amountForeign when POs are selected
   useEffect(() => {
@@ -137,10 +146,10 @@ export function LetterOfCreditForm() {
       if (po) total += parseFloat(po.totalAmount);
     });
     // Update amount but allow user to override
-    if (total > 0) {
+    if (total > 0 && watchAmountForeign !== total) {
       setValue('amountForeign', total, { shouldValidate: true });
     }
-  }, [watchPoIds, availablePos, setValue]);
+  }, [watchPoIds, availablePos, watchAmountForeign, setValue]);
 
   const supplierOptions = (activeSuppliers?.data || []).map((s) => ({
     label: s.name,
@@ -191,7 +200,9 @@ export function LetterOfCreditForm() {
       <div className="md:flex md:items-center md:justify-between mb-8">
         <div className="min-w-0 flex-1">
           <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-            Create Letter of Credit
+            <LocalizedText
+              text={'\n            Create Letter of Credit\n          '}
+            />
           </h2>
         </div>
       </div>
@@ -204,11 +215,16 @@ export function LetterOfCreditForm() {
         <div className="space-y-6 pt-8 sm:space-y-5 sm:pt-10">
           <div>
             <h3 className="text-lg font-medium leading-6 text-gray-900">
-              Primary Configuration
+              <LocalizedText
+                text={'\n              Primary Configuration\n            '}
+              />
             </h3>
             <p className="mt-1 max-w-2xl text-sm text-gray-500">
-              Select the supplier and link the approved Purchase Orders to
-              bundle into this instrument.
+              <LocalizedText
+                text={
+                  '\n              Select the supplier and link the approved Purchase Orders to\n              bundle into this instrument.\n            '
+                }
+              />
             </p>
           </div>
 
@@ -235,7 +251,7 @@ export function LetterOfCreditForm() {
 
             <div className="sm:col-span-3">
               <Input
-                label="LC Number *"
+                label={localize('LC Number *')}
                 {...register('lcNumber')}
                 error={errors.lcNumber?.message}
               />
@@ -244,43 +260,85 @@ export function LetterOfCreditForm() {
             {watchSupplierId && (
               <div className="sm:col-span-6 bg-gray-50 p-4 rounded-md border border-gray-200">
                 <label className="block text-sm font-medium text-gray-900 mb-3">
-                  Link Approved Purchase Orders (BR08 Enforced) *
+                  <LocalizedText
+                    text={
+                      '\n                  Link Approved Purchase Orders (BR08 Enforced) *\n                '
+                    }
+                  />
                 </label>
                 {isLoadingPos ? (
-                  <p className="text-sm text-gray-500">Loading POs...</p>
+                  <p className="text-sm text-gray-500">
+                    <LocalizedText text={'Loading POs...'} />
+                  </p>
                 ) : availablePos.length === 0 ? (
                   <p className="text-sm text-amber-600 italic">
-                    No approved POs without LCs found for this supplier.
+                    <LocalizedText
+                      text={
+                        '\n                    No approved POs without LCs found for this supplier.\n                  '
+                      }
+                    />
                   </p>
                 ) : (
-                  <div className="space-y-3">
-                    {availablePos.map((po) => (
-                      <div key={po.id} className="relative flex items-start">
-                        <div className="flex h-5 items-center">
-                          <input
-                            type="checkbox"
-                            value={po.id}
-                            {...register('poIds')}
-                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
+                  <Controller
+                    name="poIds"
+                    control={control}
+                    render={({ field }) => {
+                      const selectedPoIds = Array.isArray(field.value)
+                        ? field.value
+                        : field.value
+                          ? [field.value]
+                          : [];
+
+                      return (
+                        <div className="space-y-3">
+                          {availablePos.map((po) => {
+                            const isSelected = selectedPoIds.includes(po.id);
+                            return (
+                              <div
+                                key={po.id}
+                                className="relative flex items-start"
+                              >
+                                <div className="flex h-5 items-center">
+                                  <input
+                                    type="checkbox"
+                                    value={po.id}
+                                    checked={isSelected}
+                                    onChange={() =>
+                                      field.onChange(
+                                        isSelected
+                                          ? selectedPoIds.filter(
+                                              (id) => id !== po.id,
+                                            )
+                                          : [...selectedPoIds, po.id],
+                                      )
+                                    }
+                                    onBlur={field.onBlur}
+                                    ref={field.ref}
+                                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                  />
+                                </div>
+                                <div className="ml-3 text-sm flex justify-between w-full pr-4">
+                                  <label className="font-medium text-gray-700">
+                                    {po.poNumber}
+                                  </label>
+                                  <span className="text-gray-500 font-mono">
+                                    {formatAmount4(po.totalAmount)}
+                                    <LocalizedText text={' '} />
+                                    {po.currency}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {errors.poIds && (
+                            <p className="text-sm text-red-600">
+                              {errors.poIds.message}
+                            </p>
+                          )}
                         </div>
-                        <div className="ml-3 text-sm flex justify-between w-full pr-4">
-                          <label className="font-medium text-gray-700">
-                            {po.poNumber}
-                          </label>
-                          <span className="text-gray-500 font-mono">
-                            {parseFloat(po.totalAmount).toLocaleString()}{' '}
-                            {po.currency}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                    {errors.poIds && (
-                      <p className="text-sm text-red-600">
-                        {errors.poIds.message}
-                      </p>
-                    )}
-                  </div>
+                      );
+                    }}
+                  />
                 )}
               </div>
             )}
@@ -291,21 +349,23 @@ export function LetterOfCreditForm() {
         <div className="space-y-6 pt-8 sm:space-y-5 sm:pt-10">
           <div>
             <h3 className="text-lg font-medium leading-6 text-gray-900">
-              Banking & Financials
+              <LocalizedText
+                text={'\n              Banking & Financials\n            '}
+              />
             </h3>
           </div>
 
           <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
             <div className="sm:col-span-3">
               <Input
-                label="Issuing Bank *"
+                label={localize('Issuing Bank *')}
                 {...register('issuingBank')}
                 error={errors.issuingBank?.message}
               />
             </div>
             <div className="sm:col-span-3">
               <Input
-                label="Advising Bank"
+                label={localize('Advising Bank')}
                 {...register('advisingBank')}
                 error={errors.advisingBank?.message}
               />
@@ -313,7 +373,7 @@ export function LetterOfCreditForm() {
 
             <div className="sm:col-span-2">
               <Select
-                label="LC Type *"
+                label={localize('LC Type *')}
                 options={[
                   { label: 'Sight', value: 'sight' },
                   { label: 'Usance', value: 'usance' },
@@ -327,7 +387,7 @@ export function LetterOfCreditForm() {
             </div>
             <div className="sm:col-span-2">
               <Input
-                label="Currency"
+                label={localize('Currency')}
                 {...register('currency')}
                 error={errors.currency?.message}
               />
@@ -350,7 +410,7 @@ export function LetterOfCreditForm() {
 
             <div className="sm:col-span-3">
               <Input
-                label="Total LC Amount (Foreign) *"
+                label={localize('Total LC Amount (Foreign) *')}
                 type="number"
                 step="0.01"
                 {...register('amountForeign', { valueAsNumber: true })}
@@ -359,7 +419,7 @@ export function LetterOfCreditForm() {
             </div>
             <div className="sm:col-span-3">
               <Input
-                label="Incoterm"
+                label={localize('Incoterm')}
                 {...register('incoterm')}
                 error={errors.incoterm?.message}
               />
@@ -371,28 +431,30 @@ export function LetterOfCreditForm() {
         <div className="space-y-6 pt-8 sm:space-y-5 sm:pt-10">
           <div>
             <h3 className="text-lg font-medium leading-6 text-gray-900">
-              Dates & Logistics Rules
+              <LocalizedText
+                text={'\n              Dates & Logistics Rules\n            '}
+              />
             </h3>
           </div>
 
           <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
             <div className="sm:col-span-2">
               <DatePicker
-                label="Opening Date"
+                label={localize('Opening Date')}
                 {...register('openingDate')}
                 error={errors.openingDate?.message}
               />
             </div>
             <div className="sm:col-span-2">
               <DatePicker
-                label="Latest Shipment Date"
+                label={localize('Latest Shipment Date')}
                 {...register('lastShipmentDate')}
                 error={errors.lastShipmentDate?.message}
               />
             </div>
             <div className="sm:col-span-2">
               <DatePicker
-                label="Expiry Date *"
+                label={localize('Expiry Date *')}
                 {...register('expiryDate')}
                 error={errors.expiryDate?.message}
               />
@@ -400,7 +462,7 @@ export function LetterOfCreditForm() {
 
             <div className="sm:col-span-2">
               <Input
-                label="Presentation Period (Days)"
+                label={localize('Presentation Period (Days)')}
                 type="number"
                 {...register('presentationPeriodDays', { valueAsNumber: true })}
                 error={errors.presentationPeriodDays?.message}
@@ -417,7 +479,11 @@ export function LetterOfCreditForm() {
               </div>
               <div className="ml-3 text-sm">
                 <label className="font-medium text-gray-700">
-                  Allow Partial Shipment
+                  <LocalizedText
+                    text={
+                      '\n                  Allow Partial Shipment\n                '
+                    }
+                  />
                 </label>
               </div>
             </div>
@@ -432,7 +498,11 @@ export function LetterOfCreditForm() {
               </div>
               <div className="ml-3 text-sm">
                 <label className="font-medium text-gray-700">
-                  Allow Transhipment
+                  <LocalizedText
+                    text={
+                      '\n                  Allow Transhipment\n                '
+                    }
+                  />
                 </label>
               </div>
             </div>
@@ -443,14 +513,22 @@ export function LetterOfCreditForm() {
         <div className="space-y-6 pt-8 sm:space-y-5 sm:pt-10">
           <div>
             <h3 className="text-lg font-medium leading-6 text-gray-900">
-              Required Documents & Conditions
+              <LocalizedText
+                text={
+                  '\n              Required Documents & Conditions\n            '
+                }
+              />
             </h3>
           </div>
 
           <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
             <div className="sm:col-span-6 bg-white border border-gray-200 shadow-sm rounded-md p-4">
               <legend className="text-sm font-medium text-gray-900 mb-4">
-                Select Required Documents for Presentation
+                <LocalizedText
+                  text={
+                    '\n                Select Required Documents for Presentation\n              '
+                  }
+                />
               </legend>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {DOC_TYPES.map((doc) => (
@@ -474,7 +552,11 @@ export function LetterOfCreditForm() {
 
             <div className="sm:col-span-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Special Conditions (MT700 Field 47A)
+                <LocalizedText
+                  text={
+                    '\n                Special Conditions (MT700 Field 47A)\n              '
+                  }
+                />
               </label>
               <textarea
                 className="appearance-none block w-full px-3 py-2 border rounded-md shadow-sm border-gray-300"
@@ -492,14 +574,16 @@ export function LetterOfCreditForm() {
               variant="secondary"
               onClick={() => navigate(-1)}
             >
-              Cancel
+              <LocalizedText text={'\n              Cancel\n            '} />
             </Button>
             <Button
               type="submit"
               variant="primary"
               isLoading={createMutation.isPending}
             >
-              Create Letter of Credit
+              <LocalizedText
+                text={'\n              Create Letter of Credit\n            '}
+              />
             </Button>
           </div>
         </div>

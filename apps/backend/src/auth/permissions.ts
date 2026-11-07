@@ -6,6 +6,7 @@ export enum Role {
   CUSTOMS_OFFICER = 'customs_officer',
   WAREHOUSE_MANAGER = 'warehouse_manager',
   GENERAL_MANAGER = 'general_manager',
+  AUDITOR = 'auditor',
   SYSTEM_ADMIN = 'system_admin',
 }
 
