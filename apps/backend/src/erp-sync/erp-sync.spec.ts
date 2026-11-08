@@ -3,7 +3,7 @@ import { InventoryPostingService } from './inventory-posting.service';
 import { InventoryClient } from './clients/inventory.client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { HttpModule } from '@nestjs/axios';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 import { DRIZZLE } from '@/db/db.token';
 const nock = require('nock');
@@ -30,10 +30,19 @@ describe('ERP Sync Integration (Nock)', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      imports: [HttpModule, ConfigModule.forRoot({ isGlobal: true })],
+      imports: [HttpModule],
       providers: [
         InventoryPostingService,
         InventoryClient,
+        {
+          provide: ConfigService,
+          // Keep the HTTP integration test isolated from developer .env files
+          // and Docker service discovery so Nock owns every request.
+          useValue: {
+            get: (key: string) =>
+              key === 'ERP_BASE_URL' ? 'http://localhost:3001' : undefined,
+          },
+        },
         {
           provide: DRIZZLE,
           useValue: dbMock,

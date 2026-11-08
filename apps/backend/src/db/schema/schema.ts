@@ -1085,6 +1085,9 @@ export const journalEntries = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     sourceType: journalSourceTypeEnum('source_type').notNull(),
     sourceId: uuid('source_id').notNull(),
+    entryType: varchar('entry_type', { length: 40 })
+      .notNull()
+      .default('standard'),
 
     lines: jsonb('lines').notNull(),
 

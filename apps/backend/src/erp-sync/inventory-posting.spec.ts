@@ -58,10 +58,15 @@ describe('ERP Sync & Inventory Posting (SRS 7.1)', () => {
     jest.restoreAllMocks();
   });
 
-  const setupBaseSelects = () => {
+  const setupBaseSelects = (usesEstimatedCost = false) => {
     selectWhereMock
       .mockResolvedValueOnce([
-        { id: 'grn-1', shipmentId: 'ship-1', grnNumber: 'GRN-001' },
+        {
+          id: 'grn-1',
+          shipmentId: 'ship-1',
+          grnNumber: 'GRN-001',
+          usesEstimatedCost,
+        },
       ]) // goodsReceipts
       .mockResolvedValueOnce([
         {
@@ -97,6 +102,28 @@ describe('ERP Sync & Inventory Posting (SRS 7.1)', () => {
       expect.objectContaining({
         postedToInventory: true,
         inventoryTransactionId: 'ERP-INV-8080',
+      }),
+    );
+  });
+
+  it('preserves the adjustment flag when inventory was posted using estimates', async () => {
+    setupBaseSelects(true);
+    const inventoryClient = testingModule.get(InventoryClient);
+    jest.spyOn(inventoryClient, 'postReceipt').mockResolvedValueOnce({
+      transaction_id: 'ERP-INV-ESTIMATE',
+    } as any);
+
+    await service.post('grn-1');
+
+    expect(updateSetMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'flagged_for_adjustment',
+      }),
+    );
+    expect(updateSetMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        postedToInventory: true,
+        inventoryTransactionId: 'ERP-INV-ESTIMATE',
       }),
     );
   });

@@ -108,6 +108,7 @@ export class LandedCostService {
           inArray(schema.goodsReceipts.status, [
             'confirmed',
             'flagged_for_adjustment',
+            'posted',
           ]),
         ),
       );
@@ -213,6 +214,14 @@ export class LandedCostService {
         ),
       );
 
+    const existingResults = await tx
+      .select()
+      .from(schema.importLandedCostResults)
+      .where(eq(schema.importLandedCostResults.shipmentId, shipmentId));
+    const existingResultsByItem = new Map(
+      existingResults.map((result: any) => [result.shipmentItemId, result]),
+    );
+
     let totalCostEntriesEtb = new Decimal(0);
     for (const entry of activeEntries) {
       if (entry.source === 'commercial_invoice') continue;
@@ -225,6 +234,7 @@ export class LandedCostService {
 
     for (const item of items) {
       const costs = allocationsByItem.get(item.id);
+      const existingResult: any = existingResultsByItem.get(item.id);
 
       const grnQty = grnItemsMap.get(item.id);
       const qtyReceived = new Decimal(
@@ -272,6 +282,11 @@ export class LandedCostService {
         computedAt,
         finalisedBy: finaliseMeta ? finaliseMeta.actorId : null,
         finalisedAt: finaliseMeta ? finaliseMeta.timestamp : null,
+        // Inventory postings are immutable. Preserve the original ERP posting
+        // reference while updating the final landed-cost calculation.
+        postedToInventory: existingResult?.postedToInventory ?? false,
+        postedAt: existingResult?.postedAt ?? null,
+        inventoryTransactionId: existingResult?.inventoryTransactionId ?? null,
       });
     }
 
@@ -284,11 +299,26 @@ export class LandedCostService {
       );
     }
 
-    await tx
-      .delete(schema.importLandedCostResults)
-      .where(eq(schema.importLandedCostResults.shipmentId, shipmentId));
-    if (landedCostResults.length > 0) {
-      await tx.insert(schema.importLandedCostResults).values(landedCostResults);
+    for (const result of landedCostResults) {
+      const {
+        postedToInventory: _postedToInventory,
+        postedAt: _postedAt,
+        inventoryTransactionId: _inventoryTransactionId,
+        ...recalculatedFields
+      } = result;
+
+      await tx
+        .insert(schema.importLandedCostResults)
+        .values(result)
+        .onConflictDoUpdate({
+          target: [
+            schema.importLandedCostResults.shipmentId,
+            schema.importLandedCostResults.shipmentItemId,
+          ],
+          // Keep inventory posting metadata unchanged on conflict. A revised
+          // unit cost is accounted for through the SRS journal adjustment flow.
+          set: recalculatedFields,
+        });
     }
 
     return landedCostResults;

@@ -126,10 +126,20 @@ describe('Import Shipments Services', () => {
         {
           poId: 'po-1',
           allowOverShipment: true,
+          totalWeightKg: 60.25,
+          totalVolumeCbm: 12.5,
           items: [{ poLineId: 'line-1', shippedQuantity: 60, ciUnitPrice: 10 }], // 50 + 60 = 110 (over_shipment)
         },
         'user-1',
       );
+
+      const shipmentHeaderValues = valuesMock.mock.calls.find(
+        (call) => !Array.isArray(call[0]) && call[0]?.shipmentNumber === 'SHP-001',
+      );
+      expect(shipmentHeaderValues[0]).toMatchObject({
+        totalWeightKg: '60.25',
+        totalVolumeCbm: '12.5',
+      });
 
       // 1. Verify over_shipment flag on shipment items
       const shipmentItemValues = valuesMock.mock.calls.find(

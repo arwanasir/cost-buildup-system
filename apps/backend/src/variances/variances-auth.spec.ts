@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 const request = require('supertest');
-import { VariancesModule } from './variances.module';
+import {
+  VariancesController,
+  ShipmentVariancesController,
+} from './variances.controller';
+import { VariancesService } from './variances.service';
 import { AuthGuard } from '@nestjs/passport';
 import { DRIZZLE } from '@/db/db.token';
 
@@ -19,10 +23,12 @@ describe('VariancesController (e2e)', () => {
     };
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [VariancesModule],
+      controllers: [VariancesController, ShipmentVariancesController],
+      providers: [
+        VariancesService,
+        { provide: DRIZZLE, useValue: dbMock },
+      ],
     })
-      .overrideProvider(DRIZZLE)
-      .useValue(dbMock)
       .overrideGuard(AuthGuard('jwt'))
       .useValue({
         canActivate: (context: any) => {
@@ -39,7 +45,7 @@ describe('VariancesController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) await app.close();
   });
 
   it('/variances/:id/approve (POST) - should return 403 for finance_officer', () => {

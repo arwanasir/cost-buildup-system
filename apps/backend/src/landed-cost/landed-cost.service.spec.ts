@@ -4,6 +4,7 @@ import { AllocationService } from '@/allocation/allocation.service';
 import { FinalisationGuardService } from './finalisation-guard.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DRIZZLE } from '@/db/db.token';
+import { PgDialect } from 'drizzle-orm/pg-core';
 
 describe('LandedCostService (TC-COST01, AC05)', () => {
   let service: LandedCostService;
@@ -20,7 +21,8 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
       where: jest.fn(),
       delete: jest.fn().mockReturnThis(),
       insert: jest.fn().mockReturnThis(),
-      values: jest.fn().mockImplementation((vals) => Promise.resolve(vals)),
+      values: jest.fn().mockReturnThis(),
+      onConflictDoUpdate: jest.fn().mockResolvedValue(undefined),
     };
 
     dbMock = {
@@ -49,7 +51,7 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
     service = module.get<LandedCostService>(LandedCostService);
   });
 
-  it('computes landed cost across all allocation methods with SRS 4dp monetary precision', async () => {
+  it('computes all cost categories and uses accepted quantities for posted GRNs', async () => {
     // 1. Mock 5 Shipment Items
     const mockItems = [
       {
@@ -181,7 +183,7 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
         return Promise.resolve([
           {
             id: 'grn-1',
-            status: 'flagged_for_adjustment',
+            status: 'posted',
             shipmentId: 'ship-1',
           },
         ]); // GRN uses accepted quantities, excluding rejected units
@@ -195,15 +197,30 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
         ]);
       if (whereCount === 4) return Promise.resolve(mockAllocations); // costAllocations
       if (whereCount === 5) return Promise.resolve(mockActiveEntries); // activeEntries check
+      if (whereCount === 6)
+        return Promise.resolve([
+          {
+            shipmentItemId: 'item-1',
+            postedToInventory: true,
+            postedAt: '2026-11-01T10:00:00.000Z',
+            inventoryTransactionId: 'INV-TXN-001',
+          },
+        ]); // preserve existing inventory posting metadata
       return Promise.resolve(true); // delete
     });
 
     const results = await service.computeDraft('ship-1');
 
+    const grnStatusFilter = txMock.where.mock.calls[1][0];
+    const compiledGrnFilter = new PgDialect().sqlToQuery(grnStatusFilter);
+    expect(compiledGrnFilter.params).toEqual(
+      expect.arrayContaining(['posted']),
+    );
+
     // Assert overall structural integrity
     expect(results).toHaveLength(5);
     expect(txMock.insert).toHaveBeenCalled();
-    expect(txMock.values).toHaveBeenCalledWith(results);
+    expect(txMock.values).toHaveBeenCalledTimes(5);
 
     // Assert Item 1: Complete 4.1.4 Mapping with Item-Specific Duty
     const item1 = results.find((r: any) => r.shipmentItemId === 'item-1');
@@ -222,6 +239,11 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
     expect(item1.totalLandedCostEtb).toBe('2350.0000');
     // Per unit uses accepted units only, not the rejected received unit.
     expect(item1.perUnitLandedCostEtb).toBe('587.5000');
+    expect(item1.postedToInventory).toBe(true);
+    expect(item1.postedAt).toBe('2026-11-01T10:00:00.000Z');
+    expect(item1.inventoryTransactionId).toBe('INV-TXN-001');
+    expect(txMock.delete).not.toHaveBeenCalled();
+    expect(txMock.onConflictDoUpdate).toHaveBeenCalledTimes(5);
 
     // Assert Item 2: Mixed Mapping with Item-Specific VAT
     const item2 = results.find((r: any) => r.shipmentItemId === 'item-2');

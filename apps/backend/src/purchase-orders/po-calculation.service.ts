@@ -52,7 +52,8 @@ export class PoCalculationService {
       .plus(insurance)
       .toDecimalPlaces(4);
 
-    // 5. Estimated Duty ETB = sum( (line.totalLineValue / totalValueForeign) * estimatedCIF * line.dutyRate )
+    // Tariff duty rates are percentages, so convert each rate before applying it.
+    // 5. Estimated Duty ETB = sum(line CIF share * (duty rate / 100))
     let estimatedDutyEtb = new Decimal(0);
 
     const calculatedLines = parsedLines.map((line) => {
@@ -61,7 +62,10 @@ export class PoCalculationService {
         : line.totalLineValue.dividedBy(totalValueForeign);
 
       const lineCifShare = share.times(estimatedCIF);
-      const lineDutyEtb = lineCifShare.times(line.dutyRate).toDecimalPlaces(4);
+      const lineDutyEtb = lineCifShare
+        .times(line.dutyRate)
+        .dividedBy(100)
+        .toDecimalPlaces(4);
 
       estimatedDutyEtb = estimatedDutyEtb.plus(lineDutyEtb);
 

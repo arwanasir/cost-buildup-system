@@ -84,6 +84,33 @@ export const useRetryGrnPosting = () => {
   });
 };
 
+export const usePendingGrnAdjustment = (grnId: string, enabled = true) =>
+  useQuery({
+    queryKey: ['erp-sync', 'grn-adjustment', grnId],
+    queryFn: () =>
+      api
+        .get(`/erp-sync/journal-adjustments/${grnId}`)
+        .then((res) => res.data),
+    enabled: !!grnId && enabled,
+  });
+
+export const useApproveGrnAdjustment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (grnId: string) =>
+      api
+        .post(`/erp-sync/journal-adjustments/${grnId}/approve`)
+        .then((res) => res.data),
+    onSuccess: (_, grnId) => {
+      queryClient.invalidateQueries({ queryKey: ['goods-receipts', grnId] });
+      queryClient.invalidateQueries({ queryKey: ['goods-receipts'] });
+      queryClient.invalidateQueries({
+        queryKey: ['erp-sync', 'grn-adjustment', grnId],
+      });
+    },
+  });
+};
+
 export const useGrnDiscrepancies = (id: string) => {
   return useQuery({
     queryKey: ['goods-receipts', id, 'discrepancies'],
