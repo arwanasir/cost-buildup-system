@@ -1,8 +1,13 @@
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  OnApplicationShutdown,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as net from 'net';
-import { Pool } from 'pg';
+import { Pool, PoolClient } from 'pg';
 
 export interface HealthCheckResponse {
   status: 'ok' | 'degraded' | 'down';
@@ -17,7 +22,7 @@ export interface HealthCheckResponse {
 @ApiTags('Health')
 @ApiBearerAuth()
 @Controller('health')
-export class HealthController {
+export class HealthController implements OnApplicationShutdown {
   private readonly dbPool: Pool;
 
   constructor(private readonly configService: ConfigService) {
@@ -53,14 +58,21 @@ export class HealthController {
     }
     return response;
   }
+
+  async onApplicationShutdown() {
+    await this.dbPool.end();
+  }
+
   private async checkDatabase(): Promise<boolean> {
+    let client: PoolClient | undefined;
     try {
-      const client = await this.dbPool.connect();
+      client = await this.dbPool.connect();
       await client.query('SELECT 1');
-      client.release();
       return true;
     } catch {
       return false;
+    } finally {
+      client?.release();
     }
   }
 

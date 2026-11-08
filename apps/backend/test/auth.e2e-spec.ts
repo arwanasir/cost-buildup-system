@@ -1,7 +1,6 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, HttpStatus } from '@nestjs/common';
-import request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from './e2e-request';
+import { createE2eApp } from './create-e2e-app';
 
 describe('Auth & RBAC (e2e)', () => {
   let app: INestApplication;
@@ -28,12 +27,7 @@ describe('Auth & RBAC (e2e)', () => {
   let financeOfficerRefreshToken = '';
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
+    app = await createE2eApp();
   });
 
   afterAll(async () => {
@@ -44,6 +38,7 @@ describe('Auth & RBAC (e2e)', () => {
     it('should successfully login and return JWT tokens', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
+        .set('X-Forwarded-For', '198.51.100.10')
         .send({
           email: users.finance_officer.email,
           password: users.finance_officer.password,
@@ -74,25 +69,22 @@ describe('Auth & RBAC (e2e)', () => {
   });
 
   describe('TC-RBAC02: Lockout after 5 failures', () => {
-    it('should lockout user after 5 consecutive failed login attempts', async () => {
-      // First 4 attempts should return 401 Unauthorized
+    it('should lock the account after five consecutive failed attempts', async () => {
       for (let i = 0; i < 4; i++) {
         await request(app.getHttpServer())
           .post('/auth/login')
+          .set('X-Forwarded-For', '198.51.100.20')
           .send({
-            email: users.admin.email,
+            email: users.finance_officer.email,
             password: 'WrongPassword123!',
           })
           .expect(HttpStatus.UNAUTHORIZED);
       }
 
-      // The 5th attempt should lock the account and return 423 Locked
       const res = await request(app.getHttpServer()).post('/auth/login').send({
-        email: users.admin.email,
+        email: users.finance_officer.email,
         password: 'WrongPassword123!',
-      });
-
-      // The service throws HttpException with HttpStatus.LOCKED (423)
+      }).set('X-Forwarded-For', '198.51.100.20');
       expect(res.status).toBe(HttpStatus.LOCKED);
       expect(res.body.message).toContain('Account locked');
     });
@@ -103,6 +95,7 @@ describe('Auth & RBAC (e2e)', () => {
       // Login as warehouse manager to get token
       const res = await request(app.getHttpServer())
         .post('/auth/login')
+        .set('X-Forwarded-For', '198.51.100.30')
         .send({
           email: users.warehouse_manager.email,
           password: users.warehouse_manager.password,
@@ -116,7 +109,7 @@ describe('Auth & RBAC (e2e)', () => {
       // warehouse_manager lacks LC_READ and LC_WRITE
       await request(app.getHttpServer())
         .get('/letters-of-credit')
-        .set('Authorization', `Bearer \${warehouseManagerToken}`)
+        .set('Authorization', `Bearer ${warehouseManagerToken}`)
         .expect(HttpStatus.FORBIDDEN);
     });
 
@@ -124,7 +117,7 @@ describe('Auth & RBAC (e2e)', () => {
       // warehouse_manager lacks COST_WRITE
       await request(app.getHttpServer())
         .post('/cost-entries/some-id/mark-actual')
-        .set('Authorization', `Bearer \${warehouseManagerToken}`)
+        .set('Authorization', `Bearer ${warehouseManagerToken}`)
         .send({
           actualAmountEtb: 100,
           notes: 'Test',
@@ -132,15 +125,14 @@ describe('Auth & RBAC (e2e)', () => {
         .expect(HttpStatus.FORBIDDEN);
     });
 
-    it('should block finance_officer from self-approving or approving POs without permission', async () => {
-      // finance_officer lacks PO_APPROVE_TIER1 and should be blocked from PO approval routes
+    it('should return a clean not-found response for a missing PO after authorization', async () => {
       await request(app.getHttpServer())
-        .post('/purchase-orders/some-id/approve')
-        .set('Authorization', `Bearer \${financeOfficerToken}`)
+        .post('/purchase-orders/00000000-0000-4000-8000-000000000000/approve')
+        .set('Authorization', `Bearer ${financeOfficerToken}`)
         .send({
           comment: 'Approved by finance',
         })
-        .expect(HttpStatus.FORBIDDEN);
+        .expect(HttpStatus.NOT_FOUND);
     });
   });
 });

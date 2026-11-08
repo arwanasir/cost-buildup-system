@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, HttpStatus } from '@nestjs/common';
-import request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from './e2e-request';
+import { createE2eApp } from './create-e2e-app';
 
 describe('Shipment, CI & Customs (e2e)', () => {
   let app: INestApplication;
   let adminToken = '';
+  let approverToken = '';
 
   const entities = {
     supplierId: '',
@@ -20,12 +20,7 @@ describe('Shipment, CI & Customs (e2e)', () => {
   };
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
+    app = await createE2eApp();
 
     // Login as system_admin
     const loginRes = await request(app.getHttpServer())
@@ -34,16 +29,22 @@ describe('Shipment, CI & Customs (e2e)', () => {
       .expect(HttpStatus.OK);
 
     adminToken = loginRes.body.accessToken;
+    const approverLogin = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: 'executive@company.com', password: 'Password123!' })
+      .expect(HttpStatus.OK);
+    approverToken = approverLogin.body.accessToken;
 
     // --- Prerequisites Setup ---
     // 1. Supplier
     const supRes = await request(app.getHttpServer())
       .post('/suppliers')
-      .set('Authorization', `Bearer \${adminToken}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        supplierCode: 'SUP-CUST-01',
         name: 'Customs Test Supplier',
         country: 'CN',
+        defaultCurrency: 'USD',
+        leadTimeDays: 10,
       })
       .expect(HttpStatus.CREATED);
     entities.supplierId = supRes.body.id;
@@ -51,11 +52,11 @@ describe('Shipment, CI & Customs (e2e)', () => {
     // 2. Item
     const itemRes = await request(app.getHttpServer())
       .post('/items')
-      .set('Authorization', `Bearer \${adminToken}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         itemCode: 'ITM-CUST-01',
         name: 'Customs Test Item',
-        defaultHsCode: '8517.12.00',
+        defaultHsCode: '8517.13.00',
         unitOfMeasure: 'PCS',
       })
       .expect(HttpStatus.CREATED);
@@ -64,7 +65,7 @@ describe('Shipment, CI & Customs (e2e)', () => {
     // 3. Purchase Order (Under threshold to avoid complex GM approval, just admin can do it)
     const poRes = await request(app.getHttpServer())
       .post('/purchase-orders')
-      .set('Authorization', `Bearer \${adminToken}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         poDate: '2026-03-01',
         supplierId: entities.supplierId,
@@ -85,25 +86,25 @@ describe('Shipment, CI & Customs (e2e)', () => {
 
     // 4. Submit & Approve PO
     await request(app.getHttpServer())
-      .post(`/purchase-orders/\${entities.poId}/submit`)
-      .set('Authorization', `Bearer \${adminToken}`)
+      .post(`/purchase-orders/${entities.poId}/submit`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .expect(HttpStatus.CREATED);
     await request(app.getHttpServer())
-      .post(`/purchase-orders/\${entities.poId}/approve`)
-      .set('Authorization', `Bearer \${adminToken}`)
+      .post(`/purchase-orders/${entities.poId}/approve`)
+      .set('Authorization', `Bearer ${approverToken}`)
       .send({ comment: 'Approved' })
       .expect(HttpStatus.CREATED);
 
     // Get PO to extract poLineId
     const poFetch = await request(app.getHttpServer())
-      .get(`/purchase-orders/\${entities.poId}`)
-      .set('Authorization', `Bearer \${adminToken}`);
-    entities.poLineId = poFetch.body.lines[0].id;
+      .get(`/purchase-orders/${entities.poId}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    entities.poLineId = poFetch.body.poLines[0].id;
 
     // 5. Letter of Credit
     const lcRes = await request(app.getHttpServer())
       .post('/letters-of-credit')
-      .set('Authorization', `Bearer \${adminToken}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         lcNumber: 'LC-CUST-01',
         poIds: [entities.poId],
@@ -120,8 +121,8 @@ describe('Shipment, CI & Customs (e2e)', () => {
 
     // GM Approve LC
     await request(app.getHttpServer())
-      .post(`/letters-of-credit/\${entities.lcId}/gm-approve`)
-      .set('Authorization', `Bearer \${adminToken}`)
+      .post(`/letters-of-credit/${entities.lcId}/gm-approve`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .expect(HttpStatus.CREATED);
   });
 
@@ -133,7 +134,7 @@ describe('Shipment, CI & Customs (e2e)', () => {
     it('should create a shipment', async () => {
       const res = await request(app.getHttpServer())
         .post('/import-shipments')
-        .set('Authorization', `Bearer \${adminToken}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           poId: entities.poId,
           eta: '2026-05-01',
@@ -151,15 +152,17 @@ describe('Shipment, CI & Customs (e2e)', () => {
     });
 
     it('should upload a document to MinIO', async () => {
-      const buffer = Buffer.from('dummy pdf content for minio testing');
+      const buffer = Buffer.from('%PDF-1.4\n% test shipment document\n%%EOF\n');
       const res = await request(app.getHttpServer())
-        .post(`/import-shipments/\${entities.shipmentId}/documents`)
-        .set('Authorization', `Bearer \${adminToken}`)
+        .post(`/import-shipments/${entities.shipmentId}/documents`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .field('documentType', 'bl')
         .field('referenceNumber', 'BL-999888')
         .field('documentDate', '2026-04-01')
-        .attach('file', buffer, 'bill_of_lading.pdf')
-        .expect(HttpStatus.CREATED);
+        .attach('file', buffer, 'bill_of_lading.pdf');
+      if (res.status !== HttpStatus.CREATED) {
+        throw new Error(JSON.stringify({ status: res.status, body: res.body }));
+      }
 
       expect(res.body).toHaveProperty('id');
       expect(res.body.objectKey).toBeDefined(); // Points to MinIO storage key
@@ -169,8 +172,8 @@ describe('Shipment, CI & Customs (e2e)', () => {
   describe('Commercial Invoice & BR11 Alert', () => {
     it('should fetch shipment to get shipmentItem ID', async () => {
       const res = await request(app.getHttpServer())
-        .get(`/import-shipments/\${entities.shipmentId}/items`)
-        .set('Authorization', `Bearer \${adminToken}`)
+        .get(`/import-shipments/${entities.shipmentId}/items`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(HttpStatus.OK);
 
       entities.shipmentItemId = res.body[0].id;
@@ -180,8 +183,8 @@ describe('Shipment, CI & Customs (e2e)', () => {
       // PO unit price was 100. Let's send CI unit price as 120 (20% variance).
       // BR11 triggers at >10% variance.
       const res = await request(app.getHttpServer())
-        .post(`/import-shipments/\${entities.shipmentId}/commercial-invoice`)
-        .set('Authorization', `Bearer \${adminToken}`)
+        .post(`/import-shipments/${entities.shipmentId}/commercial-invoice`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           invoiceNumber: 'INV-112233',
           invoiceDate: '2026-04-10',
@@ -193,8 +196,10 @@ describe('Shipment, CI & Customs (e2e)', () => {
               ciUnitPrice: 120, // High price!
             },
           ],
-        })
-        .expect(HttpStatus.CREATED);
+        });
+      if (res.status !== HttpStatus.CREATED) {
+        throw new Error(JSON.stringify({ status: res.status, body: res.body }));
+      }
 
       entities.ciId = res.body.id;
       // Expect the priceVariancePct to be around 20.0000
@@ -205,8 +210,8 @@ describe('Shipment, CI & Customs (e2e)', () => {
 
     it('should allow procurement manager to acknowledge the variance', async () => {
       const res = await request(app.getHttpServer())
-        .post(`/import-shipments/\${entities.ciId}/acknowledge`) // Wait, route is import-shipments/:id/acknowledge
-        .set('Authorization', `Bearer \${adminToken}`)
+        .post(`/import-shipments/${entities.ciId}/acknowledge`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(HttpStatus.CREATED);
 
       expect(res.body.acknowledgedAt).not.toBeNull();
@@ -214,17 +219,33 @@ describe('Shipment, CI & Customs (e2e)', () => {
   });
 
   describe('Customs Workflow (Declare, Assess, Pay, Release)', () => {
+    it('should transition the shipment into customs before declaration', async () => {
+      await request(app.getHttpServer())
+        .post(`/import-shipments/${entities.shipmentId}/status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: 'shipped' })
+        .expect(HttpStatus.CREATED);
+
+      await request(app.getHttpServer())
+        .post(`/import-shipments/${entities.shipmentId}/status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: 'at_customs', actualArrivalDate: '2026-05-02' })
+        .expect(HttpStatus.CREATED);
+    });
+
     it('should declare customs', async () => {
       const res = await request(app.getHttpServer())
         .post('/customs')
-        .set('Authorization', `Bearer \${adminToken}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           shipmentId: entities.shipmentId,
           declarationNumber: 'DEC-0001',
           declarationDate: '2026-05-02',
           fxRate: 120.5,
-        })
-        .expect(HttpStatus.CREATED);
+        });
+      if (res.status !== HttpStatus.CREATED) {
+        throw new Error(JSON.stringify({ status: res.status, body: res.body }));
+      }
 
       entities.declarationId = res.body.id;
       expect(res.body.status).toBe('draft');
@@ -232,8 +253,8 @@ describe('Shipment, CI & Customs (e2e)', () => {
 
     it('should assess the declaration', async () => {
       const res = await request(app.getHttpServer())
-        .post(`/customs/\${entities.declarationId}/assess`)
-        .set('Authorization', `Bearer \${adminToken}`)
+        .post(`/customs/${entities.declarationId}/assess`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(HttpStatus.CREATED);
 
       expect(res.body.status).toBe('assessed');
@@ -241,8 +262,8 @@ describe('Shipment, CI & Customs (e2e)', () => {
 
     it('should record duty payment', async () => {
       const res = await request(app.getHttpServer())
-        .post(`/customs/\${entities.declarationId}/payments`)
-        .set('Authorization', `Bearer \${adminToken}`)
+        .post(`/customs/${entities.declarationId}/payments`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           paymentDate: '2026-05-05',
           bankReference: 'CBE-9876',
@@ -251,13 +272,17 @@ describe('Shipment, CI & Customs (e2e)', () => {
         })
         .expect(HttpStatus.CREATED);
 
-      expect(res.body.status).toBe('paid');
+      const declaration = await request(app.getHttpServer())
+        .get(`/customs/${entities.declarationId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(HttpStatus.OK);
+      expect(declaration.body.status).toBe('paid');
     });
 
     it('should release the shipment from customs', async () => {
       const res = await request(app.getHttpServer())
-        .post(`/customs/\${entities.declarationId}/release`)
-        .set('Authorization', `Bearer \${adminToken}`)
+        .post(`/customs/${entities.declarationId}/release`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           releaseDate: '2026-05-06',
           releaseReference: 'REL-4455',

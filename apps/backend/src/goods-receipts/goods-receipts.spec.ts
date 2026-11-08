@@ -82,7 +82,7 @@ describe('Goods Receipts & Discrepancies (BR01A, FR-09.1, FR-09.2)', () => {
           receivedQuantity: 100,
           acceptedQuantity: 90,
           rejectedQuantity: 5, // 90 + 5 = 95 != 100
-          inspectionResult: 'partial',
+          inspectionResult: 'accepted_with_conditions',
         },
       ],
     } as any;

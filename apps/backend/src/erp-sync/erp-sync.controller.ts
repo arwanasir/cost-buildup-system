@@ -7,6 +7,7 @@ import {
   Query,
   UseGuards,
   Inject,
+  Req,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionGuard } from '../auth/guards/permissions.guards';
@@ -52,6 +53,18 @@ export class ErpSyncController {
 
     // We don't have a reliable sort column besides sentAt. If it's missing, no sort.
     return await query.limit(50);
+  }
+
+  @Get('journal-adjustments/:grnId')
+  @RequiredPermission(Permission.COST_FINALIZE)
+  async getPendingGrnAdjustment(@Param('grnId') grnId: string) {
+    return this.financePostingService.getPendingGrnAdjustment(grnId);
+  }
+
+  @Post('journal-adjustments/:grnId/approve')
+  @RequiredPermission(Permission.COST_FINALIZE)
+  async approveGrnAdjustment(@Param('grnId') grnId: string, @Req() req: any) {
+    return this.financePostingService.approveGrnAdjustment(grnId, req.user);
   }
 
   @Post(':id/retry')

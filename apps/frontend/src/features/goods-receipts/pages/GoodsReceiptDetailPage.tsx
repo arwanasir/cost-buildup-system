@@ -13,6 +13,8 @@ import {
 } from '@/components/ui';
 import { useState } from 'react';
 import { BackButton } from '@/components/ui/BackButton';
+import { PermissionGate } from '@/components/auth/PermissionGate';
+import { useAuthStore } from '@/store/auth.store';
 import { ClaimsTab } from '../components/ClaimsTab';
 import { formatAmount4 } from '@/lib/money';
 import {
@@ -20,6 +22,8 @@ import {
   useConfirmGrn,
   usePostGrnToErp,
   useRetryGrnPosting,
+  usePendingGrnAdjustment,
+  useApproveGrnAdjustment,
 } from '../api';
 
 export function GoodsReceiptDetailPage() {
@@ -27,11 +31,19 @@ export function GoodsReceiptDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('items');
   const navigate = useNavigate();
+  const hasCostFinalizePermission = useAuthStore((state) =>
+    state.hasPermission('cost:finalize'),
+  );
 
   const { data: grnData, isLoading, isError, refetch } = useGrn(id || '');
   const confirmMutation = useConfirmGrn();
   const postMutation = usePostGrnToErp();
   const retryMutation = useRetryGrnPosting();
+  const { data: pendingAdjustment } = usePendingGrnAdjustment(
+    id || '',
+    hasCostFinalizePermission,
+  );
+  const approveAdjustmentMutation = useApproveGrnAdjustment();
 
   if (isLoading)
     return (
@@ -78,6 +90,17 @@ export function GoodsReceiptDetailPage() {
       await retryMutation.mutateAsync(grn.id);
     } catch (e: any) {
       alert(e.response?.data?.message || 'Failed to retry posting');
+    }
+  };
+
+  const handleApproveAdjustment = async () => {
+    try {
+      await approveAdjustmentMutation.mutateAsync(grn.id);
+    } catch (e: any) {
+      alert(
+        e.response?.data?.message ||
+          'Failed to approve and post the final cost adjustment',
+      );
     }
   };
 
@@ -172,7 +195,9 @@ export function GoodsReceiptDetailPage() {
             <p className="text-sm text-gray-600">
               <LocalizedText
                 text={
-                  grn.status === 'posted'
+                  grn.usesEstimatedCost && grn.postedAt
+                    ? 'Inventory was posted using estimated costs. Final cost adjustment approval is pending.'
+                    : grn.status === 'posted'
                     ? `Posted to Inventory Ledger on ${new Date(grn.postedAt).toLocaleString()}`
                     : grn.status === 'posting_failed'
                       ? 'The last ERP sync attempt failed due to an API or validation error.'
@@ -191,6 +216,17 @@ export function GoodsReceiptDetailPage() {
                 text={'\n              Retry ERP Sync\n            '}
               />
             </Button>
+          )}
+          {pendingAdjustment && (
+            <PermissionGate permission="cost:finalize">
+              <Button
+                variant="primary"
+                onClick={handleApproveAdjustment}
+                isLoading={approveAdjustmentMutation.isPending}
+              >
+                <LocalizedText text={'Approve and post final cost adjustment'} />
+              </Button>
+            </PermissionGate>
           )}
         </div>
       </Card>
@@ -307,9 +343,7 @@ export function GoodsReceiptDetailPage() {
                       ) : (
                         <span className="inline-flex items-center text-xs font-medium bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
                           <LocalizedText
-                            text={
-                              '\n                          Partial\n                        '
-                            }
+                            text={'Accepted with Conditions'}
                           />
                         </span>
                       )}

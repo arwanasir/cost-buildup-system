@@ -7,7 +7,7 @@ async function main() {
   const seedType = process.argv[2];
 
   console.log(
-    ` Running database seed sequence (Type: \${seedType || 'default'})...\\n`,
+    ` Running database seed sequence (Type: ${seedType || 'default'})...\n`,
   );
   await seedReferenceData();
   await seedTariffAndFxData();
@@ -21,7 +21,7 @@ async function main() {
     await seedDemoData();
   }
 
-  console.log('\\n Database seeding completed successfully!');
+  console.log('\n Database seeding completed successfully!');
 }
 
 main()

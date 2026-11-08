@@ -95,12 +95,12 @@ export class LettersOfCreditService {
         await tx.insert(schema.lcRequiredDocuments).values(docs);
       }
 
-      // 5. Update POs with lcId and transition to lc_applied
+      // 5. Link the POs to the LC without changing their approval status.
+      // Shipment creation requires an approved PO; LC linkage is tracked by lcId.
       await tx
         .update(schema.importPurchaseOrders)
         .set({
           lcId: lc.id,
-          status: 'lc_applied',
           updatedBy: userId,
         })
         .where(inArray(schema.importPurchaseOrders.id, createLcDto.poIds));
@@ -132,7 +132,18 @@ export class LettersOfCreditService {
     });
   }
   async amend(lcId: string, amendLcDto: AmendLcDto, userId: string) {
-    return this.db.transaction(async (tx) => {
+    let recordedCharge:
+      | {
+          lcId: string;
+          chargeId: string;
+          chargeType: string;
+          amountEtb: string;
+          issuingBank: string;
+          createdBy: string;
+        }
+      | undefined;
+
+    const result = await this.db.transaction(async (tx) => {
       const lc = await tx.query.lettersOfCredit.findFirst({
         where: eq(schema.lettersOfCredit.id, lcId),
       });
@@ -141,7 +152,7 @@ export class LettersOfCreditService {
         throw new NotFoundException(`LC ${lcId} not found`);
       }
 
-      if (['applied', 'settled'].includes(lc.status)) {
+      if (lc.status === 'settled') {
         throw new BadRequestException(`Cannot amend LC in ${lc.status} status`);
       }
 
@@ -188,13 +199,14 @@ export class LettersOfCreditService {
           })
           .returning();
 
-        this.eventEmitter.emit('lc.charge.recorded', {
+        recordedCharge = {
           lcId,
           chargeId: charge.id,
           chargeType: charge.chargeType,
           amountEtb: charge.amountEtb,
           issuingBank: lc.issuingBank,
-        });
+          createdBy: userId,
+        };
       }
 
       const updatePayload: any = {
@@ -228,6 +240,12 @@ export class LettersOfCreditService {
 
       return { lc: updated, amendment };
     });
+
+    if (recordedCharge) {
+      await this.eventEmitter.emitAsync('lc.charge.recorded', recordedCharge);
+    }
+
+    return result;
   }
   async findAll(query: {
     status?: string;
@@ -313,7 +331,7 @@ export class LettersOfCreditService {
     dto: import('./dto/add-bank-charge.dto').AddBankChargeDto,
     userId: string,
   ) {
-    return this.db.transaction(async (tx) => {
+    const result = await this.db.transaction(async (tx) => {
       const lc = await tx.query.lettersOfCredit.findFirst({
         where: eq(schema.lettersOfCredit.id, lcId),
       });
@@ -330,15 +348,21 @@ export class LettersOfCreditService {
           updatedBy: userId,
         })
         .returning();
-      this.eventEmitter.emit('lc.charge.recorded', {
-        lcId,
-        chargeId: charge.id,
-        chargeType: charge.chargeType,
-        amountEtb: charge.amountEtb,
-        issuingBank: lc.issuingBank,
-      });
-      return charge;
+      return {
+        charge,
+        event: {
+          lcId,
+          chargeId: charge.id,
+          chargeType: charge.chargeType,
+          amountEtb: charge.amountEtb,
+          issuingBank: lc.issuingBank,
+          createdBy: userId,
+        },
+      };
     });
+
+    await this.eventEmitter.emitAsync('lc.charge.recorded', result.event);
+    return result.charge;
   }
 
   async markDocumentReceived(lcId: string, docId: string, isReceived: boolean) {

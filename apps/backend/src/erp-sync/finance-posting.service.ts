@@ -1,6 +1,12 @@
 import { NotificationsService } from '../notifications/notifications.service';
 import { FinanceClient } from './clients/finance.client';
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Inject,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
@@ -180,6 +186,98 @@ export class FinancePostingService {
       throw error;
     }
   }
+
+  async getPendingGrnAdjustment(grnId: string) {
+    const [grn] = await this.db
+      .select()
+      .from(schema.goodsReceipts)
+      .where(eq(schema.goodsReceipts.id, grnId));
+    if (!grn) throw new NotFoundException('GRN not found');
+    if (!grn.usesEstimatedCost) return null;
+
+    const [journal] = await this.db
+      .select()
+      .from(schema.journalEntries)
+      .where(
+        and(
+          eq(schema.journalEntries.sourceType, 'grn'),
+          eq(schema.journalEntries.sourceId, grnId),
+          eq(schema.journalEntries.entryType, 'landed_cost_adjustment'),
+          eq(schema.journalEntries.posted, false),
+        ),
+      );
+    return journal || null;
+  }
+
+  async approveGrnAdjustment(grnId: string, actor: { id: string; role: string }) {
+    if (actor.role !== 'finance_manager' && actor.role !== 'general_manager') {
+      throw new ForbiddenException(
+        'Only Finance Manager or General Manager can approve GRN cost adjustments.',
+      );
+    }
+
+    const journal = await this.getPendingGrnAdjustment(grnId);
+    if (!journal) {
+      throw new NotFoundException('No pending GRN adjustment journal found');
+    }
+    const [grn] = await this.db
+      .select()
+      .from(schema.goodsReceipts)
+      .where(eq(schema.goodsReceipts.id, grnId));
+
+    const grnItems = await this.db
+      .select()
+      .from(schema.goodsReceiptItems)
+      .where(eq(schema.goodsReceiptItems.grnId, grnId));
+    const landedCostRows = await this.db
+      .select()
+      .from(schema.importLandedCostResults)
+      .where(eq(schema.importLandedCostResults.shipmentId, grn.shipmentId));
+    const landedCostByShipmentItem = new Map(
+      landedCostRows.map((row: any) => [row.shipmentItemId, row]),
+    );
+
+    // The stable journal ID is sent to the ERP mock as the idempotency key.
+    // Do not mark local records complete unless the external ledger accepts it.
+    const response = await this.financeClient.postJournalEntry(
+      journal.id,
+      grnId,
+      journal.lines,
+    );
+
+    for (const grnItem of grnItems) {
+      const finalResult: any = landedCostByShipmentItem.get(
+        grnItem.shipmentItemId,
+      );
+      if (!finalResult) continue;
+      const acceptedQuantity = new Decimal(String(grnItem.acceptedQuantity));
+      const perUnit = new Decimal(String(finalResult.perUnitLandedCostEtb));
+      await this.db
+        .update(schema.goodsReceiptItems)
+        .set({
+          perUnitLandedCostEtb: perUnit.toFixed(4),
+          lineValueEtb: acceptedQuantity.times(perUnit).toFixed(4),
+        })
+        .where(eq(schema.goodsReceiptItems.id, grnItem.id));
+    }
+
+    const now = new Date().toISOString();
+    await this.db
+      .update(schema.journalEntries)
+      .set({ posted: true })
+      .where(eq(schema.journalEntries.id, journal.id));
+    await this.db
+      .update(schema.goodsReceipts)
+      .set({
+        status: 'posted',
+        usesEstimatedCost: false,
+        postedAt: grn.postedAt || now,
+      })
+      .where(eq(schema.goodsReceipts.id, grnId));
+
+    return { status: 'approved_and_posted', journalId: journal.id, response };
+  }
+
   @OnEvent('landedCost.finalised', { async: true })
   async handleLandedCostFinalised(payload: {
     shipmentId: string;
@@ -243,10 +341,10 @@ export class FinancePostingService {
         }
 
         if (totalAdjustment.isZero()) {
-          // If no financial diff, just mark posted since no adjustment needed
+          // No journal approval is needed when final costs equal the estimate.
           await this.db
             .update(schema.goodsReceipts)
-            .set({ status: 'posted' })
+            .set({ status: 'posted', usesEstimatedCost: false })
             .where(eq(schema.goodsReceipts.id, grn.id));
           continue;
         }
@@ -290,6 +388,7 @@ export class FinancePostingService {
           .values({
             sourceType: 'grn',
             sourceId: grn.id,
+            entryType: 'landed_cost_adjustment',
             lines: lines,
             posted: false,
           })

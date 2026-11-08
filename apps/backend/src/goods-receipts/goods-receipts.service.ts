@@ -457,7 +457,19 @@ export class GoodsReceiptsService {
   }
 
   async retryPosting(id: string) {
-    return this.postToErp(id);
+    const [pendingInventoryPost] = await this.db
+      .select()
+      .from(schema.erpSyncLog)
+      .where(
+        and(
+          eq(schema.erpSyncLog.entityType, 'inventory_posting'),
+          eq(schema.erpSyncLog.entityId, id),
+          eq(schema.erpSyncLog.status, 'pending'),
+        ),
+      )
+      .limit(1);
+
+    return this.inventoryPostingService.post(id, pendingInventoryPost?.id);
   }
 
   async getDiscrepancies(id: string) {

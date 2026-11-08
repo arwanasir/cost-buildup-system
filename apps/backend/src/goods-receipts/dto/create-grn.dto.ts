@@ -8,7 +8,7 @@ import {
   IsNumber,
   IsOptional,
   Min,
-  IsEnum,
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -22,7 +22,7 @@ export class CreateGrnItemDto {
   @ApiProperty()
   receivedQuantity!: number;
 
-  @IsEnum(['accepted', 'rejected', 'partial'])
+  @IsIn(['pending', 'accepted', 'rejected', 'accepted_with_conditions'])
   @ApiProperty()
   inspectionResult!: string;
 

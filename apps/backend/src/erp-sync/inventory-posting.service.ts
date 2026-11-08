@@ -140,7 +140,12 @@ export class InventoryPostingService {
 
       await this.db
         .update(schema.goodsReceipts)
-        .set({ status: 'posted', postedAt: new Date().toISOString() })
+        .set({
+          // Keep the cost-adjustment workflow visible after the inventory
+          // module accepts a GRN posted at estimated cost.
+          status: grn.usesEstimatedCost ? 'flagged_for_adjustment' : 'posted',
+          postedAt: new Date().toISOString(),
+        })
         .where(eq(schema.goodsReceipts.id, grnId));
 
       const shipmentItemIdsToUpdate = payloads.map((p) => p.shipment_item_id);

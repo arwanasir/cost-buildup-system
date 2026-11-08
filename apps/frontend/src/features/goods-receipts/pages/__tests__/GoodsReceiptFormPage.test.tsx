@@ -13,8 +13,9 @@ describe('GoodsReceiptFormPage', () => {
     vi.clearAllMocks();
   });
 
-  it('validates that accepted and rejected quantities sum to received quantity for partial inspections', async () => {
+  it('submits the database inspection enum and validates conditional acceptance quantities', async () => {
     const user = userEvent.setup();
+    let createdGrnPayload: any;
 
     server.use(
       http.get(`${API_URL}/import-shipments`, () => {
@@ -62,6 +63,10 @@ describe('GoodsReceiptFormPage', () => {
           lines: [{ id: 'line-1', quantity: '100' }],
         });
       }),
+      http.post(`${API_URL}/goods-receipts`, async ({ request }) => {
+        createdGrnPayload = await request.json();
+        return HttpResponse.json({ id: 'grn-1' }, { status: 201 });
+      }),
     );
 
     renderWithProviders(<GoodsReceiptFormPage />);
@@ -83,9 +88,9 @@ describe('GoodsReceiptFormPage', () => {
     const selects = screen.getAllByRole('combobox');
     const inspectionSelect = selects[1]; // First is shipment, second is item's inspection
 
-    await user.selectOptions(inspectionSelect, 'partial');
+    await user.selectOptions(inspectionSelect, 'accepted_with_conditions');
 
-    // The default accepted and rejected might be 100 and 0 respectively for 'partial', so sum is 100 (which is valid).
+    // The default accepted and rejected quantities sum to the received quantity.
     // Let's change accepted to 90
     const acceptedInput = screen.getByLabelText(/Accepted Quantity/i);
     const rejectedInput = screen.getByLabelText(/Rejected Quantity/i);
@@ -112,5 +117,27 @@ describe('GoodsReceiptFormPage', () => {
         ),
       ).not.toBeInTheDocument();
     });
-  });
+
+    await user.type(
+      screen.getByLabelText(/Rejection Reason/i),
+      'Quality checked with minor packaging wear',
+    );
+    await user.type(
+      screen.getByLabelText(/Warehouse Location/i),
+      'Zone A, Rack 12',
+    );
+    await user.click(
+      screen.getByRole('button', { name: /Save Goods Receipt/i }),
+    );
+
+    await waitFor(() => {
+      expect(createdGrnPayload.items[0]).toEqual(
+        expect.objectContaining({
+          inspectionResult: 'accepted_with_conditions',
+          acceptedQuantity: '90',
+          rejectedQuantity: '10',
+        }),
+      );
+    });
+  }, 15000);
 });

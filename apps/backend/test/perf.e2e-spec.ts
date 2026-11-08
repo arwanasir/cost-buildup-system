@@ -1,13 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, HttpStatus } from '@nestjs/common';
-import request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from './e2e-request';
+import { createE2eApp } from './create-e2e-app';
 import { execSync } from 'child_process';
 import * as path from 'path';
 
 describe('Performance Benchmarks (e2e) (TC-PERF01)', () => {
   let app: INestApplication;
   let adminToken = '';
+  let approverToken = '';
 
   // Set larger timeout for perf data seeding and stress tests
   jest.setTimeout(120000);
@@ -38,12 +38,7 @@ describe('Performance Benchmarks (e2e) (TC-PERF01)', () => {
       console.error('Failed to seed perf data', e);
     }
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
+    app = await createE2eApp();
 
     // Login
     const loginRes = await request(app.getHttpServer())
@@ -52,6 +47,11 @@ describe('Performance Benchmarks (e2e) (TC-PERF01)', () => {
       .expect(HttpStatus.OK);
 
     adminToken = loginRes.body.accessToken;
+    const approverLogin = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: 'executive@company.com', password: 'Password123!' })
+      .expect(HttpStatus.OK);
+    approverToken = approverLogin.body.accessToken;
 
     // Fetch Cost Categories
     const catRes = await request(app.getHttpServer())
@@ -67,9 +67,10 @@ describe('Performance Benchmarks (e2e) (TC-PERF01)', () => {
       .post('/suppliers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        supplierCode: 'SUP-PERF-200',
         name: 'Perf 200 Supplier',
         country: 'US',
+        defaultCurrency: 'USD',
+        leadTimeDays: 10,
       });
     entities.supplierId = supRes.body.id;
 
@@ -80,7 +81,7 @@ describe('Performance Benchmarks (e2e) (TC-PERF01)', () => {
       .send({
         itemCode: 'ITM-PERF-200',
         name: 'Perf 200 Item',
-        defaultHsCode: '8517.12.00',
+        defaultHsCode: '8517.13.00',
         unitOfMeasure: 'PCS',
       });
     entities.itemId = itemRes.body.id;
@@ -114,13 +115,13 @@ describe('Performance Benchmarks (e2e) (TC-PERF01)', () => {
       .set('Authorization', `Bearer ${adminToken}`);
     await request(app.getHttpServer())
       .post(`/purchase-orders/${entities.poId}/approve`)
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${approverToken}`)
       .send({ comment: 'Approved' });
 
     const poFetch = await request(app.getHttpServer())
       .get(`/purchase-orders/${entities.poId}`)
       .set('Authorization', `Bearer ${adminToken}`);
-    const fetchedLines = poFetch.body.lines;
+    const fetchedLines = poFetch.body.poLines;
 
     // 4. Create a 200-line Shipment
     const shipItems = fetchedLines.map((line: any) => ({
@@ -148,7 +149,7 @@ describe('Performance Benchmarks (e2e) (TC-PERF01)', () => {
 
     for (let i = 0; i < 4; i++) {
       await request(app.getHttpServer())
-        .post('/cost-entries')
+        .post(`/import-shipments/${entities.shipmentId}/cost-entries`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           shipmentId: entities.shipmentId,
@@ -220,7 +221,8 @@ describe('Performance Benchmarks (e2e) (TC-PERF01)', () => {
       const durationMs = endTime - startTime;
 
       expect(res.status).toBe(HttpStatus.OK);
-      expect(res.body.data.length).toBeGreaterThan(0);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
 
       console.log(
         `[perf-e2e] Shipment Listing (10k+ db rows) took: ${durationMs}ms`,

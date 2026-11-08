@@ -70,6 +70,14 @@ export class ImportShipmentsService {
           carrier: createDto.carrier,
           containerNumbers: createDto.containerNumbers,
           eta: createDto.eta,
+          totalWeightKg:
+            createDto.totalWeightKg === undefined
+              ? undefined
+              : new Decimal(createDto.totalWeightKg).toString(),
+          totalVolumeCbm:
+            createDto.totalVolumeCbm === undefined
+              ? undefined
+              : new Decimal(createDto.totalVolumeCbm).toString(),
           status: 'ordered' as any,
           createdBy: userId,
           updatedBy: userId,

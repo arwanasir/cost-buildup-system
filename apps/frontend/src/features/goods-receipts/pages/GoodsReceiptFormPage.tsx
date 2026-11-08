@@ -42,7 +42,10 @@ export function GoodsReceiptFormPage() {
       string,
       {
         receivedQuantity: string;
-        inspectionResult: 'accepted' | 'rejected' | 'partial';
+        inspectionResult:
+          | 'accepted'
+          | 'rejected'
+          | 'accepted_with_conditions';
         acceptedQuantity: string;
         rejectedQuantity: string;
         rejectionReason: string;
@@ -72,7 +75,7 @@ export function GoodsReceiptFormPage() {
     setItemsState((prev) => {
       const curr = { ...prev[itemId], [field]: value };
 
-      // Auto-compute accepted vs rejected for partial
+      // Keep accepted and rejected quantities aligned with full acceptance/rejection.
       if (field === 'inspectionResult') {
         if (value === 'accepted') {
           curr.acceptedQuantity = curr.receivedQuantity;
@@ -234,14 +237,16 @@ export function GoodsReceiptFormPage() {
                 const rcvQty = parseFloat(state.receivedQuantity || '0');
                 const isDiscrepant = rcvQty !== shippedQty;
 
-                const isPartial = state.inspectionResult === 'partial';
+                const isAcceptedWithConditions =
+                  state.inspectionResult === 'accepted_with_conditions';
                 const isRejected = state.inspectionResult === 'rejected';
                 const isAccepted = state.inspectionResult === 'accepted';
                 const accQty = parseFloat(state.acceptedQuantity || '0');
                 const rejQty = parseFloat(state.rejectedQuantity || '0');
                 const sumError = accQty + rejQty !== rcvQty && !isAccepted;
                 const needsReason =
-                  (isPartial || isRejected) && !state.rejectionReason;
+                  (isAcceptedWithConditions || isRejected) &&
+                  !state.rejectionReason;
 
                 return (
                   <div
@@ -349,8 +354,8 @@ export function GoodsReceiptFormPage() {
                         options={[
                           { label: 'Accepted', value: 'accepted' },
                           {
-                            label: 'Accepted with Conditions (Partial)',
-                            value: 'partial',
+                            label: localize('Accepted with Conditions'),
+                            value: 'accepted_with_conditions',
                           },
                           { label: 'Rejected', value: 'rejected' },
                         ]}

@@ -1,7 +1,6 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, HttpStatus } from '@nestjs/common';
-import request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from './e2e-request';
+import { createE2eApp } from './create-e2e-app';
 import { execSync } from 'child_process';
 import * as path from 'path';
 
@@ -46,24 +45,15 @@ describe('Reports & Exports (e2e) (TC-RPT-01 to 09)', () => {
   beforeAll(async () => {
     // 1. Seed demo data to ensure reports have actual rows
     console.log('[reports-e2e] Seeding demo data...');
-    try {
-      const rootDir = path.resolve(__dirname, '..');
-      execSync('npx ts-node src/db/seed/seed.ts demo', {
-        env: { ...process.env }, // uses the testDbUrl injected by setup-e2e.ts
-        cwd: rootDir,
-        stdio: 'ignore',
-      });
-    } catch (e) {
-      console.error('Failed to seed demo data', e);
-    }
+    const rootDir = path.resolve(__dirname, '..');
+    execSync('npx ts-node src/db/seed/seed.ts demo', {
+      env: { ...process.env }, // uses the testDbUrl injected by setup-e2e.ts
+      cwd: rootDir,
+      stdio: 'inherit',
+    });
 
     // 2. Initialize NestJS App
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
+    app = await createE2eApp();
 
     // 3. Authenticate
     const loginRes = await request(app.getHttpServer())
