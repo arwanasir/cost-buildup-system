@@ -43,6 +43,17 @@ describe('ReportTable', () => {
     expect(tfoot).toBeInTheDocument();
   });
 
+  it('formats per-unit cost components to four decimal places', () => {
+    render(
+      <ReportTable
+        columns={['perUnitBreakdown.freight']}
+        rows={[{ 'perUnitBreakdown.freight': 102.04081632653062 }]}
+      />,
+    );
+
+    expect(screen.getByText('102.0408')).toBeInTheDocument();
+  });
+
   it('handles empty totals object gracefully', () => {
     render(<ReportTable columns={columns} rows={rows} totals={{}} />);
     expect(screen.queryByText('TOTAL')).not.toBeInTheDocument();

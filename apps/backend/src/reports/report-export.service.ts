@@ -9,6 +9,12 @@ function formatHeader(key: string): string {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function isMoneyColumn(key: string): boolean {
+  return /etb|amount|cost|value|duty|vat|freight|insurance|bank.?charges|port.?charges|clearing.?fee|other.?charges|price|commission|fee/i.test(
+    key,
+  );
+}
+
 function cellValue(value: unknown): string | number | boolean {
   if (value === null || value === undefined) return '';
   if (typeof value === 'object') return JSON.stringify(value);
@@ -29,6 +35,7 @@ export class ReportExportService {
       header: formatHeader(column),
       key: column,
       width: 25,
+      style: isMoneyColumn(column) ? { numFmt: '#,##0.0000' } : undefined,
     }));
 
     for (const row of data.rows) {

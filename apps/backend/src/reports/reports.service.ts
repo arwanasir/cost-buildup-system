@@ -3,6 +3,7 @@ import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, inArray, and, gte, lte, ne } from 'drizzle-orm';
 import { ReportFilterDto } from './dto/report-filter.dto';
+import Decimal from 'decimal.js';
 
 const inclusiveDateTo = (value?: string) =>
   value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T23:59:59.999Z` : value;
@@ -244,8 +245,14 @@ export class ReportsService {
     );
 
     return results.map((row: any) => {
-      const qty = Number(row.quantity);
-      const safeDiv = (val: any) => (qty > 0 ? Number(val || 0) / qty : 0);
+      const qty = new Decimal(String(row.quantity || 0));
+      const safeDiv = (val: any) =>
+        qty.greaterThan(0)
+          ? new Decimal(String(val || 0))
+              .dividedBy(qty)
+              .toDecimalPlaces(4)
+              .toNumber()
+          : 0;
 
       return {
         shipmentId: row.shipmentId,
@@ -256,7 +263,11 @@ export class ReportsService {
         itemName: row.itemName,
         hsCode: row.hsCode,
         quantity: qty,
-        totalPerUnitCost: Number(row.perUnitLandedCostEtb),
+        totalPerUnitCost: new Decimal(
+          String(row.perUnitLandedCostEtb || 0),
+        )
+          .toDecimalPlaces(4)
+          .toNumber(),
         perUnitBreakdown: {
           ciValue: safeDiv(row.ciValueEtb),
           customsDuty: safeDiv(row.customsDutyEtb),

@@ -35,13 +35,9 @@ export function ReportTable({
           (row) => row[col] !== null && row[col] !== undefined,
         )?.[col];
         const isMoney =
-          normalized.includes('etb') ||
-          normalized.includes('foreign') ||
-          normalized.includes('amount') ||
-          normalized.includes('cost') ||
-          normalized.includes('value') ||
-          normalized.includes('duty') ||
-          normalized.includes('variance');
+          /etb|foreign|amount|cost|value|duty|variance|freight|insurance|vat|bank.?charges|port.?charges|clearing.?fee|other.?charges|commission|price|fee/.test(
+            normalized,
+          );
         const isDate = normalized.includes('date') || normalized === 'eta';
         const type = isMoney
           ? 'money'
