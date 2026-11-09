@@ -10,6 +10,12 @@ describe('ReportExportService', () => {
     });
 
     expect(buffer.subarray(0, 2).toString()).toBe('PK');
+
+    const workbook = new (require('exceljs').Workbook)();
+    await workbook.xlsx.load(buffer);
+    const worksheet = workbook.getWorksheet('Report');
+    expect(worksheet?.getCell('B2').value).toBe(1234.5);
+    expect(worksheet?.getCell('B2').numFmt).toBe('#,##0.0000');
   });
 
   it('creates a PDF with valid font paths', async () => {

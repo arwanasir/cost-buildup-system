@@ -28,7 +28,7 @@ function getTestDatabaseUrl(): URL {
   return testUrl;
 }
 
-export default async () => {
+export async function prepareE2eDatabase() {
   const testUrl = getTestDatabaseUrl();
   const databaseName = decodeURIComponent(testUrl.pathname.slice(1));
   const adminUrl = new URL(testUrl);
@@ -76,4 +76,8 @@ export default async () => {
     stdio: 'inherit',
     cwd: backendRoot,
   });
-};
+}
+
+export default async function setupE2e() {
+  await prepareE2eDatabase();
+}

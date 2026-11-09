@@ -82,6 +82,20 @@ const INITIAL_COST_CATEGORIES = [
     isMandatory: false,
   },
   {
+    code: 'STORAGE',
+    name: 'Storage and Demurrage',
+    description: 'Port or terminal storage and demurrage charges',
+    defaultAllocationMethod: 'by_weight',
+    isMandatory: false,
+  },
+  {
+    code: 'DEMURRAGE',
+    name: 'Demurrage',
+    description: 'Charges for delayed container or cargo handling',
+    defaultAllocationMethod: 'by_weight',
+    isMandatory: false,
+  },
+  {
     code: 'CLEARING',
     name: 'Customs Clearing Agent Fee',
     description: 'Local customs broker/clearing agent service fees',
@@ -99,6 +113,13 @@ const INITIAL_COST_CATEGORIES = [
     code: 'BANK_CHARGES',
     name: 'Bank & LC Opening Charges',
     description: 'Letter of Credit opening, amendment, and SWIFT charges',
+    defaultAllocationMethod: 'by_value',
+    isMandatory: false,
+  },
+  {
+    code: 'OTHER',
+    name: 'Other Import Costs',
+    description: 'Other import-related charges not covered by a listed category',
     defaultAllocationMethod: 'by_value',
     isMandatory: false,
   },
@@ -276,6 +297,7 @@ const ROLE_PERMISSION_MAP: Record<Role, Permission[]> = {
     Permission.COST_READ,
     Permission.REPORT_SHIPMENT_STATUS_READ,
     Permission.REPORT_SUPPLIER_PERFORMANCE_READ,
+    Permission.REPORT_LC_STATUS_READ,
   ],
   [Role.FINANCE_OFFICER]: [
     Permission.PO_READ,
@@ -305,6 +327,8 @@ const ROLE_PERMISSION_MAP: Record<Role, Permission[]> = {
     Permission.REPORT_LANDED_COST_ITEM_READ,
     Permission.REPORT_LANDED_COST_SUPPLIER_READ,
     Permission.REPORT_IMPORT_COST_SUMMARY_READ,
+    Permission.REPORT_LC_STATUS_READ,
+    Permission.REPORT_CUSTOMS_DUTY_READ,
     Permission.REPORT_COST_VARIANCE_READ,
   ],
   [Role.CUSTOMS_OFFICER]: [
@@ -379,7 +403,7 @@ export async function seedReferenceData(): Promise<void> {
   console.log('Starting reference data seeding...');
 
   try {
-    console.log('Seeding 11 Cost Categories...');
+    console.log(`Seeding ${INITIAL_COST_CATEGORIES.length} Cost Categories...`);
     for (const category of INITIAL_COST_CATEGORIES) {
       await db
         .insert(costCategories)

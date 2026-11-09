@@ -3,6 +3,8 @@ import request from './e2e-request';
 import { createE2eApp } from './create-e2e-app';
 import nock from 'nock';
 
+const ERP_BASE_URL = process.env.ERP_BASE_URL || 'http://localhost:3001';
+
 describe('Goods Receipts (GRN) & ERP Sync (e2e)', () => {
   let app: INestApplication;
   let adminToken = '';
@@ -244,13 +246,13 @@ describe('Goods Receipts (GRN) & ERP Sync (e2e)', () => {
 
     it('should fail ERP posting and retry until posting_failed state is reached (TC-GRN01)', async () => {
       // Mock finance API success
-      nock('http://erp-mock:3001')
+      nock(ERP_BASE_URL)
         .post('/finance/journal-entries')
         .reply(200, { transaction_id: 'FIN-123' })
         .persist();
 
       // Mock inventory API failure
-      nock('http://erp-mock:3001')
+      nock(ERP_BASE_URL)
         .post('/inventory/postings')
         .reply(500, { error: 'Internal Server Error' })
         .persist();
@@ -287,11 +289,11 @@ describe('Goods Receipts (GRN) & ERP Sync (e2e)', () => {
       nock.cleanAll();
 
       // Mock both as successful
-      nock('http://erp-mock:3001')
+      nock(ERP_BASE_URL)
         .post('/finance/journal-entries')
         .reply(200, { transaction_id: 'FIN-123' });
 
-      nock('http://erp-mock:3001')
+      nock(ERP_BASE_URL)
         .post('/inventory/postings')
         .reply(200, { transaction_id: 'INV-123' });
 
