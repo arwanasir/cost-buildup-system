@@ -3,7 +3,7 @@ import { getShipmentEligiblePurchaseOrders } from './ShipmentCreatePage';
 import type { PurchaseOrder } from '@/features/purchase-orders/api';
 
 const po = (id: string, status: PurchaseOrder['status']) =>
-  ({ id, status, poNumber: id } as PurchaseOrder);
+  ({ id, status, poNumber: id }) as PurchaseOrder;
 
 describe('getShipmentEligiblePurchaseOrders', () => {
   it('includes approved and LC-applied POs without duplicating records', () => {
@@ -11,10 +11,7 @@ describe('getShipmentEligiblePurchaseOrders', () => {
     const lcApplied = po('po-lc', 'lc_applied');
 
     expect(
-      getShipmentEligiblePurchaseOrders(
-        [approved],
-        [lcApplied, approved],
-      ),
+      getShipmentEligiblePurchaseOrders([approved], [lcApplied, approved]),
     ).toEqual([approved, lcApplied]);
   });
 

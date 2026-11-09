@@ -22,6 +22,13 @@ Backend modules are organized by business domain under `apps/backend/src` (inclu
 7. Create a goods receipt after clearance, record discrepancies, and process claims/variances.
 8. Post inventory and finance entries to the ERP mock; review reports, notifications, lineage, and audit history.
 
+**LC bank-charge allocation choice:** a charge is divided equally among the
+shipments linked to its LC when it is synchronized. If the charge is recorded
+before any shipment exists, the first subsequently created shipment receives
+the full charge. Existing allocations are not rebalanced when later shipments
+are created. The landed-cost allocator then allocates each shipment's bank
+charge to its items by item value.
+
 ## Requirements
 
 - Node.js 20 or newer.
@@ -56,7 +63,7 @@ npm run start:dev
 
 Apply the committed migrations with `npm run db:migrate`. Do not run
 `npm run db:generate` (or `drizzle-kit generate`) blindly: the migration journal
-contains migrations `0000` through `0007`, but Drizzle currently has only the
+contains migrations `0000` through `0011`, but Drizzle currently has only the
 `0000` snapshot. Generating a migration from that incomplete snapshot history
 can propose changes that are already present in later committed migrations.
 Review and reconcile the migration snapshots before generating new migrations.
@@ -130,6 +137,8 @@ Both environment variables are required. The database name prefix is checked
 before reset. The suite migrates and seeds the database itself. ERP requests in
 the GRN e2e test are intercepted using `ERP_BASE_URL` (default:
 `http://localhost:3001`), matching the example environment configuration.
+The audit-ledger integration test inserts a disposable audit row and verifies
+that UPDATE, DELETE, and TRUNCATE are rejected by PostgreSQL.
 
 ### Browser End-to-End Tests
 
@@ -153,3 +162,22 @@ reset confirmation and the `costbuildup_e2e_` database-name prefix, then seeds
 demo records using `E2E_DATABASE_URL`. To start with a clean database on a later
 run, stop the API and rerun `npx ts-node test/prepare-e2e-database.ts` from the
 backend terminal. It recreates only the guarded e2e database.
+
+## Deployment and Operations
+
+Deploy the frontend and API as separate services, with PostgreSQL and MinIO
+provided by persistent managed services or protected persistent volumes. Set
+production values for database and JWT credentials, ERP credentials, MinIO,
+SMTP, CORS/frontend URL, and the public API URL through the host's secret and
+environment configuration. Never deploy the example credentials or demo seed
+users. Restrict PostgreSQL and MinIO to the application network, and terminate
+browser/API traffic with HTTPS at the hosting provider or reverse proxy.
+
+For each release, back up PostgreSQL and document storage, deploy the API, run
+`npm run db:migrate` once against the production database, seed only required
+reference data when needed, and then deploy the frontend. Do not run
+`db:reset`, `db:push`, or unreviewed migration generation against production.
+After deployment, verify API health, login, a read-only report, document upload
+and view, and ERP connector health. Monitor API logs, database capacity,
+document storage, notification delivery, and ERP posting failures. Test backup
+restoration and retain a rollback build before accepting production traffic.

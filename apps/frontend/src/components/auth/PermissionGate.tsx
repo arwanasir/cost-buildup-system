@@ -12,7 +12,9 @@ export function PermissionGate({
   children,
   fallback = null,
 }: PermissionGateProps) {
-  const hasPermission = useAuthStore((state: ReturnType<typeof useAuthStore.getState>) => state.hasPermission);
+  const hasPermission = useAuthStore(
+    (state: ReturnType<typeof useAuthStore.getState>) => state.hasPermission,
+  );
 
   const isAllowed = Array.isArray(permission)
     ? permission.some((p) => hasPermission(p))

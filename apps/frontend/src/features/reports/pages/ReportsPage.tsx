@@ -1,6 +1,6 @@
 import { useUiText } from '@/lib/ui-text';
 import { LocalizedText } from '@/components/ui/LocalizedText';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { PageHeader, Card, Button } from '@/components/ui';
 import { ReportTable } from '../components/ReportTable';
 import { ReportFilterBar } from '../components/ReportFilterBar';
@@ -70,28 +70,20 @@ export function ReportsPage() {
     (r) => hasPermission(r.perm) || hasPermission('admin:all'),
   );
 
-  const [activeReportKey, setActiveReportKey] = useState<ReportKey | null>(
-    availableReports.length > 0 ? (availableReports[0].key as ReportKey) : null,
+  const [selectedReportKey, setSelectedReportKey] = useState<ReportKey | null>(
+    (availableReports[0]?.key as ReportKey | undefined) ?? null,
   );
+  const activeReportKey = (availableReports.find(
+    (report) => report.key === selectedReportKey,
+  )?.key ??
+    availableReports[0]?.key ??
+    null) as ReportKey | null;
 
   const [filters, setFilters] = useState<ReportFilterDto>({});
   const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [exportError, setExportError] = useState('');
   const [exportSuccess, setExportSuccess] = useState('');
-
-  useEffect(() => {
-    if (availableReports.length === 0) {
-      if (activeReportKey !== null) setActiveReportKey(null);
-      return;
-    }
-    if (!availableReports.some((report) => report.key === activeReportKey)) {
-      setActiveReportKey(
-        availableReports[0].key as ReportKey,
-      );
-      setFilters({});
-    }
-  }, [activeReportKey, availableReports]);
 
   const {
     data: reportData,
@@ -206,7 +198,8 @@ export function ReportsPage() {
                 <button
                   key={report.key}
                   onClick={() => {
-                    setActiveReportKey(report.key as ReportKey);
+                    setSelectedReportKey(report.key as ReportKey);
+                    setFilters({});
                     setFilters({});
                     setExportError('');
                     setExportSuccess('');
@@ -264,9 +257,7 @@ export function ReportsPage() {
           <Card className="p-0 bg-white border shadow-sm overflow-hidden">
             <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
               <h3 className="font-bold text-gray-800">
-                {activeReportConfig
-                  ? localize(activeReportConfig.label)
-                  : ''}{' '}
+                {activeReportConfig ? localize(activeReportConfig.label) : ''}{' '}
                 <LocalizedText text={' Results\n              '} />
               </h3>
               {reportData?.generated_at && (
@@ -312,7 +303,11 @@ export function ReportsPage() {
                 <div className="text-center text-gray-500 py-8">
                   {activeReportKey === 'landed-cost-by-supplier' ? (
                     <div>
-                      <p>{localize('No landed-cost results match these filters.')}</p>
+                      <p>
+                        {localize(
+                          'No landed-cost results match these filters.',
+                        )}
+                      </p>
                       <p className="mt-2 text-sm">
                         {localize(
                           'This report includes suppliers only after a shipment has a computed landed-cost result.',
@@ -406,8 +401,8 @@ export function ReportsPage() {
                                           {name}
                                         </span>
                                         <span className="absolute bottom-full z-10 mb-1 hidden whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white group-hover:block">
-                                          {name}:{' '}
-                                          {formatAmount4(Number(value))} ETB
+                                          {name}: {formatAmount4(Number(value))}{' '}
+                                          ETB
                                         </span>
                                       </div>
                                     ))}

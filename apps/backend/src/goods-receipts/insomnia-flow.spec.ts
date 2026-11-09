@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GoodsReceiptsService } from './goods-receipts.service';
+import { NumberingService } from '@/core/numbering/numbering.service';
 import { FinancePostingService } from '@/erp-sync/finance-posting.service';
 import { InventoryPostingService } from '@/erp-sync/inventory-posting.service';
 import { QuantityDiscrepancyService } from './quantity-discrepancy.service';
@@ -98,6 +99,12 @@ describe.skip('Insomnia Flow: GRN Rejection and ERP Posting Verification', () =>
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GoodsReceiptsService,
+        {
+          provide: NumberingService,
+          useValue: {
+            generateNextNumber: jest.fn().mockResolvedValue('GRN-00001'),
+          },
+        },
         FinancePostingService,
         InventoryPostingService,
         {

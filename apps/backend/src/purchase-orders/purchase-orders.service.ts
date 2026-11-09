@@ -464,6 +464,8 @@ export class PurchaseOrdersService {
           channel: 'in_app' as any,
           titleEn: `PO Approval Required: ${po.poNumber}`,
           bodyEn: `Purchase Order ${po.poNumber} has been submitted and requires your approval.`,
+          titleAm: `የግዢ ትዕዛዝ ማጽደቅ ያስፈልጋል: ${po.poNumber}`,
+          bodyAm: `የግዢ ትዕዛዝ ${po.poNumber} ቀርቧል፤ የእርስዎን ማጽደቅ ይጠብቃል።`,
           entityType: 'import_purchase_orders',
           entityId: po.id,
         }));

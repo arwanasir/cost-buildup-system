@@ -83,5 +83,15 @@ describe('NumberingService', () => {
       const result = await service.generateNextNumber('lc');
       expect(result).toBe('LC-09999');
     });
+
+    it('generates sequential GRN numbers with the standard prefix', async () => {
+      db.execute.mockResolvedValue({ rows: [{ nextval: '42' }] });
+      db.query.policySettings.findFirst.mockResolvedValue(null);
+
+      await expect(service.generateNextNumber('grn')).resolves.toBe(
+        'GRN-00042',
+      );
+      expect(db.execute).toHaveBeenCalled();
+    });
   });
 });

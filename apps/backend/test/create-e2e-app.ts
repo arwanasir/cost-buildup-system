@@ -21,5 +21,9 @@ export async function createE2eApp() {
     }),
   );
   await app.init();
+  // Keep Supertest bound to a live server address. An initialized but
+  // unlistened Nest server can be closed/restarted between long workflow
+  // tests, leaving Supertest with a null server.address() during dispatch.
+  await app.listen(0);
   return app;
 }

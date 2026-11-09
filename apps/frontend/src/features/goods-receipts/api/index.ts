@@ -88,9 +88,7 @@ export const usePendingGrnAdjustment = (grnId: string, enabled = true) =>
   useQuery({
     queryKey: ['erp-sync', 'grn-adjustment', grnId],
     queryFn: () =>
-      api
-        .get(`/erp-sync/journal-adjustments/${grnId}`)
-        .then((res) => res.data),
+      api.get(`/erp-sync/journal-adjustments/${grnId}`).then((res) => res.data),
     enabled: !!grnId && enabled,
   });
 

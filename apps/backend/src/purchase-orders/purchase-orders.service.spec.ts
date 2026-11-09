@@ -110,6 +110,31 @@ describe('Purchase Orders Workflow', () => {
   });
 
   describe('PurchaseOrdersService: Approval Roles & Clearances', () => {
+    it('stores both English and Amharic PO approval-request notification text', async () => {
+      mockTx.query.importPurchaseOrders.findFirst.mockResolvedValueOnce({
+        id: 'po-1',
+        poNumber: 'PO-00001',
+        status: 'draft',
+      });
+      mockTx.query.users.findMany.mockResolvedValueOnce([{ id: 'approver-1' }]);
+      jest
+        .spyOn(approvalRoutingService, 'determineRequiredApproverRole')
+        .mockResolvedValueOnce('finance_manager' as any);
+
+      await poService.submit('po-1', 'creator-1');
+
+      const notificationRows =
+        mockValues.mock.calls[mockValues.mock.calls.length - 1]?.[0];
+      expect(notificationRows).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            titleAm: expect.stringContaining('PO-00001'),
+            bodyAm: expect.stringContaining('PO-00001'),
+          }),
+        ]),
+      );
+    });
+
     it('should throw BadRequestException if creator tries to approve their own PO (AC10)', async () => {
       mockTx.query.importPurchaseOrders.findFirst.mockResolvedValueOnce({
         id: 'po-1',

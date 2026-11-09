@@ -198,10 +198,10 @@ export function GoodsReceiptDetailPage() {
                   grn.usesEstimatedCost && grn.postedAt
                     ? 'Inventory was posted using estimated costs. Final cost adjustment approval is pending.'
                     : grn.status === 'posted'
-                    ? `Posted to Inventory Ledger on ${new Date(grn.postedAt).toLocaleString()}`
-                    : grn.status === 'posting_failed'
-                      ? 'The last ERP sync attempt failed due to an API or validation error.'
-                      : 'Not yet posted to ERP.'
+                      ? `Posted to Inventory Ledger on ${new Date(grn.postedAt).toLocaleString()}`
+                      : grn.status === 'posting_failed'
+                        ? 'The last ERP sync attempt failed due to an API or validation error.'
+                        : 'Not yet posted to ERP.'
                 }
               />
             </p>
@@ -224,7 +224,9 @@ export function GoodsReceiptDetailPage() {
                 onClick={handleApproveAdjustment}
                 isLoading={approveAdjustmentMutation.isPending}
               >
-                <LocalizedText text={'Approve and post final cost adjustment'} />
+                <LocalizedText
+                  text={'Approve and post final cost adjustment'}
+                />
               </Button>
             </PermissionGate>
           )}
@@ -342,9 +344,7 @@ export function GoodsReceiptDetailPage() {
                         </span>
                       ) : (
                         <span className="inline-flex items-center text-xs font-medium bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
-                          <LocalizedText
-                            text={'Accepted with Conditions'}
-                          />
+                          <LocalizedText text={'Accepted with Conditions'} />
                         </span>
                       )}
                     </td>

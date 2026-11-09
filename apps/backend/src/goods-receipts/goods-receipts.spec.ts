@@ -6,6 +6,7 @@ import { InventoryPostingService } from '@/erp-sync/inventory-posting.service';
 import { FinancePostingService } from '@/erp-sync/finance-posting.service';
 import { DRIZZLE } from '@/db/db.token';
 import { BadRequestException } from '@nestjs/common';
+import { NumberingService } from '@/core/numbering/numbering.service';
 
 describe('Goods Receipts & Discrepancies (BR01A, FR-09.1, FR-09.2)', () => {
   let grnService: GoodsReceiptsService;
@@ -33,6 +34,12 @@ describe('Goods Receipts & Discrepancies (BR01A, FR-09.1, FR-09.2)', () => {
       providers: [
         GoodsReceiptsService,
         QuantityDiscrepancyService,
+        {
+          provide: NumberingService,
+          useValue: {
+            generateNextNumber: jest.fn().mockResolvedValue('GRN-00001'),
+          },
+        },
         { provide: DRIZZLE, useValue: dbMock },
         { provide: LandedCostService, useValue: { computeDraft: jest.fn() } },
         { provide: InventoryPostingService, useValue: { post: jest.fn() } },

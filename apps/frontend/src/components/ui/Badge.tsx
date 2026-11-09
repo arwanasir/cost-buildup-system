@@ -13,7 +13,11 @@ interface BadgeProps {
   className?: string;
 }
 
-export function Badge({ children, variant = 'default', className = '' }: BadgeProps) {
+export function Badge({
+  children,
+  variant = 'default',
+  className = '',
+}: BadgeProps) {
   const variants = {
     default: 'bg-gray-100 text-gray-800',
     secondary: 'bg-gray-100 text-gray-800',

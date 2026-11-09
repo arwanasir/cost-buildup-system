@@ -12,6 +12,7 @@ import { QuantityDiscrepancyService } from './quantity-discrepancy.service';
 import { LandedCostService } from '@/landed-cost/landed-cost.service';
 import { InventoryPostingService } from '@/erp-sync/inventory-posting.service';
 import { FinancePostingService } from '@/erp-sync/finance-posting.service';
+import { NumberingService } from '@/core/numbering/numbering.service';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -22,6 +23,7 @@ export class GoodsReceiptsService {
     private readonly landedCostService: LandedCostService,
     private readonly inventoryPostingService: InventoryPostingService,
     private readonly financePostingService: FinancePostingService,
+    private readonly numberingService: NumberingService,
   ) {}
 
   async createGrn(dto: CreateGrnDto, actorId: string) {
@@ -68,7 +70,7 @@ export class GoodsReceiptsService {
       }
 
       // Generate GRN Number
-      const grnNumber = `GRN-${Date.now()}`;
+      const grnNumber = await this.numberingService.generateNextNumber('grn');
 
       // Insert GRN header (receivedBy maps to current warehouse_manager acting)
       const [grn] = await tx

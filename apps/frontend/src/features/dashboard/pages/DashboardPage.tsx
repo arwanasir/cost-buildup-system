@@ -58,20 +58,22 @@ export function DashboardPage() {
   const hasPermission = useAuthStore((state) => state.hasPermission);
   const canReadPurchaseOrders = hasPermission('po:read');
   const canReadLettersOfCredit = hasPermission('lc:read');
-  const { data: summary, isLoading: summaryLoading, isError: summaryError } =
-    useQuery({
-      queryKey: ['dashboard', 'summary'],
-      queryFn: async () => {
-        const res = await api.get('/dashboard/summary');
-        return res.data.data || res.data;
-      },
-      retry: 2,
-      retryDelay: 1000,
-      refetchOnWindowFocus: true,
-      refetchOnReconnect: true,
-      refetchInterval: (query) =>
-        query.state.status === 'error' ? 5000 : false,
-    });
+  const {
+    data: summary,
+    isLoading: summaryLoading,
+    isError: summaryError,
+  } = useQuery({
+    queryKey: ['dashboard', 'summary'],
+    queryFn: async () => {
+      const res = await api.get('/dashboard/summary');
+      return res.data.data || res.data;
+    },
+    retry: 2,
+    retryDelay: 1000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: (query) => (query.state.status === 'error' ? 5000 : false),
+  });
   const countResponse = (response: any) => {
     if (Array.isArray(response)) return response.length;
     return (
@@ -114,12 +116,8 @@ export function DashboardPage() {
     ],
   });
 
-  const [
-    shipmentsQuery,
-    costRegistersQuery,
-    variancesQuery,
-    grnsQuery,
-  ] = queries;
+  const [shipmentsQuery, costRegistersQuery, variancesQuery, grnsQuery] =
+    queries;
 
   return (
     <div className="space-y-6">
@@ -134,7 +132,11 @@ export function DashboardPage() {
           title={localize('POs Pending Approval')}
           value={summary?.pendingPurchaseOrders ?? 0}
           color="text-yellow-600"
-          to={canReadPurchaseOrders ? '/purchase-orders?status=pending_approval' : undefined}
+          to={
+            canReadPurchaseOrders
+              ? '/purchase-orders?status=pending_approval'
+              : undefined
+          }
           isLoading={summaryLoading}
           isError={summaryError}
         />

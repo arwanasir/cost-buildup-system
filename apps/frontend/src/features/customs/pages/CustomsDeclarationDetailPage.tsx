@@ -226,7 +226,7 @@ export function CustomsDeclarationDetailPage() {
             <p className="mt-1 text-lg font-semibold">
               {formatAmount4(
                 parseFloat(declaration.totalVatEtb) +
-                parseFloat(declaration.totalExciseEtb)
+                  parseFloat(declaration.totalExciseEtb),
               )}
               <LocalizedText text={' '} />
               <LocalizedText text={'\n              ETB\n            '} />
@@ -344,12 +344,8 @@ export function CustomsDeclarationDetailPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div>V: {formatAmount4(item.vatEtb)}</div>
-                      <div>
-                        E: {formatAmount4(item.exciseEtb)}
-                      </div>
-                      <div>
-                        W: {formatAmount4(item.withholdingEtb)}
-                      </div>
+                      <div>E: {formatAmount4(item.exciseEtb)}</div>
+                      <div>W: {formatAmount4(item.withholdingEtb)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       {declaration.status === 'draft' && (

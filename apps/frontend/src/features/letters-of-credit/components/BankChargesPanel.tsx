@@ -65,7 +65,9 @@ export function BankChargesPanel({ lc }: { lc: LetterOfCredit }) {
       setShowAddForm(false);
     } catch (e: any) {
       setSubmitError(
-        e?.response?.data?.message || e?.message || 'Failed to save bank charge. Please try again.',
+        e?.response?.data?.message ||
+          e?.message ||
+          'Failed to save bank charge. Please try again.',
       );
     }
   };

@@ -16,9 +16,7 @@ describe('UI localization', () => {
   });
 
   it('translates report titles as complete Amharic phrases', () => {
-    expect(localizeUiText('Supplier Performance', 'am')).toBe(
-      'የአቅራቢ አፈጻጸም',
-    );
+    expect(localizeUiText('Supplier Performance', 'am')).toBe('የአቅራቢ አፈጻጸም');
     expect(localizeUiText('Export to Excel', 'am')).toBe('ወደ Excel ላክ');
   });
 

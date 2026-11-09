@@ -31,17 +31,15 @@ export function initializeAuthSession(): Promise<void> {
         .setAccessToken(tokens.accessToken, tokens.refreshToken);
       const { data: profile } = await api.get<ProfileResponse>('/auth/me');
       const { permissions = [], preferred_language, ...user } = profile;
-      useAuthStore
-        .getState()
-        .restore(
-          {
-            ...user,
-            preferredLanguage: preferred_language ?? user.preferredLanguage,
-          },
-          permissions,
-          tokens.accessToken,
-          tokens.refreshToken,
-        );
+      useAuthStore.getState().restore(
+        {
+          ...user,
+          preferredLanguage: preferred_language ?? user.preferredLanguage,
+        },
+        permissions,
+        tokens.accessToken,
+        tokens.refreshToken,
+      );
     } catch {
       useAuthStore.getState().logout();
     }

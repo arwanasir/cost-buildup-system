@@ -169,8 +169,7 @@ export function PurchaseOrderDetailPage() {
     { header: 'Description', accessor: (row: any) => row.description || '-' },
     {
       header: 'Unit Price',
-      accessor: (row: any) =>
-        `${formatAmount4(row.unitPrice)} ${po.currency}`,
+      accessor: (row: any) => `${formatAmount4(row.unitPrice)} ${po.currency}`,
     },
     {
       header: 'Ordered',

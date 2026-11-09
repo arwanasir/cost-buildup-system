@@ -859,7 +859,10 @@ export const importLandedCostResults = pgTable(
     }).notNull(),
     isEstimated: boolean('is_estimated').notNull().default(false),
     isFinalised: boolean('is_finalised').notNull().default(false),
-    computedAt: timestamp('computed_at', { mode: 'string', withTimezone: true }),
+    computedAt: timestamp('computed_at', {
+      mode: 'string',
+      withTimezone: true,
+    }),
     finalisedBy: uuid('finalised_by').references(() => users.id, {
       onDelete: 'set null',
     }),
@@ -1012,7 +1015,7 @@ export const auditLedger = pgTable(
     entityId: uuid('entity_id').notNull(),
     action: auditActionEnum('action').notNull(),
     actorId: uuid('actor_id').references(() => users.id, {
-      onDelete: 'set null',
+      onDelete: 'restrict',
     }),
     ipAddress: inet('ip_address'),
     beforeValue: jsonb('before_value'),

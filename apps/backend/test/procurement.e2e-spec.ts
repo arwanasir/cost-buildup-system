@@ -196,7 +196,7 @@ describe('Procurement & LC (e2e)', () => {
         .get(`/purchase-orders/${poUnderThreshold.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(HttpStatus.OK);
-      expect(linkedPo.body.status).toBe('approved');
+      expect(linkedPo.body.status).toBe('lc_applied');
       expect(linkedPo.body.lcId).toBe(lc1.id);
     });
 

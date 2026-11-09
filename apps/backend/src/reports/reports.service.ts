@@ -262,10 +262,8 @@ export class ReportsService {
         itemId: row.itemId,
         itemName: row.itemName,
         hsCode: row.hsCode,
-        quantity: qty,
-        totalPerUnitCost: new Decimal(
-          String(row.perUnitLandedCostEtb || 0),
-        )
+        quantity: qty.toNumber(),
+        totalPerUnitCost: new Decimal(String(row.perUnitLandedCostEtb || 0))
           .toDecimalPlaces(4)
           .toNumber(),
         perUnitBreakdown: {
