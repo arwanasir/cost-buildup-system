@@ -57,13 +57,7 @@ describe('ReportsController', () => {
               .mockResolvedValue([{ id: 'TC-RPT-09', data: 'seeded' }]),
           },
         },
-        {
-          provide: ReportExportService,
-          useValue: {
-            toExcel: jest.fn().mockResolvedValue(Buffer.from('excel')),
-            toPdf: jest.fn().mockResolvedValue(Buffer.from('pdf')),
-          },
-        },
+        ReportExportService,
       ],
     }).compile();
 
@@ -155,5 +149,36 @@ describe('ReportsController', () => {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     );
     expect(mockRes.send).toHaveBeenCalled();
+  });
+
+  it('exports all nine reports as PDF and Excel', async () => {
+    const reports = [
+      ['landed-cost-by-shipment', {}],
+      ['landed-cost-by-item', { item_id: 'item-1' }],
+      ['landed-cost-by-supplier', {}],
+      ['import-cost-summary', {}],
+      ['lc-status', {}],
+      ['customs-duty', {}],
+      ['shipment-status', {}],
+      ['cost-variance', {}],
+      ['supplier-performance', {}],
+    ] as const;
+    const req = { user: { role: Role.SYSTEM_ADMIN } };
+
+    for (const [reportKey, filters] of reports) {
+      for (const format of ['pdf', 'excel'] as const) {
+        const response = { setHeader: jest.fn(), send: jest.fn() };
+        await expect(
+          controller.exportReport(
+            reportKey,
+            filters,
+            format,
+            req as any,
+            response as any,
+          ),
+        ).resolves.toBeUndefined();
+        expect(response.send).toHaveBeenCalledWith(expect.any(Buffer));
+      }
+    }
   });
 });

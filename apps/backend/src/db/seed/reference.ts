@@ -85,14 +85,14 @@ const INITIAL_COST_CATEGORIES = [
     code: 'STORAGE',
     name: 'Storage and Demurrage',
     description: 'Port or terminal storage and demurrage charges',
-    defaultAllocationMethod: 'by_weight',
+    defaultAllocationMethod: 'by_value',
     isMandatory: false,
   },
   {
     code: 'DEMURRAGE',
     name: 'Demurrage',
     description: 'Charges for delayed container or cargo handling',
-    defaultAllocationMethod: 'by_weight',
+    defaultAllocationMethod: 'by_value',
     isMandatory: false,
   },
   {
@@ -119,7 +119,8 @@ const INITIAL_COST_CATEGORIES = [
   {
     code: 'OTHER',
     name: 'Other Import Costs',
-    description: 'Other import-related charges not covered by a listed category',
+    description:
+      'Other import-related charges not covered by a listed category',
     defaultAllocationMethod: 'by_value',
     isMandatory: false,
   },
@@ -156,7 +157,7 @@ const DEFAULT_POLICY_SETTINGS = [
   // Document number prefixes
   { key: 'po_number_prefix', valueText: 'PO' },
   { key: 'shipment_number_prefix', valueText: 'SHP' },
-  { key: 'grn_number_prefix', valueText: 'GRN' },
+  { key: 'grn_number_prefix', valueText: 'GRN-' },
   { key: 'lc_number_prefix', valueText: 'LC' },
   { key: 'claim_number_prefix', valueText: 'CLM' },
 

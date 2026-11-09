@@ -14,11 +14,9 @@ describe('normalizeLettersOfCreditResponse', () => {
   it('preserves an already wrapped list response', () => {
     const lc = { id: 'lc-1', lcNumber: 'LC-001', status: 'applied' };
 
-    expect(normalizeLettersOfCreditResponse({ data: [lc], total: 3 })).toEqual(
-      {
-        data: [lc],
-        total: 3,
-      },
-    );
+    expect(normalizeLettersOfCreditResponse({ data: [lc], total: 3 })).toEqual({
+      data: [lc],
+      total: 3,
+    });
   });
 });

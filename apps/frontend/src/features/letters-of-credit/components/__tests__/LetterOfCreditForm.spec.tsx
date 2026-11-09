@@ -241,9 +241,9 @@ describe('LetterOfCreditForm', () => {
 
     await waitFor(() => {
       expect(poCheckbox).toBeChecked();
-      expect(
-        screen.getByLabelText(/Total LC Amount \(Foreign\)/i),
-      ).toHaveValue(80000);
+      expect(screen.getByLabelText(/Total LC Amount \(Foreign\)/i)).toHaveValue(
+        80000,
+      );
     });
     expect(
       screen.queryByText(/Unexpected Application Error/i),

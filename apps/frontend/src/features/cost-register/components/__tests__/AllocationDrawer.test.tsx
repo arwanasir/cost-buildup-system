@@ -32,9 +32,7 @@ describe('AllocationDrawer', () => {
       http.get(
         'http://localhost:3000/api/v1/import-shipments/shipment-1/cost-entries',
         () =>
-          HttpResponse.json([
-            { id: 'entry-1', costCategoryId: 'category-1' },
-          ]),
+          HttpResponse.json([{ id: 'entry-1', costCategoryId: 'category-1' }]),
       ),
       http.get('http://localhost:3000/api/v1/cost-categories', () =>
         HttpResponse.json([

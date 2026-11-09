@@ -94,6 +94,38 @@ describe('Letters Of Credit Module Tests', () => {
       );
     });
 
+    it('sets linked POs to lc_applied when an LC is created (FR-02.3)', async () => {
+      mockTx.query.importPurchaseOrders.findMany.mockResolvedValue([
+        { id: 'po1', supplierId: 'sup1', status: 'approved', lcId: null },
+      ]);
+      mockTx.returning.mockResolvedValue([{ id: 'lc1' }]);
+
+      await lcService.create(
+        {
+          poIds: ['po1'],
+          lcNumber: 'LC-TEST-001',
+          issuingBank: 'Demo Bank',
+          advisingBank: 'Advising Bank',
+          lcType: 'sight',
+          amountForeign: 1000,
+          currency: 'USD',
+          fxRate: 120,
+          openingDate: '2026-11-01',
+          expiryDate: '2027-02-01',
+          lastShipmentDate: '2027-01-01',
+          presentationPeriodDays: 21,
+          incoterm: 'CIF',
+          partialShipmentAllowed: true,
+          transhipmentAllowed: false,
+        } as any,
+        'user1',
+      );
+
+      expect(mockTx.set).toHaveBeenCalledWith(
+        expect.objectContaining({ lcId: 'lc1', status: 'lc_applied' }),
+      );
+    });
+
     it('should validate dates correctly in CreateLcDto (DTO Date Validators)', async () => {
       const dto = new CreateLcDto();
       dto.openingDate = '2026-05-01';

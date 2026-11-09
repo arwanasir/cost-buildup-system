@@ -42,10 +42,7 @@ export function GoodsReceiptFormPage() {
       string,
       {
         receivedQuantity: string;
-        inspectionResult:
-          | 'accepted'
-          | 'rejected'
-          | 'accepted_with_conditions';
+        inspectionResult: 'accepted' | 'rejected' | 'accepted_with_conditions';
         acceptedQuantity: string;
         rejectedQuantity: string;
         rejectionReason: string;

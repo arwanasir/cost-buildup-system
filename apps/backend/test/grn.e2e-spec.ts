@@ -302,13 +302,13 @@ describe('Goods Receipts (GRN) & ERP Sync (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(HttpStatus.CREATED);
 
-      // Verify status is posted
+      // A GRN posted using estimated costs remains visible for adjustment.
       const fetchRes = await request(app.getHttpServer())
         .get(`/goods-receipts/${entities.grnId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(HttpStatus.OK);
 
-      expect(fetchRes.body.grn.status).toBe('posted');
+      expect(fetchRes.body.grn.status).toBe('flagged_for_adjustment');
     });
   });
 });

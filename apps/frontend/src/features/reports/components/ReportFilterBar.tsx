@@ -255,9 +255,15 @@ export function ReportFilterBar({
           </>
         )}
         <label className="block">
-            <span className={labelClass}>
-              {localize(reportKey === 'cost-variance' ? 'Variance Status' : reportKey === 'lc-status' ? 'LC Status' : 'Shipment Status')}
-            </span>
+          <span className={labelClass}>
+            {localize(
+              reportKey === 'cost-variance'
+                ? 'Variance Status'
+                : reportKey === 'lc-status'
+                  ? 'LC Status'
+                  : 'Shipment Status',
+            )}
+          </span>
           <select
             value={filters.status || ''}
             onChange={(event) => onFilterChange('status', event.target.value)}

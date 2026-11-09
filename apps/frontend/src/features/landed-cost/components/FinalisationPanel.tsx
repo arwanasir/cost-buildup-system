@@ -30,7 +30,9 @@ export function FinalisationPanel({ shipmentId }: { shipmentId: string }) {
   const handleAcceptEstimates = async () => {
     if (!justification || justification.length < 10) {
       setJustificationError(
-        localize('A detailed justification (min 10 characters) is required for the audit trail.'),
+        localize(
+          'A detailed justification (min 10 characters) is required for the audit trail.',
+        ),
       );
       return;
     }

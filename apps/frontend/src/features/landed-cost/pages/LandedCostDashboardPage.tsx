@@ -64,9 +64,7 @@ export function LandedCostDashboardPage() {
     };
   }, [results, hasResults]);
 
-  const computedAt = summary?.computedAt
-    ? new Date(summary.computedAt)
-    : null;
+  const computedAt = summary?.computedAt ? new Date(summary.computedAt) : null;
   const hasValidComputedAt = computedAt && !Number.isNaN(computedAt.getTime());
 
   const handleCompute = async () => {
@@ -120,15 +118,15 @@ export function LandedCostDashboardPage() {
             />
           </div>
           {selectedShipmentId && !selectedShipment?.isFinalised && (
-              <Button
-                variant="primary"
-                onClick={handleCompute}
-                isLoading={computeMutation.isPending}
-              >
-                <LocalizedText
-                  text={hasResults ? 'Recompute Draft LC' : 'Compute Draft LC'}
-                />
-              </Button>
+            <Button
+              variant="primary"
+              onClick={handleCompute}
+              isLoading={computeMutation.isPending}
+            >
+              <LocalizedText
+                text={hasResults ? 'Recompute Draft LC' : 'Compute Draft LC'}
+              />
+            </Button>
           )}
         </div>
       </Card>
@@ -174,7 +172,9 @@ export function LandedCostDashboardPage() {
               <div className="text-lg font-bold text-gray-900">
                 {hasValidComputedAt
                   ? computedAt.toLocaleString()
-                  : localize('Not recorded; recompute this draft to record it.')}
+                  : localize(
+                      'Not recorded; recompute this draft to record it.',
+                    )}
               </div>
             </Card>
             <Card className="p-4 bg-white border flex flex-col justify-center items-start">
@@ -202,9 +202,7 @@ export function LandedCostDashboardPage() {
             <div className="lg:col-span-2">
               <Card className="p-6 bg-white border shadow-sm h-full">
                 <h3 className="text-lg font-bold text-gray-800 mb-6">
-                  <LocalizedText
-                    text={'Per-Item LC Composition (Stacked)'}
-                  />
+                  <LocalizedText text={'Per-Item LC Composition (Stacked)'} />
                 </h3>
                 <StackedBarChart data={results} />
               </Card>
@@ -223,9 +221,7 @@ export function LandedCostDashboardPage() {
 
           <div className="pt-4">
             <h3 className="text-lg font-bold text-gray-800 mb-4">
-              <LocalizedText
-                text={'Final Per-Item Buildup Register'}
-              />
+              <LocalizedText text={'Final Per-Item Buildup Register'} />
             </h3>
             <LandedCostResultsTable data={results} />
           </div>

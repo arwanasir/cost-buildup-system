@@ -39,14 +39,14 @@ export class LettersOfCreditService {
             'All POs must belong to the same supplier',
           );
         }
-        if (po.status !== 'approved') {
-          throw new BadRequestException(
-            `Purchase Order ${po.id} is not in approved status`,
-          );
-        }
         if (po.lcId) {
           throw new BadRequestException(
             `Purchase Order ${po.id} already has an LC attached (BR08)`,
+          );
+        }
+        if (po.status !== 'approved') {
+          throw new BadRequestException(
+            `Purchase Order ${po.id} is not in approved status`,
           );
         }
       }
@@ -95,12 +95,12 @@ export class LettersOfCreditService {
         await tx.insert(schema.lcRequiredDocuments).values(docs);
       }
 
-      // 5. Link the POs to the LC without changing their approval status.
-      // Shipment creation requires an approved PO; LC linkage is tracked by lcId.
+      // 5. Link the POs to the LC and advance their lifecycle status.
       await tx
         .update(schema.importPurchaseOrders)
         .set({
           lcId: lc.id,
+          status: 'lc_applied',
           updatedBy: userId,
         })
         .where(inArray(schema.importPurchaseOrders.id, createLcDto.poIds));

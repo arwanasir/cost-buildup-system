@@ -233,11 +233,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             </PermissionGate>
 
             <PermissionGate permission="audit:read">
-              <NavLink
-                to="/audit"
-                className={navClass}
-                onClick={closeSidebar}
-              >
+              <NavLink to="/audit" className={navClass} onClick={closeSidebar}>
                 <LocalizedText text={'Audit Logs'} />
               </NavLink>
             </PermissionGate>

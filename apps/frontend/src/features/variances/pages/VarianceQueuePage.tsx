@@ -408,9 +408,7 @@ export function VarianceQueuePage() {
               ? parseFloat(selectedVariance.variancePct).toFixed(2)
               : 0}
             % (
-            {selectedVariance
-              ? formatAmount4(selectedVariance.varianceEtb)
-              : 0}
+            {selectedVariance ? formatAmount4(selectedVariance.varianceEtb) : 0}
             <LocalizedText text={' '} />
             <LocalizedText text={'\n            ETB)\n          '} />
           </div>

@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  mapPurchaseOrderStatusFilter,
-  normalizePurchaseOrder,
-} from './index';
+import { mapPurchaseOrderStatusFilter, normalizePurchaseOrder } from './index';
 
 describe('normalizePurchaseOrder', () => {
   it('maps the backend value fields to the amounts used by the UI', () => {
