@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { and, eq, gte, lte, ne, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lte, ne, sql } from 'drizzle-orm';
 import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
 
@@ -29,9 +29,32 @@ export class DashboardService {
         ),
       );
 
+    const [shipmentsAtCustoms] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.importShipments)
+      .where(eq(schema.importShipments.status, 'at_customs'));
+
+    const [registersPendingFinalisation] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.importShipments)
+      .where(
+        and(
+          inArray(schema.importShipments.status, [
+            'cleared',
+            'partially_received',
+            'received',
+          ]),
+          eq(schema.importShipments.isFinalised, false),
+        ),
+      );
+
     return {
       pendingPurchaseOrders: Number(pendingPos?.count ?? 0),
       expiringLettersOfCredit: Number(expiringLcs?.count ?? 0),
+      shipmentsAtCustoms: Number(shipmentsAtCustoms?.count ?? 0),
+      registersPendingFinalisation: Number(
+        registersPendingFinalisation?.count ?? 0,
+      ),
     };
   }
 }

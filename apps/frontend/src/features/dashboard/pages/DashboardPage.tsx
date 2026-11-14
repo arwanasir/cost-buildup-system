@@ -75,6 +75,8 @@ export function DashboardPage() {
   const hasPermission = useAuthStore((state) => state.hasPermission);
   const canReadPurchaseOrders = hasPermission('po:read');
   const canReadLettersOfCredit = hasPermission('lc:read');
+  const canReadShipments = hasPermission('shipment:read');
+  const canReadCosts = hasPermission('cost:read');
   const {
     data: summary,
     isLoading: summaryLoading,
@@ -103,20 +105,6 @@ export function DashboardPage() {
   const queries = useQueries({
     queries: [
       {
-        queryKey: ['kpi', 'shipments'],
-        queryFn: async () => {
-          const res = await api.get('/import-shipments?status=at_customs');
-          return countResponse(res.data);
-        },
-      },
-      {
-        queryKey: ['kpi', 'cost-registers'],
-        queryFn: async () => {
-          const res = await api.get('/import-shipments?status=cleared');
-          return countResponse(res.data);
-        },
-      },
-      {
         queryKey: ['kpi', 'variances'],
         queryFn: async () => {
           const res = await api.get('/variances?status=pending_approval');
@@ -133,8 +121,7 @@ export function DashboardPage() {
     ],
   });
 
-  const [shipmentsQuery, costRegistersQuery, variancesQuery, grnsQuery] =
-    queries;
+  const [variancesQuery, grnsQuery] = queries;
 
   return (
     <div className="space-y-7">
@@ -214,20 +201,20 @@ export function DashboardPage() {
 
         <DashboardCard
           title={localize('Shipments at Customs')}
-          value={shipmentsQuery.data}
+          value={summary?.shipmentsAtCustoms ?? 0}
           color="text-blue-600"
-          to="/shipments"
-          isLoading={shipmentsQuery.isLoading}
-          isError={shipmentsQuery.isError}
+          to={canReadShipments ? '/shipments' : undefined}
+          isLoading={summaryLoading}
+          isError={summaryError}
         />
 
         <DashboardCard
           title={localize('Registers Pending Finalisation')}
-          value={costRegistersQuery.data}
+          value={summary?.registersPendingFinalisation ?? 0}
           color="text-purple-600"
-          to="/landed-cost"
-          isLoading={costRegistersQuery.isLoading}
-          isError={costRegistersQuery.isError}
+          to={canReadCosts ? '/landed-cost' : undefined}
+          isLoading={summaryLoading}
+          isError={summaryError}
         />
 
         <DashboardCard
