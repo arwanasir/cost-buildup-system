@@ -69,7 +69,7 @@ npm run start:dev
 
 Apply the committed migrations with `npm run db:migrate`. Do not run
 `npm run db:generate` (or `drizzle-kit generate`) blindly: the migration journal
-contains migrations `0000` through `0014`, but Drizzle currently has only the
+contains migrations `0000` through `0015`, but Drizzle currently has only the
 `0000` snapshot. Generating a migration from that incomplete snapshot history
 can propose changes that are already present in later committed migrations.
 Review and reconcile the migration snapshots before generating new migrations.
