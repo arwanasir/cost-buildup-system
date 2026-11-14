@@ -20,7 +20,11 @@ export class AllocationBasisService {
 
     if (method === 'by_weight') {
       const missingWeight = items.some((item) => {
-        if (item.weightKg === null || item.weightKg === undefined || item.weightKg === '') {
+        if (
+          item.weightKg === null ||
+          item.weightKg === undefined ||
+          item.weightKg === ''
+        ) {
           return true;
         }
         return !new Decimal(item.weightKg).greaterThan(0);
@@ -34,7 +38,11 @@ export class AllocationBasisService {
 
     if (method === 'by_volume') {
       const missingVolume = items.some((item) => {
-        if (item.volumeCbm === null || item.volumeCbm === undefined || item.volumeCbm === '') {
+        if (
+          item.volumeCbm === null ||
+          item.volumeCbm === undefined ||
+          item.volumeCbm === ''
+        ) {
           return true;
         }
         return !new Decimal(item.volumeCbm).greaterThan(0);

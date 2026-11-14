@@ -1,244 +1,150 @@
 import { LocalizedText } from '@/components/ui/LocalizedText';
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { AppIcon } from './AppIcon';
 import { PermissionGate } from '@/components/auth/PermissionGate';
+import { NavLink } from 'react-router-dom';
 
 interface SidebarProps {
-  isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
+  isMobileOpen: boolean;
+  isDesktopOpen: boolean;
+  setIsMobileOpen: (isOpen: boolean) => void;
 }
 
-export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
-  /**
-   * Active link style: blue background tint + bold blue text.
-   * Inactive link: gray text, subtle hover.
-   * FIX: Replaced undefined `bg-primary-50`/`text-primary-700` classes with
-   * concrete Tailwind `bg-blue-50`/`text-blue-700` equivalents that actually
-   * exist in the default theme. The old classes resolved to nothing, making
-   * active nav items visually identical to inactive ones.
-   */
-  const navClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-      isActive
-        ? 'bg-blue-50 text-blue-700 font-semibold'
-        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-    }`;
+const linkBase =
+  'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors';
+const navClass = ({ isActive }: { isActive: boolean }) =>
+  `${linkBase} ${isActive ? 'bg-sky-500/15 text-sky-200 ring-1 ring-inset ring-sky-300/15' : 'text-slate-300 hover:bg-white/8 hover:text-white'}`;
 
-  const closeSidebar = () => setIsOpen(false);
+export function Sidebar({
+  isMobileOpen,
+  isDesktopOpen,
+  setIsMobileOpen,
+}: SidebarProps) {
+  const close = () => setIsMobileOpen(false);
+  const item = (path: string, label: string, icon: string, end = false) => (
+    <NavLink to={path} end={end} className={navClass} onClick={close}>
+      <AppIcon name={icon} className="h-[18px] w-[18px] shrink-0 opacity-85" />
+      <span>
+        <LocalizedText text={label} />
+      </span>
+    </NavLink>
+  );
 
   return (
     <>
-      {/* Mobile/Tablet Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-20 bg-gray-900 bg-opacity-50 md:hidden"
-          onClick={closeSidebar}
+      {isMobileOpen && (
+        <button
+          aria-label="Close navigation"
+          className="fixed inset-0 z-30 bg-slate-950/55 backdrop-blur-[2px] md:hidden"
+          onClick={close}
         />
       )}
-
-      {/* Sidebar Container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 flex flex-col transform transition-transform duration-300 ease-in-out md:relative ${
-          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}
+        id="main-navigation"
+        className={`fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col overflow-hidden border-r border-white/8 bg-[#101b2d] text-white shadow-2xl transition-[width,transform] duration-300 md:relative md:z-auto md:translate-x-0 md:shadow-none ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} ${isDesktopOpen ? 'md:w-[264px]' : 'md:w-0 md:border-r-0'}`}
       >
-        {/*
-          FIX: Header was using dark-theme colours (border-blue-800,
-          text-blue-100) on a white bg-white sidebar, making the brand name
-          and close button invisible in light mode. Changed to a solid blue
-          background header consistent with the app's primary brand colour,
-          with proper white text that is readable in both themes.
-        */}
-        <div className="flex items-center justify-between h-16 px-4 bg-blue-700 flex-shrink-0">
-          <span className="text-lg font-bold text-white truncate">
-            <LocalizedText text={'Cost Buildup'} />
-          </span>
+        <div className="flex h-[76px] shrink-0 items-center justify-between border-b border-white/10 px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sky-400 text-slate-950 shadow-lg shadow-sky-950/30">
+              <AppIcon name="ship" className="h-6 w-6" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold tracking-wide text-white">
+                <LocalizedText text="Cost Buildup" />
+              </p>
+              <p className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[.17em] text-slate-400">
+                <LocalizedText text="Import operations" />
+              </p>
+            </div>
+          </div>
           <button
-            className="md:hidden text-blue-100 hover:text-white focus:outline-none focus:ring-2 focus:ring-white rounded p-1"
-            onClick={closeSidebar}
-            aria-label="Close navigation menu"
+            className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white md:hidden"
+            onClick={close}
+            aria-label="Close navigation"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <AppIcon name="close" className="h-5 w-5" />
           </button>
         </div>
-
-        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          <NavLink to="/" end className={navClass} onClick={closeSidebar}>
-            <LocalizedText text={'Dashboard'} />
-          </NavLink>
-
+        <nav
+          aria-label="Main navigation"
+          className="flex-1 space-y-1 overflow-y-auto px-3 py-5"
+        >
+          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">
+            <LocalizedText text="Workspace" />
+          </p>
+          {item('/', 'Dashboard', 'dashboard', true)}
           <PermissionGate permission="suppliers:read">
-            <NavLink
-              to="/suppliers"
-              className={navClass}
-              onClick={closeSidebar}
-            >
-              <LocalizedText text={'Suppliers'} />
-            </NavLink>
+            {item('/suppliers', 'Suppliers', 'suppliers')}
           </PermissionGate>
-
           <PermissionGate permission="items:read">
-            <NavLink to="/items" className={navClass} onClick={closeSidebar}>
-              <LocalizedText text={'Items'} />
-            </NavLink>
+            {item('/items', 'Items', 'items')}
           </PermissionGate>
-
           <PermissionGate permission="po:read">
-            <NavLink
-              to="/purchase-orders"
-              className={navClass}
-              onClick={closeSidebar}
-            >
-              <LocalizedText text={'Purchase Orders'} />
-            </NavLink>
+            {item('/purchase-orders', 'Purchase Orders', 'orders')}
           </PermissionGate>
-
           <PermissionGate permission="lc:read">
-            <NavLink
-              to="/letters-of-credit"
-              className={navClass}
-              onClick={closeSidebar}
-            >
-              <LocalizedText text={'Letters of Credit'} />
-            </NavLink>
+            {item('/letters-of-credit', 'Letters of Credit', 'bank')}
           </PermissionGate>
-
           <PermissionGate permission="shipment:read">
-            <NavLink
-              to="/shipments"
-              className={navClass}
-              onClick={closeSidebar}
-            >
-              <LocalizedText text={'Shipments'} />
-            </NavLink>
+            {item('/shipments', 'Shipments', 'ship')}
           </PermissionGate>
-
           <PermissionGate permission="customs:read">
-            <NavLink to="/customs" className={navClass} onClick={closeSidebar}>
-              <LocalizedText text={'Customs'} />
-            </NavLink>
+            {item('/customs', 'Customs', 'customs')}
           </PermissionGate>
-
           <PermissionGate permission="cost:read">
-            <NavLink
-              to="/cost-buildup"
-              className={navClass}
-              onClick={closeSidebar}
-            >
-              <LocalizedText text={'Cost Buildup'} />
-            </NavLink>
-            <NavLink
-              to="/landed-cost"
-              className={navClass}
-              onClick={closeSidebar}
-            >
-              <LocalizedText text={'Landed Cost'} />
-            </NavLink>
+            {item('/cost-buildup', 'Cost Buildup', 'cost')}
+            {item('/landed-cost', 'Landed Cost', 'cost')}
           </PermissionGate>
-
           <PermissionGate permission="grn:read">
-            <NavLink
-              to="/goods-receipts"
-              className={navClass}
-              onClick={closeSidebar}
-            >
-              <LocalizedText text={'Goods Receipts'} />
-            </NavLink>
+            {item('/goods-receipts', 'Goods Receipts', 'receipt')}
           </PermissionGate>
-
-          <PermissionGate permission="variance:approve">
-            <NavLink
-              to="/variances"
-              className={navClass}
-              onClick={closeSidebar}
-            >
-              <LocalizedText text={'Variances'} />
-            </NavLink>
+          <PermissionGate permission="variance:read">
+            {item('/variances', 'Variances', 'variance')}
           </PermissionGate>
-
-          <NavLink to="/reports" className={navClass} onClick={closeSidebar}>
-            <LocalizedText text={'Reports'} />
-          </NavLink>
-
-          {/*
-            Administration section
-            FIX: Separator and label were using dark-theme colours
-            (border-blue-800, text-blue-300) on a white background, making them
-            invisible in light mode. Changed to standard gray tones that work
-            correctly in both light and dark themes.
-          */}
-          <div className="pt-4 mt-4 border-t border-gray-200">
-            <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-              <LocalizedText text={'Administration'} />
+          <PermissionGate
+            permission={[
+              'report:landed_cost_shipment:read',
+              'report:landed_cost_item:read',
+              'report:landed_cost_supplier:read',
+              'report:import_cost_summary:read',
+              'report:lc_status:read',
+              'report:customs_duty:read',
+              'report:shipment_status:read',
+              'report:cost_variance:read',
+              'report:supplier_performance:read',
+              'admin:all',
+            ]}
+          >
+            {item('/reports', 'Reports', 'reports')}
+          </PermissionGate>
+          <div className="!mt-5 border-t border-white/10 pt-5">
+            <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">
+              <LocalizedText text="Administration" />
             </p>
-
             <PermissionGate permission="users:read">
-              <NavLink
-                to="/admin/users"
-                className={navClass}
-                onClick={closeSidebar}
-              >
-                <LocalizedText text={'Users'} />
-              </NavLink>
+              {item('/admin/users', 'Users', 'users')}
             </PermissionGate>
-
             <PermissionGate permission="settings:read">
-              <NavLink
-                to="/admin/settings"
-                className={navClass}
-                onClick={closeSidebar}
-              >
-                <LocalizedText text={'Settings'} />
-              </NavLink>
-              <NavLink
-                to="/admin/cost-categories"
-                className={navClass}
-                onClick={closeSidebar}
-              >
-                <LocalizedText text={'Cost Categories'} />
-              </NavLink>
+              {item('/admin/settings', 'Settings', 'settings')}
+              {item('/admin/cost-categories', 'Cost Categories', 'cost')}
             </PermissionGate>
-
             <PermissionGate permission="rates:read">
-              <NavLink
-                to="/admin/nbe-rates"
-                className={navClass}
-                onClick={closeSidebar}
-              >
-                <LocalizedText text={'NBE Rates'} />
-              </NavLink>
+              {item('/admin/nbe-rates', 'NBE Rates', 'rates')}
             </PermissionGate>
-
             <PermissionGate permission="tariffs:read">
-              <NavLink
-                to="/admin/tariffs"
-                className={navClass}
-                onClick={closeSidebar}
-              >
-                <LocalizedText text={'Tariffs'} />
-              </NavLink>
+              {item('/admin/tariffs', 'Tariffs', 'tariffs')}
             </PermissionGate>
-
             <PermissionGate permission="audit:read">
-              <NavLink to="/audit" className={navClass} onClick={closeSidebar}>
-                <LocalizedText text={'Audit Logs'} />
-              </NavLink>
+              {item('/audit', 'Audit Logs', 'audit')}
             </PermissionGate>
           </div>
         </nav>
+        <div className="mx-3 mb-3 rounded-xl border border-white/8 bg-white/[.04] px-3 py-3 text-xs text-slate-400">
+          <span className="mb-2 flex items-center gap-2 font-semibold text-slate-200">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
+            <LocalizedText text="Operations workspace" />
+          </span>
+          <LocalizedText text="Track each import from purchase order through receipt." />
+        </div>
       </aside>
     </>
   );

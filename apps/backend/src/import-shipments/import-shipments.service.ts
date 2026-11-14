@@ -488,9 +488,7 @@ export class ImportShipmentsService {
       ne(schema.importCostEntries.source, 'commercial_invoice'),
     ];
     if (isEstimated !== undefined) {
-      conditions.push(
-        eq(schema.importCostEntries.isEstimated, isEstimated),
-      );
+      conditions.push(eq(schema.importCostEntries.isEstimated, isEstimated));
     }
 
     return this.db.query.importCostEntries.findMany({

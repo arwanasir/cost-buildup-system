@@ -190,7 +190,9 @@ export function BankChargesPanel({ lc }: { lc: LetterOfCredit }) {
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium text-gray-900 uppercase">
-                      {charge.chargeType.replace(/_/g, ' ')}
+                      <LocalizedText
+                        text={charge.chargeType.replace(/_/g, ' ')}
+                      />
                     </p>
                     {charge.registerEntryId && (
                       <Badge variant="success" className="text-xs">

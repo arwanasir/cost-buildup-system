@@ -174,7 +174,11 @@ export class ImportShipmentsController {
     @Body() dto: CreateClearingInvoiceDto,
     @Req() req: any,
   ) {
-    return this.shipmentsService.addClearingAgentInvoice(id, dto, req.user.userId);
+    return this.shipmentsService.addClearingAgentInvoice(
+      id,
+      dto,
+      req.user.userId,
+    );
   }
 
   @Post(':id/port-charges')

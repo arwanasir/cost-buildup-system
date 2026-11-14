@@ -32,6 +32,7 @@ export enum Permission {
   COST_WRITE = 'cost:write',
   COST_APPROVE = 'cost:approve',
   COST_FINALIZE = 'cost:finalize',
+  VARIANCE_READ = 'variance:read',
   VARIANCE_APPROVE = 'variance:approve',
   GRN_READ = 'grn:read',
   GRN_WRITE = 'grn:write',

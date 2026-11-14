@@ -7,6 +7,7 @@ import {
   Patch,
   Body,
   Param,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -32,8 +33,8 @@ export class GoodsReceiptsController {
 
   @Get()
   @RequiredPermission(Permission.GRN_READ)
-  async getGrns() {
-    return this.goodsReceiptsService.getGrns();
+  async getGrns(@Query('status') status?: string) {
+    return this.goodsReceiptsService.getGrns(status);
   }
 
   @Get(':id')

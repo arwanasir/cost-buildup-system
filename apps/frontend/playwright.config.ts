@@ -1,4 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 export default defineConfig({
   timeout: 120000,

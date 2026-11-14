@@ -31,7 +31,7 @@ export function RequiredDocumentsChecklist({ lc }: { lc: LetterOfCredit }) {
               className="flex items-center justify-between p-3 border rounded bg-gray-50"
             >
               <span className="text-sm font-medium text-gray-900 uppercase">
-                {doc.documentType.replace(/_/g, ' ')}
+                <LocalizedText text={doc.documentType.replace(/_/g, ' ')} />
               </span>
               <PermissionGate
                 permission="lc:write"

@@ -6,7 +6,7 @@ import { useUiText } from '@/lib/ui-text';
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
-  options: { label: string; value: string | number }[];
+  options: { label: string; value: string | number; translate?: boolean }[];
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
@@ -19,7 +19,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label
             htmlFor={id}
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="mb-1.5 block text-sm font-semibold text-slate-700"
           >
             {localize(label)}
           </label>
@@ -27,7 +27,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         <select
           id={id}
           ref={ref}
-          className={`block w-full pl-3 pr-10 py-2 text-base focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border ${error ? 'border-red-300' : 'border-gray-300'} ${className}`}
+          className={`block min-h-11 w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-3.5 pr-10 text-sm shadow-sm shadow-slate-950/[.02] focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 ${error ? 'border-red-300' : ''} ${className}`}
           {...props}
         >
           <option value="" disabled>
@@ -37,7 +37,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </option>
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {localize(opt.label)}
+              {opt.translate === false ? opt.label : localize(opt.label)}
             </option>
           ))}
         </select>

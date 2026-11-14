@@ -344,7 +344,8 @@ export function VarianceQueuePage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        {v.status === 'pending_approval' ? (
+                        {v.status === 'pending_approval' ||
+                        v.status === 'rejected' ? (
                           <PermissionGate permission="variance:approve">
                             <div className="flex flex-wrap justify-center gap-2">
                               <Button
@@ -352,15 +353,21 @@ export function VarianceQueuePage() {
                                 variant="success"
                                 onClick={() => openModal(v, 'approve')}
                               >
-                                {localize('Approve')}
+                                {localize(
+                                  v.status === 'rejected'
+                                    ? 'Re-review and Approve'
+                                    : 'Approve',
+                                )}
                               </Button>
-                              <Button
-                                className="min-w-24"
-                                variant="danger"
-                                onClick={() => openModal(v, 'reject')}
-                              >
-                                {localize('Reject')}
-                              </Button>
+                              {v.status === 'pending_approval' && (
+                                <Button
+                                  className="min-w-24"
+                                  variant="danger"
+                                  onClick={() => openModal(v, 'reject')}
+                                >
+                                  {localize('Reject')}
+                                </Button>
+                              )}
                             </div>
                           </PermissionGate>
                         ) : (

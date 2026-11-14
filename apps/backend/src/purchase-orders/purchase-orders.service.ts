@@ -94,6 +94,7 @@ export class PurchaseOrdersService {
       // 5. Delegate heavily fractional calculation to PoCalculationService
       const calcTotals = this.poCalculationService.calculateTotals({
         fxRate: createPoDto.fxRate,
+        incoterm: createPoDto.incoterm,
         estimatedFreightEtb: createPoDto.estimatedFreightEtb,
         estimatedInsuranceEtb: createPoDto.estimatedInsuranceEtb,
         estimatedOtherChargesEtb: createPoDto.estimatedOtherChargesEtb,
@@ -279,6 +280,7 @@ export class PurchaseOrdersService {
 
     const calcTotals = this.poCalculationService.calculateTotals({
       fxRate: po.fxRate,
+      incoterm: po.incoterm,
       estimatedFreightEtb: po.estimatedFreightEtb,
       estimatedInsuranceEtb: po.estimatedInsuranceEtb,
       estimatedOtherChargesEtb: po.estimatedOtherChargesEtb,

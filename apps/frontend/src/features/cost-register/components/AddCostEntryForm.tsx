@@ -119,7 +119,7 @@ export function AddCostEntryForm({
             options={
               categories
                 ?.filter((c) => c.code !== 'FOB' && c.isActive !== false)
-                .map((c) => ({ label: c.name, value: c.id })) || []
+                .map((c) => ({ label: localize(c.name), value: c.id })) || []
             }
             {...form.register('costCategoryId')}
             error={form.formState.errors.costCategoryId?.message}

@@ -17,11 +17,19 @@ export class EmailChannel {
   ) {
     const host = this.configService.get<string>('SMTP_HOST') || '127.0.0.1';
     const port = this.configService.get<number>('SMTP_PORT') || 1025;
+    const secure =
+      this.configService.get<boolean>('SMTP_SECURE') ?? port === 465;
+    const production =
+      this.configService.get<string>('NODE_ENV') === 'production';
 
     this.transporter = nodemailer.createTransport({
       host,
       port,
-      ignoreTLS: true,
+      secure,
+      requireTLS: production && !secure,
+      ...(production || secure
+        ? { tls: { minVersion: 'TLSv1.3' as const } }
+        : {}),
       connectionTimeout: 5000,
       greetingTimeout: 5000,
       socketTimeout: 10000,

@@ -154,6 +154,7 @@ export function LetterOfCreditForm() {
   const supplierOptions = (activeSuppliers?.data || []).map((s) => ({
     label: s.name,
     value: s.id,
+    translate: false,
   }));
 
   const onSubmit = async (data: LcFormData) => {
@@ -398,7 +399,7 @@ export function LetterOfCreditForm() {
                 control={control}
                 render={({ field }) => (
                   <FxInput
-                    label="Exchange Rate (FX) *"
+                    label={localize('Exchange Rate (FX) *')}
                     value={field.value}
                     onChange={(val) => field.onChange(val || 0)}
                     currency={watchCurrency}
@@ -542,7 +543,7 @@ export function LetterOfCreditForm() {
                     </div>
                     <div className="ml-3 text-sm">
                       <label className="font-medium text-gray-700">
-                        {doc.label}
+                        {localize(doc.label)}
                       </label>
                     </div>
                   </div>

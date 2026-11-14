@@ -72,4 +72,29 @@ describe('PoCalculationService', () => {
     expect(result.estimatedDutyEtb).toEqual('19000.0000');
     expect(result.lines[0].lineDutyEtb).toEqual('19000.0000');
   });
+
+  it('does not add freight and insurance to a CIF duty base twice', () => {
+    const result = service.calculateTotals({
+      fxRate: 100,
+      incoterm: 'CIF',
+      estimatedFreightEtb: 2000,
+      estimatedInsuranceEtb: 500,
+      lines: [{ quantity: 5, unitPrice: 50, estimatedDutyRate: 35 }],
+    });
+
+    expect(result.estimatedCIF).toEqual('27500.0000');
+    expect(result.estimatedDutyEtb).toEqual('8750.0000');
+  });
+
+  it('includes freight and insurance in the duty base for FOB terms', () => {
+    const result = service.calculateTotals({
+      fxRate: 100,
+      incoterm: 'FOB',
+      estimatedFreightEtb: 2000,
+      estimatedInsuranceEtb: 500,
+      lines: [{ quantity: 5, unitPrice: 50, estimatedDutyRate: 35 }],
+    });
+
+    expect(result.estimatedDutyEtb).toEqual('9625.0000');
+  });
 });

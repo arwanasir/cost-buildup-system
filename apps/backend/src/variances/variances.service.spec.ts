@@ -61,6 +61,8 @@ describe('VariancesService - Evaluate', () => {
                     { id: 'cat-f', code: 'FREIGHT' },
                     { id: 'cat-d', code: 'CUSTOMS_DUTY' },
                     { id: 'cat-o', code: 'OTHER' },
+                    { id: 'cat-vat', code: 'VAT' },
+                    { id: 'cat-excise', code: 'EXCISE' },
                   ]);
                 if (t === 'cost_variances')
                   return resolve(existingVarianceRows);
@@ -79,6 +81,16 @@ describe('VariancesService - Evaluate', () => {
                     {
                       costCategoryId: 'cat-o',
                       amountEtb: '10000',
+                      isEstimated: false,
+                    },
+                    {
+                      costCategoryId: 'cat-vat',
+                      amountEtb: '7500',
+                      isEstimated: false,
+                    },
+                    {
+                      costCategoryId: 'cat-excise',
+                      amountEtb: '20000',
                       isEstimated: false,
                     },
                   ]);
@@ -126,6 +138,36 @@ describe('VariancesService - Evaluate', () => {
     }).compile();
 
     service = module.get<VariancesService>(VariancesService);
+  });
+
+  it('defers variance evaluation until the commercial invoice is uploaded', async () => {
+    const dbMock: any = {
+      transaction: (callback: (tx: any) => unknown) => callback(dbMock),
+      select: () => ({
+        from: (table: any) => ({
+          where: () => {
+            const tableName = table[Symbol.for('drizzle:Name')];
+            if (tableName === 'import_shipments') {
+              return Promise.resolve([
+                { id: 'ship-before-ci', poId: 'po-before-ci' },
+              ]);
+            }
+            if (tableName === 'import_purchase_orders') {
+              return Promise.resolve([{ id: 'po-before-ci' }]);
+            }
+            if (tableName === 'commercial_invoices') {
+              return Promise.resolve([]);
+            }
+            return Promise.resolve([]);
+          },
+        }),
+      }),
+    };
+
+    const serviceWithoutInvoice = new VariancesService(dbMock);
+    await expect(
+      serviceWithoutInvoice.evaluate('ship-before-ci'),
+    ).resolves.toEqual([]);
   });
 
   it('should compute exact variances, auto-approve 1.5% and pend 2.5% into 5 distinct categories', async () => {

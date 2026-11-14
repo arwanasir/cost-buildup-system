@@ -7,15 +7,15 @@ WORKDIR /app
 
 # Dev stage
 FROM base AS dev
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
 EXPOSE 5173
 CMD ["pnpm", "dev", "--host", "0.0.0.0"]
 
 # Build stage
 FROM base AS build
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build

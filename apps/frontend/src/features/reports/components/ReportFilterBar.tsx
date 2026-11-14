@@ -123,8 +123,8 @@ export function ReportFilterBar({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <label className="block">
+      <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <label className="block min-w-0">
           <span className={labelClass}>{localize('Start Date')}</span>
           <input
             type="date"
@@ -137,7 +137,7 @@ export function ReportFilterBar({
             className={selectClass}
           />
         </label>
-        <label className="block">
+        <label className="block min-w-0">
           <span className={labelClass}>{localize('End Date')}</span>
           <input
             type="date"
@@ -148,7 +148,7 @@ export function ReportFilterBar({
             className={selectClass}
           />
         </label>
-        <label className="block">
+        <label className="block min-w-0">
           <span className={labelClass}>{localize('Supplier')}</span>
           <select
             value={filters.supplierId || ''}
@@ -168,7 +168,7 @@ export function ReportFilterBar({
           </select>
         </label>
         {supportsShipment && (
-          <label className="block">
+          <label className="block min-w-0">
             <span className={labelClass}>{localize('Shipment')}</span>
             <select
               value={filters.shipmentId || ''}
@@ -189,7 +189,7 @@ export function ReportFilterBar({
           </label>
         )}
         {supportsItem && (
-          <label className="block">
+          <label className="block min-w-0">
             <span className={labelClass}>{localize('Item')}</span>
             <select
               value={filters.itemId || ''}
@@ -214,7 +214,7 @@ export function ReportFilterBar({
         )}
         {reportKey === 'landed-cost-by-shipment' && (
           <>
-            <label className="block">
+            <label className="block min-w-0">
               <span className={labelClass}>{localize('HS Code')}</span>
               <select
                 value={filters.hsCode || ''}
@@ -233,7 +233,7 @@ export function ReportFilterBar({
                 ))}
               </select>
             </label>
-            <label className="block">
+            <label className="block min-w-0">
               <span className={labelClass}>{localize('Cost Category')}</span>
               <select
                 value={filters.category || ''}
@@ -247,14 +247,14 @@ export function ReportFilterBar({
                 <option value="">{localize('All categories')}</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
-                    {category.code} - {category.name}
+                    {category.code} - {localize(category.name)}
                   </option>
                 ))}
               </select>
             </label>
           </>
         )}
-        <label className="block">
+        <label className="block min-w-0">
           <span className={labelClass}>
             {localize(
               reportKey === 'cost-variance'
@@ -279,7 +279,7 @@ export function ReportFilterBar({
           </select>
         </label>
         {supportsPeriod && (
-          <label className="block">
+          <label className="block min-w-0">
             <span className={labelClass}>{localize('Period Grouping')}</span>
             <select
               value={filters.period || 'month'}

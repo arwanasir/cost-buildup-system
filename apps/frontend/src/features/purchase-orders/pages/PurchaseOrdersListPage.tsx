@@ -213,7 +213,7 @@ export function PurchaseOrdersListPage() {
                   : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
               } whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium`}
             >
-              {tab.label}
+              {localize(tab.label)}
             </button>
           ))}
         </nav>
@@ -234,6 +234,7 @@ export function PurchaseOrdersListPage() {
               ...(allSuppliers?.data || []).map((s) => ({
                 label: s.name,
                 value: s.id,
+                translate: false,
               })),
             ]}
           />

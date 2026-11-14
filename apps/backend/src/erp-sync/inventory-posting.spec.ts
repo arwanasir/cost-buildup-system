@@ -44,6 +44,10 @@ describe('ERP Sync & Inventory Posting (SRS 7.1)', () => {
               status: 200,
               json: async () => ({ transaction_id: 'TX-TEST' }),
             }),
+            postCostAdjustment: jest.fn().mockResolvedValue({
+              status: 'posted',
+              inventory_transaction_id: 'ERP-INV-ADJ-001',
+            }),
           },
         },
       ],
@@ -128,13 +132,8 @@ describe('ERP Sync & Inventory Posting (SRS 7.1)', () => {
     );
   });
 
-  it.skip('should set posting_failed and trigger system_admin notification on 500 FAIL_MODE', async () => {
+  it('should set posting_failed and trigger system_admin notification on ERP 500', async () => {
     setupBaseSelects();
-
-    // 5th query selects admins
-    selectWhereMock.mockResolvedValueOnce([
-      { id: 'admin-99', role: 'system_admin' },
-    ]);
 
     const inventoryClient = testingModule.get(InventoryClient);
     jest
@@ -154,15 +153,12 @@ describe('ERP Sync & Inventory Posting (SRS 7.1)', () => {
       expect.objectContaining({ status: 'posting_failed' }),
     );
 
-    // Verifies the notification table push
-    expect(insertValuesMock).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({
-          userId: 'admin-99',
-          type: 'posting_failed',
-          titleEn: 'ERP Inventory Sync Failed',
-        }),
-      ]),
+    // Failed ERP sync is surfaced through the configured notification channels.
+    const notificationsService = testingModule.get(NotificationsService);
+    expect(notificationsService.notifyRoles).toHaveBeenCalledWith(
+      'posting_failed',
+      { type: 'goods_receipt', id: 'grn-1' },
+      expect.objectContaining({ entityName: 'GRN GRN-001' }),
     );
   });
 
@@ -179,5 +175,64 @@ describe('ERP Sync & Inventory Posting (SRS 7.1)', () => {
     expect(updateSetMock).toHaveBeenCalledWith(
       expect.objectContaining({ inventoryTransactionId: 'ERP-INV-RETRY-01' }),
     );
+  });
+
+  it('posts approved final unit costs and stores the ERP adjustment reference', async () => {
+    selectWhereMock
+      .mockResolvedValueOnce([
+        {
+          id: 'grn-1',
+          shipmentId: 'ship-1',
+          grnNumber: 'GRN-001',
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'grn-item-1',
+          shipmentItemId: 'si-1',
+          acceptedQuantity: '2',
+          perUnitLandedCostEtb: '10.0000',
+        },
+      ])
+      .mockResolvedValueOnce([{ id: 'si-1', itemId: 'item-1' }])
+      .mockResolvedValueOnce([
+        {
+          shipmentItemId: 'si-1',
+          ciValueEtb: '20.0000',
+          customsDutyEtb: '2.0000',
+          importVatEtb: '3.3000',
+          freightAllocatedEtb: '0.0000',
+          insuranceAllocatedEtb: '0.0000',
+          bankChargesAllocatedEtb: '0.0000',
+          portChargesAllocatedEtb: '0.0000',
+          clearingFeeAllocatedEtb: '0.0000',
+          otherChargesAllocatedEtb: '0.0000',
+          totalLandedCostEtb: '25.3000',
+          perUnitLandedCostEtb: '12.6500',
+          postedToInventory: true,
+        },
+      ]);
+
+    const inventoryClient = testingModule.get(InventoryClient);
+    const result = await service.postFinalCostAdjustment('grn-1', 'journal-1');
+
+    expect(inventoryClient.postCostAdjustment).toHaveBeenCalledWith(
+      'journal-1',
+      'GRN-001',
+      'ship-1',
+      [
+        expect.objectContaining({
+          item_id: 'item-1',
+          quantity_received: '2.0000',
+          previous_per_unit_landed_cost_etb: '10.0000',
+          per_unit_landed_cost_etb: '12.6500',
+          line_value_etb: '25.3000',
+        }),
+      ],
+    );
+    expect(updateSetMock).toHaveBeenCalledWith({
+      inventoryAdjustmentTransactionId: 'ERP-INV-ADJ-001',
+    });
+    expect(result.inventory_transaction_id).toBe('ERP-INV-ADJ-001');
   });
 });

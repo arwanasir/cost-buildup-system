@@ -8,6 +8,7 @@ import {
   ConfirmDialog,
   Skeleton,
   ErrorState,
+  PermissionGate,
 } from '@/components/ui';
 
 const SETTING_METADATA: Record<
@@ -286,12 +287,14 @@ export function SettingsPage() {
                       {displayValue || '-'}
                     </dd>
                     <dd className="mt-1 text-sm sm:mt-0 sm:col-span-1 text-right">
-                      <Button
-                        variant="secondary"
-                        onClick={() => handleEditClick(setting)}
-                      >
-                        <LocalizedText text={'Edit Value'} />
-                      </Button>
+                      <PermissionGate permission="settings:write">
+                        <Button
+                          variant="secondary"
+                          onClick={() => handleEditClick(setting)}
+                        >
+                          <LocalizedText text={'Edit Value'} />
+                        </Button>
+                      </PermissionGate>
                     </dd>
                   </div>
                 );

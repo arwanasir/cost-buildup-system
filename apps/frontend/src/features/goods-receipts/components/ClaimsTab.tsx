@@ -1,10 +1,11 @@
 import { LocalizedText } from '@/components/ui/LocalizedText';
-import React from 'react';
+import React, { useState } from 'react';
 import { useGrnClaims, useUpdateClaim } from '../api';
-import { Table, Select, Input } from '@/components/ui';
+import { Table, Select, Input, Toast } from '@/components/ui';
 import { formatAmount4 } from '@/lib/money';
 
 export function ClaimsTab({ grnId }: { grnId: string }) {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { data: claimsResponse, isLoading } = useGrnClaims(grnId);
   const claims = Array.isArray(claimsResponse)
     ? claimsResponse
@@ -19,7 +20,8 @@ export function ClaimsTab({ grnId }: { grnId: string }) {
         data: { [field]: value },
       });
     } catch (e: any) {
-      alert(e.response?.data?.message || 'Failed to update claim');
+      const message = e.response?.data?.message || 'Failed to update claim';
+      setErrorMessage(Array.isArray(message) ? message.join(', ') : message);
     }
   };
 
@@ -44,6 +46,13 @@ export function ClaimsTab({ grnId }: { grnId: string }) {
 
   return (
     <div className="overflow-x-auto">
+      {errorMessage && (
+        <Toast
+          message={errorMessage}
+          type="error"
+          onClose={() => setErrorMessage(null)}
+        />
+      )}
       <Table>
         <thead>
           <tr className="bg-gray-50">

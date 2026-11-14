@@ -6,35 +6,54 @@ import {
   ShipmentVariancesController,
 } from './variances.controller';
 import { VariancesService } from './variances.service';
-import { AuthGuard } from '@nestjs/passport';
 import { DRIZZLE } from '@/db/db.token';
+import { PermissionGuard } from '@/auth/guards/permissions.guards';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 
-describe('VariancesController (e2e)', () => {
+describe('VariancesController permissions', () => {
   let app: INestApplication;
+  let role: string;
+  const permissionsByRole: Record<string, string[]> = {
+    auditor: ['variance:read'],
+    finance_manager: ['variance:read', 'variance:approve'],
+    finance_officer: [],
+  };
 
-  beforeEach(async () => {
-    // We mock the database just in case, though the guard should fail before DB is hit.
-    // Actually, the guard passes, but the service throws the 403.
+  beforeAll(async () => {
     const dbMock = {
-      update: jest.fn().mockReturnThis(),
-      set: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      returning: jest.fn().mockResolvedValue([{ id: 'var-1' }]),
+      select: jest.fn(() => ({
+        from: jest.fn(() => ({
+          where: jest.fn(async () =>
+            (permissionsByRole[role] || []).map((permission) => ({
+              permission,
+            })),
+          ),
+        })),
+      })),
+    };
+    const serviceMock = {
+      findAll: jest.fn().mockResolvedValue([]),
+      findByShipment: jest.fn().mockResolvedValue([]),
+      approve: jest.fn().mockResolvedValue({ id: 'variance-1' }),
+      reject: jest.fn().mockResolvedValue({ id: 'variance-1' }),
+      evaluate: jest.fn().mockResolvedValue([]),
     };
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [VariancesController, ShipmentVariancesController],
       providers: [
-        VariancesService,
+        PermissionGuard,
+        { provide: VariancesService, useValue: serviceMock },
         { provide: DRIZZLE, useValue: dbMock },
       ],
     })
-      .overrideGuard(AuthGuard('jwt'))
+      .overrideGuard(JwtAuthGuard)
       .useValue({
         canActivate: (context: any) => {
-          const req = context.switchToHttp().getRequest();
-          // Simulating the JWT strategy attaching the user to the request
-          req.user = { id: 'fo-1', role: 'finance_officer' };
+          context.switchToHttp().getRequest().user = {
+            id: 'test-user',
+            role,
+          };
           return true;
         },
       })
@@ -48,27 +67,21 @@ describe('VariancesController (e2e)', () => {
     if (app) await app.close();
   });
 
-  it('/variances/:id/approve (POST) - should return 403 for finance_officer', () => {
-    return request(app.getHttpServer())
-      .post('/variances/var-1/approve')
-      .send({ comment: 'looks good' })
-      .expect(403)
-      .expect((res: any) => {
-        expect(res.body.message).toEqual(
-          'Only Finance Manager or General Manager can approve variances',
-        );
-      });
+  it('allows an auditor to view variances', async () => {
+    role = 'auditor';
+    await request(app.getHttpServer()).get('/variances').expect(200);
   });
 
-  it('/variances/:id/reject (POST) - should return 403 for finance_officer', () => {
-    return request(app.getHttpServer())
-      .post('/variances/var-1/reject')
-      .send({ comment: 'nope' })
-      .expect(403)
-      .expect((res: any) => {
-        expect(res.body.message).toEqual(
-          'Only Finance Manager or General Manager can reject variances',
-        );
-      });
+  it('denies an auditor variance approval actions', async () => {
+    role = 'auditor';
+    await request(app.getHttpServer())
+      .post('/variances/variance-1/approve')
+      .send({ comment: 'review' })
+      .expect(403);
+  });
+
+  it('denies a finance officer variance reads without variance:read', async () => {
+    role = 'finance_officer';
+    await request(app.getHttpServer()).get('/variances').expect(403);
   });
 });

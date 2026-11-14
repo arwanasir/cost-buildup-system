@@ -51,6 +51,7 @@
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "exceljs": "^4.4.0",
+    "express": "^5.2.1",
     "i18next": "^26.4.2",
     "joi": "^18.2.5",
     "nodemailer": "^10.0.10",
@@ -69,6 +70,7 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
+    "@jest/globals": "^30.4.1",
     "@types/bcrypt": "^6.0.0",
     "@types/decimal.js": "^0.0.32",
     "@types/express": "^5.0.0",
@@ -132,11 +134,5 @@
         "branches": 70
       }
     }
-  },
-  "allowScripts": {
-    "unrs-resolver@1.12.2": true,
-    "bcrypt@6.0.0": true,
-    "es5-ext@0.10.64": true,
-    "esbuild@0.15.18": true
   }
 }

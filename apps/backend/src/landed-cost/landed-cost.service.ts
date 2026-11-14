@@ -12,7 +12,7 @@ import { FinalisationGuardService } from './finalisation-guard.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DRIZZLE } from '@/db/db.token';
 import * as schema from '@/db/schema';
-import { eq, and, isNull, inArray } from 'drizzle-orm';
+import { eq, and, isNull, inArray, sql } from 'drizzle-orm';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -66,11 +66,10 @@ export class LandedCostService {
     const now = new Date().toISOString();
 
     const results = await this.db.transaction(async (tx: any) => {
-      const computed = await this._executeCalculationEngine(
-        tx,
-        shipmentId,
-        { actorId: actor.id, timestamp: now },
-      );
+      const computed = await this._executeCalculationEngine(tx, shipmentId, {
+        actorId: actor.id,
+        timestamp: now,
+      });
 
       await tx
         .update(schema.importShipments)
@@ -168,35 +167,58 @@ export class LandedCostService {
 
       const amount = new Decimal(String(alloc.allocatedEtb));
       switch (alloc.categoryCode) {
+        // ── Customs duty (item-specific, assigned directly per HS code) ────
         case 'CUSTOMS_DUTY':
           itemCosts.customsDutyEtb = itemCosts.customsDutyEtb.plus(amount);
           break;
+
+        // FR-08.1 has a dedicated Import VAT line. Keep only VAT in that
+        // column; other assessed taxes remain in Other Allocated Charges.
         case 'VAT':
           itemCosts.importVatEtb = itemCosts.importVatEtb.plus(amount);
           break;
+
+        case 'EXCISE':
+        case 'SURTAX':
+        case 'WITHHOLDING':
+          itemCosts.otherChargesAllocatedEtb =
+            itemCosts.otherChargesAllocatedEtb.plus(amount);
+          break;
+
+        // ── Freight & transit insurance ────────────────────────────────────
         case 'FREIGHT':
           itemCosts.freightAllocatedEtb =
             itemCosts.freightAllocatedEtb.plus(amount);
           break;
+
+        // ── Marine / transit insurance ─────────────────────────────────────
         case 'INSURANCE':
           itemCosts.insuranceAllocatedEtb =
             itemCosts.insuranceAllocatedEtb.plus(amount);
           break;
-        case 'BANK':
+
+        // ── Bank & LC charges ──────────────────────────────────────────────
         case 'BANK_CHARGES':
           itemCosts.bankChargesAllocatedEtb =
             itemCosts.bankChargesAllocatedEtb.plus(amount);
           break;
-        case 'PORT':
+
+        // ── Port, terminal handling, storage & demurrage ───────────────────
         case 'PORT_HANDLING':
+        case 'STORAGE':
+        case 'DEMURRAGE':
           itemCosts.portChargesAllocatedEtb =
             itemCosts.portChargesAllocatedEtb.plus(amount);
           break;
+
+        // ── Clearing agent fee & inland transport ──────────────────────────
         case 'CLEARING':
-        case 'TRANSIT':
+        case 'INLAND_TRANSPORT':
           itemCosts.clearingFeeAllocatedEtb =
             itemCosts.clearingFeeAllocatedEtb.plus(amount);
           break;
+
+        // ── Everything else (OTHER, FOB guard, any future custom categories)
         default:
           itemCosts.otherChargesAllocatedEtb =
             itemCosts.otherChargesAllocatedEtb.plus(amount);
@@ -299,25 +321,39 @@ export class LandedCostService {
       );
     }
 
-    for (const result of landedCostResults) {
-      const {
-        postedToInventory: _postedToInventory,
-        postedAt: _postedAt,
-        inventoryTransactionId: _inventoryTransactionId,
-        ...recalculatedFields
-      } = result;
-
+    if (landedCostResults.length > 0) {
       await tx
         .insert(schema.importLandedCostResults)
-        .values(result)
+        .values(landedCostResults)
         .onConflictDoUpdate({
           target: [
             schema.importLandedCostResults.shipmentId,
             schema.importLandedCostResults.shipmentItemId,
           ],
-          // Keep inventory posting metadata unchanged on conflict. A revised
-          // unit cost is accounted for through the SRS journal adjustment flow.
-          set: recalculatedFields,
+          // A shipment can contain 200 lines. Use a single upsert to keep the
+          // full calculation within the SRS time limit; posting metadata is
+          // deliberately omitted so a recalculation cannot overwrite it.
+          set: {
+            itemId: sql`excluded.item_id`,
+            poLineId: sql`excluded.po_line_id`,
+            quantityReceived: sql`excluded.quantity_received`,
+            ciValueEtb: sql`excluded.ci_value_etb`,
+            customsDutyEtb: sql`excluded.customs_duty_etb`,
+            importVatEtb: sql`excluded.import_vat_etb`,
+            freightAllocatedEtb: sql`excluded.freight_allocated_etb`,
+            insuranceAllocatedEtb: sql`excluded.insurance_allocated_etb`,
+            bankChargesAllocatedEtb: sql`excluded.bank_charges_allocated_etb`,
+            portChargesAllocatedEtb: sql`excluded.port_charges_allocated_etb`,
+            clearingFeeAllocatedEtb: sql`excluded.clearing_fee_allocated_etb`,
+            otherChargesAllocatedEtb: sql`excluded.other_charges_allocated_etb`,
+            totalLandedCostEtb: sql`excluded.total_landed_cost_etb`,
+            perUnitLandedCostEtb: sql`excluded.per_unit_landed_cost_etb`,
+            isEstimated: sql`excluded.is_estimated`,
+            isFinalised: sql`excluded.is_finalised`,
+            computedAt: sql`excluded.computed_at`,
+            finalisedBy: sql`excluded.finalised_by`,
+            finalisedAt: sql`excluded.finalised_at`,
+          },
         });
     }
 

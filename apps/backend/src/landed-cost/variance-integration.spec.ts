@@ -123,7 +123,7 @@ describe('Integration (TC-VAR-01): Finalise Refused with Pending Variance', () =
       await landedCostService.finalise('ship-1', actor);
     } catch (e: any) {
       expect(e.getResponse().blockers[0]).toContain(
-        'BR07: Found 1 pending cost variance(s) requiring approval.',
+        'BR07: Found 1 unresolved cost variance(s) (pending approval or rejected)',
       );
     }
 

@@ -134,7 +134,8 @@ describe('Import Shipments Services', () => {
       );
 
       const shipmentHeaderValues = valuesMock.mock.calls.find(
-        (call) => !Array.isArray(call[0]) && call[0]?.shipmentNumber === 'SHP-001',
+        (call) =>
+          !Array.isArray(call[0]) && call[0]?.shipmentNumber === 'SHP-001',
       );
       expect(shipmentHeaderValues[0]).toMatchObject({
         totalWeightKg: '60.25',
@@ -160,9 +161,9 @@ describe('Import Shipments Services', () => {
         (c: any) => c.isEstimated === true && c.source === 'po_estimate',
       );
       expect(estimatedEntries.length).toBeGreaterThan(0);
-      expect(costEntryValues[0].every((entry: any) => entry.createdBy === 'user-1')).toBe(
-        true,
-      );
+      expect(
+        costEntryValues[0].every((entry: any) => entry.createdBy === 'user-1'),
+      ).toBe(true);
 
       expect(
         costEntryValues[0].some(

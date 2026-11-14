@@ -114,10 +114,21 @@ export class ReportsService {
       .from(schema.costVariances)
       .where(inArray(schema.costVariances.shipmentId, shipmentIds));
 
+    const groupByShipmentId = (rows: any[]) => {
+      const grouped = new Map<string, any[]>();
+      for (const row of rows) {
+        const shipmentRows = grouped.get(row.shipmentId) || [];
+        shipmentRows.push(row);
+        grouped.set(row.shipmentId, shipmentRows);
+      }
+      return grouped;
+    };
+    const costEntriesByShipment = groupByShipmentId(costEntries);
+    const landedCostsByShipment = groupByShipmentId(landedCosts);
+    const variancesByShipment = groupByShipmentId(variances);
+
     return shipments.map((shipment: any) => {
-      const shipmentCostEntries = costEntries.filter(
-        (ce: any) => ce.shipmentId === shipment.id,
-      );
+      const shipmentCostEntries = costEntriesByShipment.get(shipment.id) || [];
 
       const categoryTotals: Record<string, number> = {};
       shipmentCostEntries.forEach((ce: any) => {
@@ -126,8 +137,7 @@ export class ReportsService {
           (categoryTotals[cat] || 0) + Number(ce.amountEtb || 0);
       });
 
-      const itemAllocations = landedCosts
-        .filter((lc: any) => lc.shipmentId === shipment.id)
+      const itemAllocations = (landedCostsByShipment.get(shipment.id) || [])
         .filter((lc: any) => {
           if (filters.item_id && lc.itemId !== filters.item_id) return false;
 
@@ -154,9 +164,7 @@ export class ReportsService {
           },
         }));
 
-      const shipmentVariances = variances.filter(
-        (v: any) => v.shipmentId === shipment.id,
-      );
+      const shipmentVariances = variancesByShipment.get(shipment.id) || [];
 
       return {
         shipmentId: shipment.id,

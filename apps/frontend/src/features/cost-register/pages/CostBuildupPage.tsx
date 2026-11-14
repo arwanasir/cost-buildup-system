@@ -4,12 +4,14 @@ import React, { useState } from 'react';
 import { PageHeader, Badge } from '@/components/ui';
 import { useShipments } from '@/features/import-shipments/api';
 import { CostRegister } from '../components/CostRegister';
+import { useSearchParams } from 'react-router-dom';
 
 export function CostBuildupPage() {
   const localize = useUiText();
+  const [searchParams] = useSearchParams();
   const { data: shipmentsResponse, isLoading } = useShipments();
   const [selectedShipmentId, setSelectedShipmentId] = useState<string | null>(
-    null,
+    () => searchParams.get('shipmentId'),
   );
 
   // useShipments returns axios response with { data } inside if not configured cleanly,

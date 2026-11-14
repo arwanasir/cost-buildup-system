@@ -22,8 +22,17 @@ const poolProvider: Provider = {
     const connectionString =
       configService.get<string>('DATABASE_URL') ||
       'postgres://postgres:postgres123@localhost:5432/cost_buildup_db';
+    const production = configService.get<string>('NODE_ENV') === 'production';
     return new Pool({
       connectionString,
+      ...(production
+        ? {
+            ssl: {
+              rejectUnauthorized: true,
+              minVersion: 'TLSv1.3' as const,
+            },
+          }
+        : {}),
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,

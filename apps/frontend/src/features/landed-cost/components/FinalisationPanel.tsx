@@ -18,6 +18,12 @@ export function FinalisationPanel({ shipmentId }: { shipmentId: string }) {
   } = useFinalisationCheck(shipmentId);
   const blockers = finalisationCheck?.blockers ?? [];
   const user = useAuthStore((s) => s.user);
+  const hasFinalizePermission = useAuthStore((s) =>
+    s.hasPermission('cost:finalize'),
+  );
+  const hasCostApprovePermission = useAuthStore((s) =>
+    s.hasPermission('cost:approve'),
+  );
 
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [showFinaliseModal, setShowFinaliseModal] = useState(false);
@@ -43,8 +49,12 @@ export function FinalisationPanel({ shipmentId }: { shipmentId: string }) {
   };
 
   const handleFinalise = async () => {
-    await finaliseMutation.mutateAsync(shipmentId);
-    setShowFinaliseModal(false);
+    try {
+      await finaliseMutation.mutateAsync(shipmentId);
+      setShowFinaliseModal(false);
+    } catch {
+      // Keep the confirmation open and show the server error to the user.
+    }
   };
 
   if (isLoading)
@@ -58,7 +68,25 @@ export function FinalisationPanel({ shipmentId }: { shipmentId: string }) {
 
   const isReady = finalisationCheck?.canFinalise ?? false;
   const hasBr05 = blockers?.some((b: string) => b.includes('BR05'));
-  const canAcceptEstimates = hasBr05 && user?.role === 'finance_manager';
+  const canAcceptEstimates =
+    hasBr05 &&
+    user?.role === 'finance_manager' &&
+    hasCostApprovePermission;
+  const canFinalize =
+    hasFinalizePermission &&
+    (user?.role === 'finance_manager' || user?.role === 'general_manager');
+  const finaliseError = finaliseMutation.error as
+    | {
+        response?: { data?: { message?: unknown } };
+        message?: string;
+      }
+    | null;
+  const finaliseErrorMessage =
+    typeof finaliseError?.response?.data?.message === 'string'
+      ? localize(finaliseError.response.data.message)
+      : localize(
+          'Finalisation failed. Please review the checks and try again.',
+        );
 
   return (
     <Card className="p-6 bg-white shadow-sm border mt-6">
@@ -127,15 +155,20 @@ export function FinalisationPanel({ shipmentId }: { shipmentId: string }) {
         </div>
       )}
 
-      <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-        <Button
-          variant="primary"
-          onClick={() => setShowFinaliseModal(true)}
-          disabled={!isReady}
-        >
-          <LocalizedText text={'\n          Finalise Shipment\n        '} />
-        </Button>
-      </div>
+      {canFinalize && (
+        <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
+          <Button
+            variant="primary"
+            onClick={() => {
+              finaliseMutation.reset();
+              setShowFinaliseModal(true);
+            }}
+            disabled={!isReady || isError}
+          >
+            <LocalizedText text={'\n          Finalise Shipment\n        '} />
+          </Button>
+        </div>
+      )}
 
       {/* Accept Estimates Modal */}
       <Modal
@@ -237,6 +270,11 @@ export function FinalisationPanel({ shipmentId }: { shipmentId: string }) {
             <LocalizedText text={'\n            Sign & Finalise\n          '} />
           </Button>
         </div>
+        {finaliseMutation.isError && (
+          <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-800">
+            {finaliseErrorMessage}
+          </div>
+        )}
       </Modal>
     </Card>
   );

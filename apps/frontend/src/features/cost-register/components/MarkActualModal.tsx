@@ -46,7 +46,7 @@ export function MarkActualModal({
         invoiceNumber: entry.invoiceNumber || '',
         invoiceDate:
           entry.invoiceDate || new Date().toISOString().split('T')[0],
-        amountForeign: parseFloat(entry.amountForeign) || 0,
+        amountForeign: parseFloat(entry.amountForeign ?? '0') || 0,
         fxRate: parseFloat(entry.fxRate) || 1.0,
       });
     }

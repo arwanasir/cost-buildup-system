@@ -9,29 +9,33 @@ import {
   Input,
   Badge,
   Skeleton,
+  Toast,
 } from '@/components/ui';
 import { useShipments, useShipment } from '@/features/import-shipments/api';
 import { usePurchaseOrder } from '@/features/purchase-orders/api';
 import { useCreateGrn } from '../api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export function GoodsReceiptFormPage() {
   const localize = useUiText();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { data: shipmentsResponse, isLoading: loadingShipments } =
     useShipments();
   const shipments = Array.isArray(shipmentsResponse)
     ? shipmentsResponse
     : shipmentsResponse?.data || [];
 
-  const [selectedShipmentId, setSelectedShipmentId] = useState('');
+  const [selectedShipmentId, setSelectedShipmentId] = useState(
+    () => searchParams.get('shipmentId') || '',
+  );
   const [receiptDate, setReceiptDate] = useState(
     new Date().toISOString().split('T')[0],
   );
   const [warehouseLocation, setWarehouseLocation] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { data: shipmentResponse, isLoading: loadingShipment } =
-    useShipment(selectedShipmentId);
+  const { data: shipmentResponse } = useShipment(selectedShipmentId);
   const shipment = shipmentResponse?.data;
   const { data: po } = usePurchaseOrder(shipment?.poId || '');
 
@@ -118,7 +122,8 @@ export function GoodsReceiptFormPage() {
       });
       navigate('/goods-receipts');
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to create GRN');
+      const message = error.response?.data?.message || 'Failed to create GRN';
+      setErrorMessage(Array.isArray(message) ? message.join(', ') : message);
     }
   };
 
@@ -142,6 +147,13 @@ export function GoodsReceiptFormPage() {
           'Record incoming inventory and log discrepancies.',
         )}
       />
+      {errorMessage && (
+        <Toast
+          message={errorMessage}
+          type="error"
+          onClose={() => setErrorMessage(null)}
+        />
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card className="p-6 bg-white shadow-sm border space-y-4">
@@ -156,8 +168,9 @@ export function GoodsReceiptFormPage() {
               options={[
                 { label: '-- Select Shipment --', value: '' },
                 ...shipments.map((s: any) => ({
-                  label: `${s.shipmentNumber} [${s.status.toUpperCase()}]`,
+                  label: `${s.shipmentNumber} [${localize(s.status.replace(/_/g, ' '))}]`,
                   value: s.id,
+                  translate: false,
                 })),
               ]}
               required

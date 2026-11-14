@@ -282,6 +282,20 @@ describe('Goods Receipts (GRN) & ERP Sync (e2e)', () => {
         .expect(HttpStatus.OK);
 
       expect(fetchRes.body.grn.status).toBe('posting_failed');
+
+      const filteredRes = await request(app.getHttpServer())
+        .get('/goods-receipts?status=posting_failed')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(HttpStatus.OK);
+      expect(filteredRes.body).toContainEqual(
+        expect.objectContaining({
+          id: entities.grnId,
+          status: 'posting_failed',
+        }),
+      );
+      expect(
+        filteredRes.body.every((grn: any) => grn.status === 'posting_failed'),
+      ).toBe(true);
     });
 
     it('should succeed after ERP is restored and we retry', async () => {

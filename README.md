@@ -22,6 +22,12 @@ Backend modules are organized by business domain under `apps/backend/src` (inclu
 7. Create a goods receipt after clearance, record discrepancies, and process claims/variances.
 8. Post inventory and finance entries to the ERP mock; review reports, notifications, lineage, and audit history.
 
+If a GRN is posted before landed-cost finalisation, inventory receives the
+estimated unit cost first and the GRN is flagged for adjustment. After a Finance
+Manager approves the adjustment journal, the final per-unit costs are sent to
+the ERP inventory mock. Both ERP calls use stable identifiers so retries do not
+create duplicate receipts, journal entries, or cost adjustments.
+
 **LC bank-charge allocation choice:** a charge is divided equally among the
 shipments linked to its LC when it is synchronized. If the charge is recorded
 before any shipment exists, the first subsequently created shipment receives
@@ -63,7 +69,7 @@ npm run start:dev
 
 Apply the committed migrations with `npm run db:migrate`. Do not run
 `npm run db:generate` (or `drizzle-kit generate`) blindly: the migration journal
-contains migrations `0000` through `0011`, but Drizzle currently has only the
+contains migrations `0000` through `0014`, but Drizzle currently has only the
 `0000` snapshot. Generating a migration from that incomplete snapshot history
 can propose changes that are already present in later committed migrations.
 Review and reconcile the migration snapshots before generating new migrations.
@@ -172,6 +178,10 @@ SMTP, CORS/frontend URL, and the public API URL through the host's secret and
 environment configuration. Never deploy the example credentials or demo seed
 users. Restrict PostgreSQL and MinIO to the application network, and terminate
 browser/API traffic with HTTPS at the hosting provider or reverse proxy.
+Run the API with `NODE_ENV=production`: database connections and production
+SMTP delivery require certificate-validated TLS 1.3. Set `SMTP_SECURE=true` for
+implicit TLS (usually port 465); otherwise production SMTP uses required
+STARTTLS. The development Mailpit connection remains plain SMTP.
 
 For each release, back up PostgreSQL and document storage, deploy the API, run
 `npm run db:migrate` once against the production database, seed only required
@@ -181,3 +191,8 @@ After deployment, verify API health, login, a read-only report, document upload
 and view, and ERP connector health. Monitor API logs, database capacity,
 document storage, notification delivery, and ERP posting failures. Test backup
 restoration and retain a rollback build before accepting production traffic.
+
+The local ERP mock provides `GET http://localhost:3001/health`. Approved final
+inventory adjustments are available at
+`GET http://localhost:3001/inventory/adjustments/{journal-id}` for local
+verification; this in-memory mock state is cleared when its container restarts.

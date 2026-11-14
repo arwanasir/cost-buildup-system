@@ -39,6 +39,7 @@ export class UsersService {
         department: createUserDto.department,
         preferredLanguage: (createUserDto.preferredLanguage ||
           'en') as (typeof schema.users.$inferInsert)['preferredLanguage'],
+        telegramChatId: createUserDto.telegramChatId || null,
         passwordHash,
         isActive: true,
       })
@@ -82,6 +83,8 @@ export class UsersService {
     if (updateUserDto.preferredLanguage)
       updateData.preferredLanguage =
         updateUserDto.preferredLanguage as (typeof schema.users.$inferInsert)['preferredLanguage'];
+    if (updateUserDto.telegramChatId !== undefined)
+      updateData.telegramChatId = updateUserDto.telegramChatId || null;
 
     if (Object.keys(updateData).length === 0) {
       return user;

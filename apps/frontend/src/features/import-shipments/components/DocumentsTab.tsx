@@ -202,7 +202,9 @@ export function DocumentsTab({ shipmentId }: { shipmentId: string }) {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h5 className="font-medium text-gray-900 uppercase">
-                    {item.documentType.replace('_', ' ')}
+                    <LocalizedText
+                      text={item.documentType.replace(/_/g, ' ')}
+                    />
                   </h5>
                   {item.isRequired && (
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">

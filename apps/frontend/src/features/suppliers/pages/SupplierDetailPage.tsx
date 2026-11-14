@@ -75,7 +75,7 @@ export function SupplierDetailPage() {
                 : 'info'
           }
         >
-          {row.status.toUpperCase()}
+          {localize(row.status.replace(/_/g, ' '))}
         </Badge>
       ),
     },

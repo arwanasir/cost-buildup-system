@@ -1,4 +1,3 @@
-import { LocalizedText } from '@/components/ui/LocalizedText';
 import React from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { LoginPage } from '@/features/auth';
@@ -37,15 +36,6 @@ import { GoodsReceiptFormPage } from '@/features/goods-receipts/pages/GoodsRecei
 import { GoodsReceiptDetailPage } from '@/features/goods-receipts/pages/GoodsReceiptDetailPage';
 import { VarianceQueuePage } from '@/features/variances/pages/VarianceQueuePage';
 import { ReportsPage } from '@/features/reports/pages/ReportsPage';
-
-const Placeholder = ({ title }: { title: string }) => (
-  <div className="bg-white rounded shadow p-6 max-w-sm">
-    <h2 className="text-2xl font-bold mb-2">{title}</h2>
-    <p className="text-gray-600">
-      <LocalizedText text={'This page is under construction.'} />
-    </p>
-  </div>
-);
 
 export const router = createBrowserRouter([
   {
@@ -106,6 +96,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredPermission="suppliers:read">
             <SuppliersListPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/suppliers/new',
+        element: (
+          <ProtectedRoute requiredPermission="suppliers:write">
+            <SuppliersListPage initialCreateOpen />
           </ProtectedRoute>
         ),
       },
@@ -280,14 +278,31 @@ export const router = createBrowserRouter([
       {
         path: '/variances',
         element: (
-          <ProtectedRoute requiredPermission="variance:approve">
+          <ProtectedRoute requiredPermission="variance:read">
             <VarianceQueuePage />
           </ProtectedRoute>
         ),
       },
       {
         path: '/reports',
-        element: <ReportsPage />,
+        element: (
+          <ProtectedRoute
+            requiredPermission={[
+              'report:landed_cost_shipment:read',
+              'report:landed_cost_item:read',
+              'report:landed_cost_supplier:read',
+              'report:import_cost_summary:read',
+              'report:lc_status:read',
+              'report:customs_duty:read',
+              'report:shipment_status:read',
+              'report:cost_variance:read',
+              'report:supplier_performance:read',
+              'admin:all',
+            ]}
+          >
+            <ReportsPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: '/notifications',

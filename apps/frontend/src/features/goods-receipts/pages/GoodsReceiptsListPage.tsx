@@ -11,12 +11,16 @@ import {
   ErrorState,
 } from '@/components/ui';
 import { useGrns } from '../api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export function GoodsReceiptsListPage() {
   const localize = useUiText();
   const { data: grnsResponse, isLoading, isError, refetch } = useGrns();
-  const [activeTab, setActiveTab] = useState('draft');
+  const [searchParams] = useSearchParams();
+  const shipmentIdFilter = searchParams.get('shipmentId');
+  const [activeTab, setActiveTab] = useState(() =>
+    shipmentIdFilter ? 'all' : 'draft',
+  );
   const navigate = useNavigate();
 
   const grns = Array.isArray(grnsResponse)
@@ -24,6 +28,7 @@ export function GoodsReceiptsListPage() {
     : grnsResponse?.data || [];
 
   const TABS = [
+    { id: 'all', label: 'All' },
     { id: 'draft', label: 'Draft' },
     { id: 'confirmed', label: 'Confirmed' },
     { id: 'posting_failed', label: 'Posting Failed' },
@@ -31,7 +36,11 @@ export function GoodsReceiptsListPage() {
     { id: 'flagged_for_adjustment', label: 'Flagged for Adj' },
   ];
 
-  const filteredGrns = grns.filter((grn: any) => grn.status === activeTab);
+  const filteredGrns = grns.filter(
+    (grn: any) =>
+      (!shipmentIdFilter || grn.shipmentId === shipmentIdFilter) &&
+      (activeTab === 'all' || grn.status === activeTab),
+  );
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -107,9 +116,7 @@ export function GoodsReceiptsListPage() {
           />
         ) : filteredGrns.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            <LocalizedText text={'\n            No '} />
-            {activeTab.replace('_', ' ')}{' '}
-            <LocalizedText text={' GRNs found.\n          '} />
+            {localize(`No ${activeTab.replace(/_/g, ' ')} GRNs found.`)}
           </div>
         ) : (
           <>

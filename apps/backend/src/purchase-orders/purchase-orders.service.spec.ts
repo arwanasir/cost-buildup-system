@@ -71,41 +71,66 @@ describe('Purchase Orders Workflow', () => {
   });
 
   describe('ApprovalRoutingService: Routing by threshold', () => {
-    it('should route to general_manager if USD equivalent >= threshold_2', async () => {
-      // Mock PO in USD
+    it('routes by ETB value using the configured upper threshold', async () => {
       mockDb.query.importPurchaseOrders.findFirst.mockResolvedValueOnce({
         id: 'po-1',
         currency: 'USD',
-        totalValueForeign: '150000', // > 100k
+        totalValueForeign: '150000',
+        totalValueEtb: '18000000',
       });
       // Mock thresholds
       mockDb.query.policySettings.findFirst
-        .mockResolvedValueOnce({ valueNumeric: '50000' }) // t1
-        .mockResolvedValueOnce({ valueNumeric: '100000' }); // t2
+        .mockResolvedValueOnce({ valueNumeric: '1000000' }) // t1 ETB
+        .mockResolvedValueOnce({ valueNumeric: '5000000' }); // t2 ETB
 
       const role =
         await approvalRoutingService.determineRequiredApproverRole('po-1');
       expect(role).toEqual('general_manager');
     });
 
-    it('should route to finance_officer if USD equivalent < threshold_1 with currency conversion', async () => {
+    it('routes foreign-currency POs using their stored ETB value', async () => {
       mockDb.query.importPurchaseOrders.findFirst.mockResolvedValueOnce({
         id: 'po-1',
         currency: 'EUR',
-        totalValueEtb: '1200000',
+        totalValueEtb: '9000',
       });
-      // Mock exchange rate: 1 USD = 120 ETB => 10,000 USD
-      mockDb.query.nbeExchangeRates.findFirst.mockResolvedValueOnce({
-        rate: '120',
-      });
-      // Mock thresholds
       mockDb.query.policySettings.findFirst
-        .mockResolvedValueOnce({ valueNumeric: '50000' }) // t1
-        .mockResolvedValueOnce({ valueNumeric: '100000' }); // t2
+        .mockResolvedValueOnce({ valueNumeric: '10000' }) // t1 ETB
+        .mockResolvedValueOnce({ valueNumeric: '50000' }); // t2 ETB
 
       const role =
         await approvalRoutingService.determineRequiredApproverRole('po-1');
-      expect(role).toEqual('finance_officer'); // 10k < 50k
+      expect(role).toEqual('finance_officer');
+    });
+
+    it('routes an ETB PO at the first threshold to finance_manager', async () => {
+      mockDb.query.importPurchaseOrders.findFirst.mockResolvedValueOnce({
+        id: 'po-1',
+        currency: 'ETB',
+        totalValueEtb: '10000',
+      });
+      mockDb.query.policySettings.findFirst
+        .mockResolvedValueOnce({ valueNumeric: '10000' })
+        .mockResolvedValueOnce({ valueNumeric: '50000' });
+
+      await expect(
+        approvalRoutingService.determineRequiredApproverRole('po-1'),
+      ).resolves.toBe('finance_manager');
+    });
+
+    it('routes a PO exactly at the upper threshold to finance_manager', async () => {
+      mockDb.query.importPurchaseOrders.findFirst.mockResolvedValueOnce({
+        id: 'po-1',
+        currency: 'ETB',
+        totalValueEtb: '50000',
+      });
+      mockDb.query.policySettings.findFirst
+        .mockResolvedValueOnce({ valueNumeric: '10000' })
+        .mockResolvedValueOnce({ valueNumeric: '50000' });
+
+      await expect(
+        approvalRoutingService.determineRequiredApproverRole('po-1'),
+      ).resolves.toBe('finance_manager');
     });
   });
 
@@ -119,7 +144,7 @@ describe('Purchase Orders Workflow', () => {
       mockTx.query.users.findMany.mockResolvedValueOnce([{ id: 'approver-1' }]);
       jest
         .spyOn(approvalRoutingService, 'determineRequiredApproverRole')
-        .mockResolvedValueOnce('finance_manager' as any);
+        .mockResolvedValueOnce('finance_manager');
 
       await poService.submit('po-1', 'creator-1');
 

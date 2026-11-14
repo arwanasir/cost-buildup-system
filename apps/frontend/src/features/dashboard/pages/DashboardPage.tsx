@@ -26,19 +26,35 @@ function DashboardCard({
   }
 
   const className = isError
-    ? 'block bg-white p-6 rounded-lg shadow-sm border border-red-200'
-    : `block bg-white p-6 rounded-lg shadow-sm border border-gray-100 ${to ? 'transition hover:border-blue-300 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600' : ''}`;
+    ? 'group block min-h-36 rounded-2xl border border-rose-200 bg-white p-5 shadow-sm transition'
+    : `group block min-h-36 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_2px_10px_rgba(15,23,42,.035)] transition duration-150 ${to ? 'hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600' : ''}`;
   const content = isError ? (
     <>
+      <div className="mb-5 h-1 w-9 rounded-full bg-rose-400" />
       <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-      <p className="mt-2 text-sm text-red-600">
+      <p className="mt-3 text-sm text-red-600">
         <LocalizedText text={'Error loading data'} />
       </p>
     </>
   ) : (
     <div>
-      <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-      <p className={`mt-2 text-3xl font-semibold ${color}`}>{value}</p>
+      <div className="mb-5 flex items-center justify-between">
+        <span className="h-1 w-9 rounded-full bg-sky-500" />
+        {to && (
+          <span
+            aria-hidden="true"
+            className="text-sm text-slate-300 transition group-hover:translate-x-1 group-hover:text-sky-700"
+          >
+            ↗
+          </span>
+        )}
+      </div>
+      <h3 className="text-sm font-medium leading-5 text-gray-500">{title}</h3>
+      <p
+        className={`mt-2 text-[32px] font-bold leading-none tracking-tight ${color}`}
+      >
+        {value}
+      </p>
     </div>
   );
 
@@ -55,6 +71,7 @@ function DashboardCard({
 
 export function DashboardPage() {
   const localize = useUiText();
+  const user = useAuthStore((state) => state.user);
   const hasPermission = useAuthStore((state) => state.hasPermission);
   const canReadPurchaseOrders = hasPermission('po:read');
   const canReadLettersOfCredit = hasPermission('lc:read');
@@ -120,14 +137,59 @@ export function DashboardPage() {
     queries;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-          <LocalizedText text={'\n          Executive Dashboard\n        '} />
-        </h2>
-      </div>
+    <div className="space-y-7">
+      <section className="workflow-hero relative overflow-hidden rounded-3xl bg-[#14243a] px-6 py-7 text-white shadow-xl shadow-slate-900/10 sm:px-8 sm:py-8">
+        <div className="pointer-events-none absolute -right-12 -top-24 h-72 w-72 rounded-full border-[38px] border-sky-400/10" />
+        <div className="pointer-events-none absolute -bottom-28 right-32 h-56 w-56 rounded-full bg-cyan-400/10 blur-2xl" />
+        <div className="relative max-w-3xl">
+          <p className="text-[10px] font-bold uppercase tracking-[.2em] text-sky-300">
+            {localize('Import operations')}
+          </p>
+          <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+            <LocalizedText text={'Workflow Overview'} />
+          </h1>
+          <p className="mt-2 text-sm text-slate-300 sm:text-base">
+            {localize('Welcome')},{' '}
+            {user?.fullName?.trim() || user?.email || localize('User')}.{' '}
+            {localize('Monitor imports from purchase order to goods receipt.')}
+          </p>
+          <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-200 sm:gap-3">
+            {[
+              'Purchase order',
+              'Letter of credit',
+              'Shipment',
+              'Customs',
+              'Landed cost',
+              'Goods receipt',
+            ].map((step, index) => (
+              <span key={step} className="inline-flex items-center gap-2">
+                <span className="grid h-6 w-6 place-items-center rounded-full border border-sky-300/30 bg-sky-300/10 text-[10px] text-sky-200">
+                  {index + 1}
+                </span>
+                <span className="hidden sm:inline">{localize(step)}</span>
+                {index < 5 && (
+                  <span className="hidden text-slate-500 sm:inline">›</span>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">
+            {localize('Operations at a glance')}
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {localize('Current workload and items that may need attention.')}
+          </p>
+        </div>
+        <span className="hidden rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 sm:inline-flex">
+          ● {localize('Live overview')}
+        </span>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <DashboardCard
           title={localize('POs Pending Approval')}
           value={summary?.pendingPurchaseOrders ?? 0}

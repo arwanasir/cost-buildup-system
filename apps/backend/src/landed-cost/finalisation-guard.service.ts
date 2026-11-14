@@ -64,12 +64,15 @@ export class FinalisationGuardService {
       .where(
         and(
           eq(schema.costVariances.shipmentId, shipmentId),
-          eq(schema.costVariances.status, 'pending_approval'),
+          inArray(schema.costVariances.status, [
+            'pending_approval',
+            'rejected',
+          ]),
         ),
       );
     if (pendingVariances.length > 0) {
       blockers.push(
-        `BR07: Found ${pendingVariances.length} pending cost variance(s) requiring approval.`,
+        `BR07: Found ${pendingVariances.length} unresolved cost variance(s) (pending approval or rejected) requiring Finance Manager approval before finalisation.`,
       );
     }
 
@@ -103,21 +106,23 @@ export class FinalisationGuardService {
       ? new Decimal(String(policy.valueNumeric || 0))
       : new Decimal(0);
 
-    const items = await this.db
+    const commercialInvoices = await this.db
       .select()
-      .from(schema.shipmentItems)
-      .where(eq(schema.shipmentItems.shipmentId, shipmentId));
+      .from(schema.commercialInvoices)
+      .where(eq(schema.commercialInvoices.shipmentId, shipmentId));
 
-    const unacknowledgedItems = items.filter((item: any) => {
-      if (item.varianceAcknowledgedBy) return false;
-      const pct = new Decimal(String(item.priceVariancePct || 0)).abs();
+    const unacknowledgedInvoices = commercialInvoices.filter((invoice: any) => {
+      if (invoice.varianceAcknowledgedBy) return false;
+      const pct = new Decimal(String(invoice.priceVariancePct || 0)).abs();
       return pct.greaterThan(threshold);
     });
 
-    if (unacknowledgedItems.length > 0) {
-      const itemIds = unacknowledgedItems.map((i: any) => i.id).join(', ');
+    if (unacknowledgedInvoices.length > 0) {
+      const invoiceIds = unacknowledgedInvoices
+        .map((ci: any) => ci.id)
+        .join(', ');
       blockers.push(
-        `BR11: Found ${unacknowledgedItems.length} shipment item(s) with unacknowledged price variances exceeding the ${threshold.toString()}% threshold: [${itemIds}].`,
+        `BR11: Found ${unacknowledgedInvoices.length} commercial invoice(s) with unacknowledged price variances exceeding the ${threshold.toString()}% threshold: [${invoiceIds}].`,
       );
     }
 

@@ -16,15 +16,11 @@ import {
   PermissionGate,
 } from '@/components/ui';
 
-const CURRENCIES = [
-  { label: 'USD', value: 'USD' },
-  { label: 'EUR', value: 'EUR' },
-  { label: 'GBP', value: 'GBP' },
-  { label: 'CNY', value: 'CNY' },
-  { label: 'AED', value: 'AED' },
-];
-
-export function SuppliersListPage() {
+export function SuppliersListPage({
+  initialCreateOpen = false,
+}: {
+  initialCreateOpen?: boolean;
+}) {
   const localize = useUiText();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -33,7 +29,7 @@ export function SuppliersListPage() {
   >('true');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(initialCreateOpen);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [deactivateSupplier, setDeactivateSupplier] = useState<Supplier | null>(
     null,

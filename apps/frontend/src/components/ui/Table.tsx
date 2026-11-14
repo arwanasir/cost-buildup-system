@@ -26,10 +26,10 @@ export function Table<T>({
 }: TableProps<T>) {
   if (children) {
     return (
-      <div className="flex flex-col">
-        <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-            <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg max-h-[600px] overflow-y-auto">
+      <div className="flex min-w-0 flex-col">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+          <div className="inline-block min-w-full align-middle">
+            <div className="max-h-[600px] overflow-y-auto">
               <table className="min-w-full divide-y divide-gray-200 relative">
                 {children}
               </table>
@@ -44,10 +44,10 @@ export function Table<T>({
   const safeData = data ?? [];
 
   return (
-    <div className="flex flex-col">
-      <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-          <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg max-h-[600px] overflow-y-auto">
+    <div className="flex min-w-0 flex-col">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+        <div className="inline-block min-w-full align-middle">
+          <div className="max-h-[600px] overflow-y-auto">
             <table className="min-w-full divide-y divide-gray-200 relative">
               <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
                 <tr>
@@ -55,7 +55,7 @@ export function Table<T>({
                     <th
                       key={i}
                       scope="col"
-                      className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${col.sortable ? 'cursor-pointer hover:bg-gray-200' : ''}`}
+                      className={`px-5 py-3.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-[.09em] ${col.sortable ? 'cursor-pointer hover:bg-gray-200' : ''}`}
                       onClick={() =>
                         col.sortable &&
                         typeof col.accessor !== 'function' &&
@@ -64,7 +64,7 @@ export function Table<T>({
                       }
                     >
                       <div className="flex items-center gap-1">
-                        {col.header}
+                        <LocalizedText text={col.header} />
                         {col.sortable && sortKey === col.accessor && (
                           <span>
                             <LocalizedText
@@ -83,7 +83,7 @@ export function Table<T>({
                     {safeColumns.map((col, j) => (
                       <td
                         key={j}
-                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                        className="px-5 py-4 whitespace-nowrap text-sm text-gray-900"
                       >
                         {typeof col.accessor === 'function'
                           ? col.accessor(row)

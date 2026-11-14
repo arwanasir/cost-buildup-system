@@ -52,20 +52,22 @@ export class GoodsReceiptsService {
         ? new Decimal(String(policy.valueNumeric || 0))
         : new Decimal(0);
 
-      const shipmentItems = await tx
+      const commercialInvoices = await tx
         .select()
-        .from(schema.shipmentItems)
-        .where(eq(schema.shipmentItems.shipmentId, dto.shipmentId));
+        .from(schema.commercialInvoices)
+        .where(eq(schema.commercialInvoices.shipmentId, dto.shipmentId));
 
-      const unacknowledgedItems = shipmentItems.filter((item: any) => {
-        if (item.varianceAcknowledgedBy) return false;
-        const pct = new Decimal(String(item.priceVariancePct || 0)).abs();
-        return pct.greaterThan(threshold);
-      });
+      const unacknowledgedInvoices = commercialInvoices.filter(
+        (invoice: any) => {
+          if (invoice.varianceAcknowledgedBy) return false;
+          const pct = new Decimal(String(invoice.priceVariancePct || 0)).abs();
+          return pct.greaterThan(threshold);
+        },
+      );
 
-      if (unacknowledgedItems.length > 0) {
+      if (unacknowledgedInvoices.length > 0) {
         throw new BadRequestException(
-          `BR11: Cannot receive goods. Shipment has ${unacknowledgedItems.length} unacknowledged price variance(s) exceeding ${threshold.toString()}%.`,
+          `BR11: Cannot receive goods. Shipment has ${unacknowledgedInvoices.length} unacknowledged price variance(s) exceeding ${threshold.toString()}%.`,
         );
       }
 
@@ -414,8 +416,23 @@ export class GoodsReceiptsService {
     return result;
   }
 
-  async getGrns() {
-    return this.db.select().from(schema.goodsReceipts);
+  async getGrns(status?: string) {
+    const validStatuses: readonly string[] = schema.grnStatusEnum.enumValues;
+    if (status && !validStatuses.includes(status)) {
+      throw new BadRequestException(
+        `Invalid GRN status '${status}'. Valid statuses: ${validStatuses.join(', ')}`,
+      );
+    }
+
+    const query = this.db.select().from(schema.goodsReceipts);
+    return status
+      ? query.where(
+          eq(
+            schema.goodsReceipts.status,
+            status as (typeof schema.grnStatusEnum.enumValues)[number],
+          ),
+        )
+      : query;
   }
 
   async getGrnById(id: string) {

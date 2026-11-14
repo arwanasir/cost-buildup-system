@@ -3,6 +3,9 @@ import request from './e2e-request';
 import { createE2eApp } from './create-e2e-app';
 import { execSync } from 'child_process';
 import * as path from 'path';
+import { eq } from 'drizzle-orm';
+import { DRIZZLE, DrizzleDB } from '../src/db/db.token';
+import * as schema from '../src/db/schema';
 
 describe('Performance Benchmarks (e2e) (TC-PERF01)', () => {
   let app: INestApplication;
@@ -28,15 +31,11 @@ describe('Performance Benchmarks (e2e) (TC-PERF01)', () => {
     console.log(
       '[perf-e2e] Running seed script for 10,000 rows (this may take a minute)...',
     );
-    try {
-      execSync('npx ts-node src/db/seed/seed.ts perf', {
-        env: { ...process.env },
-        cwd: rootDir,
-        stdio: 'ignore',
-      });
-    } catch (e) {
-      console.error('Failed to seed perf data', e);
-    }
+    execSync('npx ts-node src/db/seed/seed.ts perf', {
+      env: { ...process.env },
+      cwd: rootDir,
+      stdio: 'ignore',
+    });
 
     app = await createE2eApp();
 
@@ -145,10 +144,10 @@ describe('Performance Benchmarks (e2e) (TC-PERF01)', () => {
 
     // Add multiple cost entries with different allocation strategies to strain the engine
     const strategies = ['by_weight', 'by_value', 'by_volume', 'by_quantity'];
-    const codes = ['freight', 'insurance', 'duty', 'bank_charge'];
+    const codes = ['FREIGHT', 'INSURANCE', 'PORT_HANDLING', 'BANK_CHARGES'];
 
     for (let i = 0; i < 4; i++) {
-      await request(app.getHttpServer())
+      const costResponse = await request(app.getHttpServer())
         .post(`/import-shipments/${entities.shipmentId}/cost-entries`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
@@ -163,6 +162,7 @@ describe('Performance Benchmarks (e2e) (TC-PERF01)', () => {
           allocationMethod: strategies[i],
           isEstimated: true,
         });
+      expect(costResponse.status).toBe(HttpStatus.CREATED);
     }
   });
 
@@ -228,6 +228,80 @@ describe('Performance Benchmarks (e2e) (TC-PERF01)', () => {
         `[perf-e2e] Shipment Listing (10k+ db rows) took: ${durationMs}ms`,
       );
       expect(durationMs).toBeLessThan(2000);
+    });
+
+    it('should load a 10,000-entry shipment cost register in under 2 seconds', async () => {
+      const db = app.get<DrizzleDB>(DRIZZLE);
+      const admin = await db.query.users.findFirst({
+        where: eq(schema.users.email, 'admin@company.com'),
+      });
+      const freightCategoryId = entities.categories.FREIGHT;
+      if (!admin || !freightCategoryId) {
+        throw new Error('Performance test user or freight category was not seeded');
+      }
+
+      const entryCount = 10_000;
+      const batchSize = 1_000;
+      for (let offset = 0; offset < entryCount; offset += batchSize) {
+        await db.insert(schema.importCostEntries).values(
+          Array.from({ length: batchSize }, (_, index) => ({
+            shipmentId: entities.shipmentId,
+            costCategoryId: freightCategoryId,
+            providerName: 'Performance Fixture',
+            invoiceNumber: `PERF-COST-${offset + index}`,
+            invoiceDate: '2026-01-02',
+            amountForeign: '1.0000',
+            currency: 'ETB',
+            fxRate: '1.000000',
+            amountEtb: '1.0000',
+            allocationMethod: 'by_value' as const,
+            isEstimated: true,
+            createdBy: admin.id,
+          })),
+        );
+      }
+
+      const startTime = Date.now();
+      const response = await request(app.getHttpServer())
+        .get(`/import-shipments/${entities.shipmentId}/cost-entries`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      const durationMs = Date.now() - startTime;
+
+      expect(response.status).toBe(HttpStatus.OK);
+      expect(response.body).toHaveLength(entryCount + 4);
+      console.log(`[perf-e2e] Cost register (10k entries) took: ${durationMs}ms`);
+      expect(durationMs).toBeLessThan(2000);
+    });
+
+    it('should generate every 12-month report within the 10-second SRS limit', async () => {
+      const reportKeys = [
+        'landed-cost-by-shipment',
+        'landed-cost-by-item',
+        'landed-cost-by-supplier',
+        'import-cost-summary',
+        'lc-status',
+        'customs-duty',
+        'shipment-status',
+        'cost-variance',
+        'supplier-performance',
+      ];
+
+      for (const reportKey of reportKeys) {
+        const startedAt = Date.now();
+        const response = await request(app.getHttpServer())
+          .get(`/reports/${reportKey}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .query({
+            date_from: '2025-11-12',
+            date_to: '2026-11-12',
+            item_id: entities.itemId,
+          });
+        const durationMs = Date.now() - startedAt;
+
+        expect(response.status).toBe(HttpStatus.OK);
+        console.log(`[perf-e2e] Report ${reportKey} took: ${durationMs}ms`);
+        expect(durationMs).toBeLessThan(10_000);
+      }
     });
   });
 });

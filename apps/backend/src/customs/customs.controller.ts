@@ -46,7 +46,10 @@ export class CustomsController {
   @Post(':id/assess')
   @RequiredPermission(Permission.CUSTOMS_WRITE)
   async assessDeclaration(@Param('id') declarationId: string, @Req() req: any) {
-    return this.customsService.assessDeclaration(declarationId, req.user.userId);
+    return this.customsService.assessDeclaration(
+      declarationId,
+      req.user.userId,
+    );
   }
 
   @Post(':id/payments')
@@ -102,7 +105,12 @@ export class CustomsController {
     @Body() dto: UpdateDeclarationItemDto,
     @Req() req: any,
   ) {
-    return this.customsService.overrideItemRate(id, itemId, dto, req.user.userId);
+    return this.customsService.overrideItemRate(
+      id,
+      itemId,
+      dto,
+      req.user.userId,
+    );
   }
 
   @Get(':id/payments')

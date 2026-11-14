@@ -171,7 +171,7 @@ export function LetterOfCreditDetailPage() {
           <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight flex items-center gap-4">
             {lc.lcNumber || 'DRAFT LC'}
             <Badge variant="info">
-              {lc.status.replace('_', ' ').toUpperCase()}
+              {localize(lc.status.replaceAll('_', ' '))}
             </Badge>
           </h2>
           <p className="mt-1 text-sm text-gray-500">
@@ -181,8 +181,8 @@ export function LetterOfCreditDetailPage() {
             <LocalizedText text={' '} />
             <LocalizedText text={'\n            | Type:'} />
             <LocalizedText text={' '} />
-            <span className="font-medium text-gray-900 uppercase">
-              {lc.lcType}
+            <span className="font-medium text-gray-900">
+              {localize(lc.lcType.replaceAll('_', ' '))}
             </span>
           </p>
         </div>
@@ -225,7 +225,7 @@ export function LetterOfCreditDetailPage() {
                     isLoading={updateStatus.isPending}
                   >
                     <LocalizedText text={'\n                    Advance to '} />
-                    {next.replace('_', ' ').toUpperCase()}
+                    {localize(next.replaceAll('_', ' '))}
                   </Button>
                 </PermissionGate>
               ),
@@ -285,7 +285,7 @@ export function LetterOfCreditDetailPage() {
                     )}
                   </div>
                   <span className="absolute -bottom-6 -ml-4 text-xs font-medium text-gray-500 whitespace-nowrap">
-                    {step.replace('_', ' ').toUpperCase()}
+                    {localize(step.replaceAll('_', ' '))}
                   </span>
                 </li>
               );

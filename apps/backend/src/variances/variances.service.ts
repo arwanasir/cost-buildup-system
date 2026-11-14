@@ -33,7 +33,10 @@ export class VariancesService {
         .select()
         .from(schema.commercialInvoices)
         .where(eq(schema.commercialInvoices.shipmentId, shipmentId));
-      if (!ci) throw new NotFoundException('Commercial Invoice not found');
+      // Cost entries can be recorded before the supplier's commercial invoice
+      // is uploaded. There is no price baseline to compare yet; the invoice
+      // upload emits cost.changed and will trigger this evaluation again.
+      if (!ci) return [];
 
       // 1.5 Fetch Threshold Setting
       const [thresholdSetting] = await tx
@@ -73,6 +76,20 @@ export class VariancesService {
           actualFreight = actualFreight.plus(amount);
         } else if (code === 'DUTY' || code === 'CUSTOMS_DUTY') {
           actualDuty = actualDuty.plus(amount);
+        } else if (
+          [
+            'VAT',
+            'IMPORT_VAT',
+            'EXCISE',
+            'EXCISE_TAX',
+            'SURTAX',
+            'WITHHOLDING',
+          ].includes(code)
+        ) {
+          // Assessed customs taxes have no matching PO estimate in the SRS
+          // variance model. Comparing them with insurance/other estimates
+          // creates a false, often very large, "other" variance.
+          continue;
         } else {
           actualOther = actualOther.plus(amount);
         }

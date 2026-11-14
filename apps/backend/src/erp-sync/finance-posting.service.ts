@@ -1,5 +1,6 @@
 import { NotificationsService } from '../notifications/notifications.service';
 import { FinanceClient } from './clients/finance.client';
+import { InventoryPostingService } from './inventory-posting.service';
 import {
   ForbiddenException,
   Injectable,
@@ -21,6 +22,7 @@ export class FinancePostingService {
     @Inject(DRIZZLE) private readonly db: any,
     private readonly notificationsService: NotificationsService,
     private readonly financeClient: FinanceClient,
+    private readonly inventoryPostingService: InventoryPostingService,
   ) {}
 
   async postGrnJournal(grnId: string, existingLogId?: string) {
@@ -209,7 +211,10 @@ export class FinancePostingService {
     return journal || null;
   }
 
-  async approveGrnAdjustment(grnId: string, actor: { id: string; role: string }) {
+  async approveGrnAdjustment(
+    grnId: string,
+    actor: { id: string; role: string },
+  ) {
     if (actor.role !== 'finance_manager' && actor.role !== 'general_manager') {
       throw new ForbiddenException(
         'Only Finance Manager or General Manager can approve GRN cost adjustments.',
@@ -244,6 +249,11 @@ export class FinancePostingService {
       grnId,
       journal.lines,
     );
+    const inventoryAdjustment =
+      await this.inventoryPostingService.postFinalCostAdjustment(
+        grnId,
+        journal.id,
+      );
 
     for (const grnItem of grnItems) {
       const finalResult: any = landedCostByShipmentItem.get(
@@ -275,7 +285,12 @@ export class FinancePostingService {
       })
       .where(eq(schema.goodsReceipts.id, grnId));
 
-    return { status: 'approved_and_posted', journalId: journal.id, response };
+    return {
+      status: 'approved_and_posted',
+      journalId: journal.id,
+      response,
+      inventoryAdjustment,
+    };
   }
 
   @OnEvent('landedCost.finalised', { async: true })
@@ -341,7 +356,19 @@ export class FinancePostingService {
         }
 
         if (totalAdjustment.isZero()) {
-          // No journal approval is needed when final costs equal the estimate.
+          // No journal adjustment is needed when final costs equal the
+          // estimate. If the original GRN posting failed, send its finalized
+          // values as the first inventory receipt instead of leaving it local.
+          const inventoryAlreadyPosted = grnItems.every((item: any) => {
+            if (new Decimal(String(item.acceptedQuantity)).isZero()) {
+              return true;
+            }
+            const result: any = lcResultsMap.get(item.shipmentItemId);
+            return Boolean(result?.postedToInventory);
+          });
+          if (!inventoryAlreadyPosted) {
+            await this.inventoryPostingService.post(grn.id, undefined, true);
+          }
           await this.db
             .update(schema.goodsReceipts)
             .set({ status: 'posted', usesEstimatedCost: false })

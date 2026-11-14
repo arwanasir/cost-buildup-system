@@ -109,7 +109,7 @@ export function AuditLogPage() {
                 : 'danger'
           }
         >
-          {row.action.toUpperCase()}
+          <LocalizedText text={row.action.toUpperCase()} />
         </Badge>
       ),
     },
@@ -229,7 +229,7 @@ export function AuditLogPage() {
         <Modal
           isOpen={true}
           onClose={() => setSelectedLog(null)}
-          title={`${selectedLog.action.toUpperCase()} - ${selectedLog.entityType}`}
+          title={`${localize(selectedLog.action.replace(/_/g, ' '))} - ${localize(selectedLog.entityType.replace(/_/g, ' '))}`}
         >
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-4">
