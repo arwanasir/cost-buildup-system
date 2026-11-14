@@ -50,7 +50,7 @@ export function CustomsListPage() {
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                {tab.label}
+                {localize(tab.label)}
               </button>
             ))}
           </div>
@@ -178,7 +178,7 @@ export function CustomsListPage() {
                                   : 'secondary'
                           }
                         >
-                          {decl.status.toUpperCase()}
+                          {localize(decl.status.replaceAll('_', ' '))}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

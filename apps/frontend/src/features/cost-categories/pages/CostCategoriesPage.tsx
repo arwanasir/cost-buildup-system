@@ -23,6 +23,7 @@ import {
   Skeleton,
   ErrorState,
   FormError,
+  PermissionGate,
 } from '@/components/ui';
 
 const ALLOCATION_METHODS = [
@@ -131,34 +132,36 @@ export function CostCategoriesPage() {
     {
       header: 'Actions',
       accessor: (row: CostCategory) => (
-        <div className="flex gap-2">
-          <button
-            onClick={() => openEdit(row)}
-            className="text-blue-600 hover:text-blue-900 font-medium text-sm"
-          >
-            <LocalizedText text={'\n            Edit\n          '} />
-          </button>
-          {row.isActive ? (
+        <PermissionGate permission="admin:all">
+          <div className="flex gap-2">
             <button
-              onClick={() => setDeactivateCategory(row)}
-              className="text-red-600 hover:text-red-900 font-medium text-sm"
+              onClick={() => openEdit(row)}
+              className="text-blue-600 hover:text-blue-900 font-medium text-sm"
             >
-              <LocalizedText
-                text={'\n              Deactivate\n            '}
-              />
+              <LocalizedText text={'\n            Edit\n          '} />
             </button>
-          ) : (
-            <button
-              onClick={() =>
-                toggleActiveMutation.mutate({ id: row.id, isActive: true })
-              }
-              className="text-green-600 hover:text-green-900 font-medium text-sm"
-              disabled={toggleActiveMutation.isPending}
-            >
-              <LocalizedText text={'\n              Activate\n            '} />
-            </button>
-          )}
-        </div>
+            {row.isActive ? (
+              <button
+                onClick={() => setDeactivateCategory(row)}
+                className="text-red-600 hover:text-red-900 font-medium text-sm"
+              >
+                <LocalizedText
+                  text={'\n              Deactivate\n            '}
+                />
+              </button>
+            ) : (
+              <button
+                onClick={() =>
+                  toggleActiveMutation.mutate({ id: row.id, isActive: true })
+                }
+                className="text-green-600 hover:text-green-900 font-medium text-sm"
+                disabled={toggleActiveMutation.isPending}
+              >
+                <LocalizedText text={'\n              Activate\n            '} />
+              </button>
+            )}
+          </div>
+        </PermissionGate>
       ),
     },
   ];
@@ -188,9 +191,11 @@ export function CostCategoriesPage() {
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
-          <Button onClick={openCreate}>
-            <LocalizedText text={'Add Category'} />
-          </Button>
+          <PermissionGate permission="admin:all">
+            <Button onClick={openCreate}>
+              <LocalizedText text={'Add Category'} />
+            </Button>
+          </PermissionGate>
         </div>
       </div>
 

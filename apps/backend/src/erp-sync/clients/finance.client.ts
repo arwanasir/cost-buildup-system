@@ -15,8 +15,9 @@ export class FinanceClient {
     const erpBaseUrl =
       this.configService.get<string>('ERP_BASE_URL') || 'http://localhost:3001';
     const configuredUrl = this.configService.get<string>('ERP_FINANCE_URL');
-    const baseUsesContainerNetwork =
-      !/localhost|127\.0\.0\.1|\[::1\]/i.test(erpBaseUrl);
+    const baseUsesContainerNetwork = !/localhost|127\.0\.0\.1|\[::1\]/i.test(
+      erpBaseUrl,
+    );
     const configuredUrlUsesLocalhost =
       configuredUrl && /localhost|127\.0\.0\.1|\[::1\]/i.test(configuredUrl);
     this.baseUrl =

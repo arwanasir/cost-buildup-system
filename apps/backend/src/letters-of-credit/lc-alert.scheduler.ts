@@ -5,14 +5,23 @@ import { DRIZZLE, DrizzleDB } from '@/db/db.token';
 import * as schema from '@/db/schema';
 import { eq, or, and, sql } from 'drizzle-orm';
 
+const BUSINESS_TIME_ZONE = 'Africa/Addis_Ababa';
+
 function formatYMD(date: Date): string {
-  return date.toISOString().split('T')[0];
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: BUSINESS_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((value) => value.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
 function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
+  const [year, month, day] = formatYMD(date).split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days, 12));
 }
 
 @Injectable()
@@ -24,7 +33,7 @@ export class LcAlertScheduler {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  @Cron('0 8 * * *')
+  @Cron('0 8 * * *', { timeZone: BUSINESS_TIME_ZONE })
   async checkLcAlerts() {
     this.logger.log('Starting LC Alert Scheduler checks...');
 

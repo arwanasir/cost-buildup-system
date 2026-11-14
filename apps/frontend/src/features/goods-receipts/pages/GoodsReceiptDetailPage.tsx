@@ -10,6 +10,7 @@ import {
   Table,
   Tabs,
   ErrorState,
+  Toast,
 } from '@/components/ui';
 import { useState } from 'react';
 import { BackButton } from '@/components/ui/BackButton';
@@ -30,6 +31,7 @@ export function GoodsReceiptDetailPage() {
   const localize = useUiText();
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('items');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const hasCostFinalizePermission = useAuthStore((state) =>
     state.hasPermission('cost:finalize'),
@@ -73,7 +75,8 @@ export function GoodsReceiptDetailPage() {
     try {
       await confirmMutation.mutateAsync(grn.id);
     } catch (e: any) {
-      alert(e.response?.data?.message || 'Failed to confirm GRN');
+      const message = e.response?.data?.message || 'Failed to confirm GRN';
+      setErrorMessage(Array.isArray(message) ? message.join(', ') : message);
     }
   };
 
@@ -81,7 +84,8 @@ export function GoodsReceiptDetailPage() {
     try {
       await postMutation.mutateAsync(grn.id);
     } catch (e: any) {
-      alert(e.response?.data?.message || 'Failed to post GRN to ERP');
+      const message = e.response?.data?.message || 'Failed to post GRN to ERP';
+      setErrorMessage(Array.isArray(message) ? message.join(', ') : message);
     }
   };
 
@@ -89,7 +93,8 @@ export function GoodsReceiptDetailPage() {
     try {
       await retryMutation.mutateAsync(grn.id);
     } catch (e: any) {
-      alert(e.response?.data?.message || 'Failed to retry posting');
+      const message = e.response?.data?.message || 'Failed to retry posting';
+      setErrorMessage(Array.isArray(message) ? message.join(', ') : message);
     }
   };
 
@@ -97,10 +102,10 @@ export function GoodsReceiptDetailPage() {
     try {
       await approveAdjustmentMutation.mutateAsync(grn.id);
     } catch (e: any) {
-      alert(
+      const message =
         e.response?.data?.message ||
-          'Failed to approve and post the final cost adjustment',
-      );
+        'Failed to approve and post the final cost adjustment';
+      setErrorMessage(Array.isArray(message) ? message.join(', ') : message);
     }
   };
 
@@ -143,6 +148,13 @@ export function GoodsReceiptDetailPage() {
 
   return (
     <div className="space-y-6">
+      {errorMessage && (
+        <Toast
+          message={errorMessage}
+          type="error"
+          onClose={() => setErrorMessage(null)}
+        />
+      )}
       <BackButton to="/goods-receipts" label="Back to goods receipts" />
       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
         <PageHeader

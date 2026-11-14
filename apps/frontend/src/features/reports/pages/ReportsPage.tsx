@@ -219,7 +219,7 @@ export function ReportsPage() {
         </Card>
 
         {/* Report Content */}
-        <div className="flex-1 space-y-4 w-full">
+        <div className="min-w-0 flex-1 space-y-4 w-full">
           {/* Filter Bar */}
           <ReportFilterBar
             filters={filters}

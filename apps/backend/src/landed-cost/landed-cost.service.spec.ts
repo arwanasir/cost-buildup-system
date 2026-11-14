@@ -94,33 +94,35 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
         categoryCode: 'FOB',
         source: 'commercial_invoice',
       })),
-      ...['FREIGHT', 'INSURANCE', 'PORT', 'BANK'].flatMap((category) => [
-        {
-          shipmentItemId: 'item-1',
-          allocatedEtb: '100.0000',
-          categoryCode: category,
-        },
-        {
-          shipmentItemId: 'item-2',
-          allocatedEtb: '200.0000',
-          categoryCode: category,
-        },
-        {
-          shipmentItemId: 'item-3',
-          allocatedEtb: '300.0000',
-          categoryCode: category,
-        },
-        {
-          shipmentItemId: 'item-4',
-          allocatedEtb: '400.0000',
-          categoryCode: category,
-        },
-        {
-          shipmentItemId: 'item-5',
-          allocatedEtb: '500.0000',
-          categoryCode: category,
-        },
-      ]),
+      ...['FREIGHT', 'INSURANCE', 'PORT_HANDLING', 'BANK_CHARGES'].flatMap(
+        (category) => [
+          {
+            shipmentItemId: 'item-1',
+            allocatedEtb: '100.0000',
+            categoryCode: category,
+          },
+          {
+            shipmentItemId: 'item-2',
+            allocatedEtb: '200.0000',
+            categoryCode: category,
+          },
+          {
+            shipmentItemId: 'item-3',
+            allocatedEtb: '300.0000',
+            categoryCode: category,
+          },
+          {
+            shipmentItemId: 'item-4',
+            allocatedEtb: '400.0000',
+            categoryCode: category,
+          },
+          {
+            shipmentItemId: 'item-5',
+            allocatedEtb: '500.0000',
+            categoryCode: category,
+          },
+        ],
+      ),
       ...['CLEARING', 'OTHER'].flatMap((category) => [
         {
           shipmentItemId: 'item-1',
@@ -158,6 +160,11 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
         allocatedEtb: '750.0000',
         categoryCode: 'VAT',
       },
+      {
+        shipmentItemId: 'item-2',
+        allocatedEtb: '100.0000',
+        categoryCode: 'EXCISE',
+      },
     ];
 
     // 3. Mock Active Cost Entries for the 0.0001 Reconciliation Check
@@ -171,6 +178,7 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
       { amountEtb: '500.0000' },
       { amountEtb: '750.0000' },
       { amountEtb: '750.0000' },
+      { amountEtb: '100.0000' },
       { amountEtb: '15000.0000', source: 'commercial_invoice' },
     ];
 
@@ -220,7 +228,8 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
     // Assert overall structural integrity
     expect(results).toHaveLength(5);
     expect(txMock.insert).toHaveBeenCalled();
-    expect(txMock.values).toHaveBeenCalledTimes(5);
+    expect(txMock.values).toHaveBeenCalledTimes(1);
+    expect(txMock.values.mock.calls[0][0]).toHaveLength(5);
 
     // Assert Item 1: Complete 4.1.4 Mapping with Item-Specific Duty
     const item1 = results.find((r: any) => r.shipmentItemId === 'item-1');
@@ -243,18 +252,22 @@ describe('LandedCostService (TC-COST01, AC05)', () => {
     expect(item1.postedAt).toBe('2026-11-01T10:00:00.000Z');
     expect(item1.inventoryTransactionId).toBe('INV-TXN-001');
     expect(txMock.delete).not.toHaveBeenCalled();
-    expect(txMock.onConflictDoUpdate).toHaveBeenCalledTimes(5);
+    expect(txMock.onConflictDoUpdate).toHaveBeenCalledTimes(1);
+    expect(txMock.onConflictDoUpdate.mock.calls[0][0].set).not.toHaveProperty(
+      'postedToInventory',
+    );
 
     // Assert Item 2: Mixed Mapping with Item-Specific VAT
     const item2 = results.find((r: any) => r.shipmentItemId === 'item-2');
     expect(item2.customsDutyEtb).toBe('0.0000');
     expect(item2.importVatEtb).toBe('750.0000'); // Explicit item-specific VAT
     expect(item2.freightAllocatedEtb).toBe('200.0000');
-    expect(item2.otherChargesAllocatedEtb).toBe('100.0000');
-    // Total = 2000 + 4*200 + 2*100 + 750 = 3750
-    expect(item2.totalLandedCostEtb).toBe('3750.0000');
-    // Per unit = 3750 / 20 = 187.500000
-    expect(item2.perUnitLandedCostEtb).toBe('187.5000');
+    expect(item2.otherChargesAllocatedEtb).toBe('200.0000');
+    // Excise stays in other charges; it must not inflate the VAT line.
+    // Total = 2000 + 4*200 + 2*100 + 750 VAT + 100 excise = 3850
+    expect(item2.totalLandedCostEtb).toBe('3850.0000');
+    // Per unit = 3850 / 20 = 192.500000
+    expect(item2.perUnitLandedCostEtb).toBe('192.5000');
 
     // Assert Item 5: Perfect math resolution up to 6dp precision
     const item5 = results.find((r: any) => r.shipmentItemId === 'item-5');

@@ -1,7 +1,7 @@
 import { useUiText } from '@/lib/ui-text';
 import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
   useCustomsDeclaration,
   useOverrideItemRate,
@@ -24,7 +24,6 @@ import { formatAmount4 } from '@/lib/money';
 export function CustomsDeclarationDetailPage() {
   const localize = useUiText();
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { data: declaration, isLoading } = useCustomsDeclaration(id!);
 
   const overrideMutation = useOverrideItemRate();
@@ -120,7 +119,6 @@ export function CustomsDeclarationDetailPage() {
   };
 
   const currency = declaration.shipment?.po?.currency || 'USD';
-  const fxRate = declaration.shipment?.po?.fxRate || '1';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-8">
@@ -143,7 +141,7 @@ export function CustomsDeclarationDetailPage() {
                         : 'secondary'
                 }
               >
-                {declaration.status.toUpperCase()}
+                {localize(declaration.status.replaceAll('_', ' '))}
               </Badge>
             </h1>
             <p className="text-gray-500 mt-1">
@@ -538,7 +536,7 @@ export function CustomsDeclarationDetailPage() {
                   </strong>{' '}
                   <LocalizedText
                     text={
-                      ' Upon successful assessment, the\n                  total duty, excise, VAT, and withholding entries will be\n                  permanently written to the Cost Register (AC04).\n                '
+                      ' Upon successful assessment, the\n                  total duty, excise, VAT, and withholding entries will be\n                  permanently written to the Cost Register.\n                '
                     }
                   />
                 </p>

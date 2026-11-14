@@ -55,7 +55,11 @@ export function localizeUiText(
   ) as AmharicResources;
   const phrases = resources.ui?.phrases ?? {};
   const words = resources.ui?.words ?? {};
-  const exact = phrases[source];
+  const exact =
+    phrases[source] ??
+    Object.entries(phrases).find(
+      ([phrase]) => phrase.toLocaleLowerCase() === source.toLocaleLowerCase(),
+    )?.[1];
   if (exact) return exact;
 
   return source.replace(/[A-Za-z]+(?:'[A-Za-z]+)*/g, (word) => {

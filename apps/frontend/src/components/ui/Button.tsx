@@ -20,21 +20,21 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseStyle =
-    'inline-flex justify-center items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+    'app-button inline-flex min-h-11 justify-center items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-semibold tracking-[.005em] transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-px';
 
   const variants = {
     primary:
-      'border-transparent text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+      'border-transparent text-white bg-sky-700 hover:bg-sky-800 focus:ring-sky-600 shadow-sm',
     secondary:
-      'border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-blue-500',
+      'app-button-secondary border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-sky-500 shadow-sm',
     danger:
       'border-transparent text-white bg-red-600 hover:bg-red-700 focus:ring-red-500',
     success:
-      'border-transparent text-white bg-green-600 hover:bg-green-700 focus:ring-green-500',
+      'border-transparent text-white bg-emerald-700 hover:bg-emerald-800 focus:ring-emerald-500',
     warning:
       'border-transparent text-white bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500',
     outline:
-      'border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-blue-500',
+      'app-button-secondary border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-sky-500 shadow-sm',
     ghost:
       'border-transparent text-gray-700 bg-transparent hover:bg-gray-100 focus:ring-gray-500 shadow-none',
   };

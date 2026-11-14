@@ -29,7 +29,9 @@ describe('PermissionGuard', () => {
       from: jest.fn().mockReturnThis(),
       where: jest
         .fn()
-        .mockResolvedValue(userPermissions.map((permission) => ({ permission }))),
+        .mockResolvedValue(
+          userPermissions.map((permission) => ({ permission })),
+        ),
     };
     const context = {
       getHandler: jest.fn(),
@@ -54,6 +56,8 @@ describe('PermissionGuard', () => {
   it('rejects a user without an approval-tier permission', async () => {
     const { guard, context } = createGuard([Permission.PO_READ]);
 
-    await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 });

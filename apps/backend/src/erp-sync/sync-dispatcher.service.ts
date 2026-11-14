@@ -50,7 +50,7 @@ export class SyncDispatcher {
       }
 
       this.logger.log(
-        'Dispatching retry for sync log ${log.id} (Attempt ${log.attempts + 1})',
+        `Dispatching retry for sync log ${log.id} (Attempt ${log.attempts + 1})`,
       );
 
       try {

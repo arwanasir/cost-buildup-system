@@ -110,6 +110,7 @@ export function ShipmentCreatePage() {
   const poOptions = pos.map((po) => ({
     value: po.id,
     label: `${po.poNumber} (${localize(po.status === 'lc_applied' ? 'LC Applied' : 'Approved')}; ${po.currency} ${po.totalAmount})`,
+    translate: false,
   }));
 
   const form = useForm<FullFormData>({

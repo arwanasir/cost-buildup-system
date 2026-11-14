@@ -85,6 +85,7 @@ export const users = pgTable('users', {
   preferredLanguage: preferredLanguageEnum('preferred_language')
     .notNull()
     .default('en'),
+  telegramChatId: varchar('telegram_chat_id', { length: 64 }),
   isActive: boolean('is_active').notNull().default(true),
   failedLoginCount: integer('failed_login_count').notNull().default(0),
   lockedUntil: timestamp('locked_until', {
@@ -875,6 +876,10 @@ export const importLandedCostResults = pgTable(
     inventoryTransactionId: varchar('inventory_transaction_id', {
       length: 100,
     }),
+    inventoryAdjustmentTransactionId: varchar(
+      'inventory_adjustment_transaction_id',
+      { length: 100 },
+    ),
   },
   (table) => [
     uniqueIndex('uq_landed_cost_results_shipment_item').on(

@@ -46,7 +46,11 @@ export function ReportTable({
             : typeof sample === 'number'
               ? 'number'
               : 'text';
-        return { key: col, label: col.replace(/_/g, ' '), type };
+        const label = col
+          .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+          .replace(/_/g, ' ')
+          .replace(/\bId\b/g, 'ID');
+        return { key: col, label, type };
       }
       return col;
     });

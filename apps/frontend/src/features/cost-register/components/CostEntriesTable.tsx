@@ -158,7 +158,9 @@ export function CostEntriesTable({
                     </td>
                     <td className="px-4 py-3 text-right align-top">
                       <div className="font-semibold text-gray-700">
-                        {formatAmount4(entry.amountForeign)}
+                        {entry.amountForeign == null
+                          ? '—'
+                          : formatAmount4(entry.amountForeign)}
                       </div>
                       <div className="text-xs text-gray-500">
                         {entry.currency}

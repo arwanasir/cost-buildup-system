@@ -2,7 +2,7 @@ import { useUiText } from '@/lib/ui-text';
 import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useShipment, useUpdateShipmentStatus, type Shipment } from '../api';
+import { useShipment, type Shipment } from '../api';
 import { Badge, Skeleton, ErrorState } from '@/components/ui';
 import { ChangeStatusButton } from '../components/ChangeStatusButton';
 import { DocumentsTab } from '../components/DocumentsTab';
@@ -23,7 +23,6 @@ export function ShipmentDetailPage() {
   const localize = useUiText();
   const { id } = useParams<{ id: string }>();
   const { data: shipmentData, isLoading, isError, refetch } = useShipment(id!);
-  const updateStatus = useUpdateShipmentStatus();
 
   const [activeTab, setActiveTab] = useState<
     'documents' | 'invoice' | 'costs' | 'landed' | 'grn'
@@ -44,14 +43,6 @@ export function ShipmentDetailPage() {
       />
     );
 
-  const handleAdvanceStatus = async (nextStatus: Shipment['status']) => {
-    try {
-      await updateStatus.mutateAsync({ id: shipment.id, status: nextStatus });
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   const currentIndex = STATUS_PIPELINE.indexOf(shipment.status);
   const nextStatus = STATUS_PIPELINE[currentIndex + 1] as
     Shipment['status'] | undefined;
@@ -65,7 +56,7 @@ export function ShipmentDetailPage() {
           <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight flex items-center gap-4">
             {shipment.shipmentNumber || 'DRAFT SHIPMENT'}
             <Badge variant="info">
-              {shipment.status.replace('_', ' ').toUpperCase()}
+              {localize(shipment.status.replaceAll('_', ' '))}
             </Badge>
           </h2>
           <p className="mt-1 text-sm text-gray-500 flex gap-4">
@@ -152,7 +143,7 @@ export function ShipmentDetailPage() {
                     )}
                   </div>
                   <span className="absolute -bottom-6 -ml-4 text-xs font-medium text-gray-500 whitespace-nowrap">
-                    {step.replace('_', ' ').toUpperCase()}
+                    {localize(step.replaceAll('_', ' '))}
                   </span>
                 </li>
               );
@@ -390,9 +381,9 @@ export function ShipmentDetailPage() {
             {[
               { id: 'documents', label: 'Documents' },
               { id: 'invoice', label: 'Commercial Invoice' },
-              { id: 'costs', label: 'Cost Register (AC04)' },
-              { id: 'landed', label: 'Landed Cost Engine' },
-              { id: 'grn', label: 'GRN & Warehouse' },
+              { id: 'costs', label: 'Cost Register' },
+              { id: 'landed', label: 'Landed Cost' },
+              { id: 'grn', label: 'Goods Receipt' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -406,7 +397,7 @@ export function ShipmentDetailPage() {
                   }
                 `}
               >
-                {tab.label}
+                <LocalizedText text={tab.label} />
               </button>
             ))}
           </nav>
@@ -420,49 +411,59 @@ export function ShipmentDetailPage() {
             <CommercialInvoiceTab shipment={shipment} />
           )}
           {activeTab === 'costs' && (
-            <div className="text-center py-12 text-gray-500">
-              <p>
-                <LocalizedText
-                  text={'AC04 Cost Register Pane will mount here.'}
-                />
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                <LocalizedText text="Shipment Cost Register" />
+              </h3>
+              <p className="mt-2 max-w-2xl text-sm text-gray-600">
+                <LocalizedText text="Review and enter this shipment's charges, allocate shared costs, and check the cost ledger." />
               </p>
-              <p className="text-xs mt-2">
-                <LocalizedText
-                  text={
-                    '\n                Bank Charges, Clearing Agent Fees, Storage Fees sync here.\n              '
-                  }
-                />
-              </p>
+              <Link
+                to={`/cost-buildup?shipmentId=${encodeURIComponent(shipment.id)}`}
+                className="mt-4 inline-flex items-center rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+              >
+                <LocalizedText text="Open this shipment's cost register" />
+              </Link>
             </div>
           )}
           {activeTab === 'landed' && (
-            <div className="text-center py-12 text-gray-500">
-              <p>
-                <LocalizedText
-                  text={'Landed Cost Calculation Engine will mount here.'}
-                />
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                <LocalizedText text="Landed Cost Calculation" />
+              </h3>
+              <p className="mt-2 max-w-2xl text-sm text-gray-600">
+                <LocalizedText text="Compute this shipment's per-item landed cost, review allocation results, and check finalisation requirements." />
               </p>
-              <p className="text-xs mt-2">
-                <LocalizedText
-                  text={
-                    '\n                Proportional cost mapping (By Value / By Volume / By Weight).\n              '
-                  }
-                />
-              </p>
+              <Link
+                to={`/landed-cost?shipmentId=${encodeURIComponent(shipment.id)}`}
+                className="mt-4 inline-flex items-center rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+              >
+                <LocalizedText text="Open this shipment's landed cost" />
+              </Link>
             </div>
           )}
           {activeTab === 'grn' && (
-            <div className="text-center py-12 text-gray-500">
-              <p>
-                <LocalizedText text={'Warehouse GRN Pane will mount here.'} />
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                <LocalizedText text="Goods Receipt Notes" />
+              </h3>
+              <p className="mt-2 max-w-2xl text-sm text-gray-600">
+                <LocalizedText text="Create a receipt for this shipment or review its existing receipts, inspection results, and inventory posting status." />
               </p>
-              <p className="text-xs mt-2">
-                <LocalizedText
-                  text={
-                    '\n                Physical receiving and condition checks.\n              '
-                  }
-                />
-              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link
+                  to={`/goods-receipts/new?shipmentId=${encodeURIComponent(shipment.id)}`}
+                  className="inline-flex items-center rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+                >
+                  <LocalizedText text="Create GRN for this shipment" />
+                </Link>
+                <Link
+                  to={`/goods-receipts?shipmentId=${encodeURIComponent(shipment.id)}`}
+                  className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  <LocalizedText text="View this shipment's GRNs" />
+                </Link>
+              </div>
             </div>
           )}
         </div>

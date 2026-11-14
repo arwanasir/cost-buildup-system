@@ -49,7 +49,7 @@ export function ChangeStatusButton({
           isLoading={updateStatus.isPending}
         >
           <LocalizedText text={'\n          Advance to '} />
-          {nextStatus.replace('_', ' ').toUpperCase()}
+          {localize(nextStatus.replace(/_/g, ' '))}
         </Button>
       </PermissionGate>
 

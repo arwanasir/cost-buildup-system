@@ -110,6 +110,11 @@ describe('ERP Sync Integration (Nock)', () => {
     expect(dbMock.set).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'pending', attempts: 1 }),
     );
+    expect(notifySpy).toHaveBeenCalledWith(
+      'posting_failed',
+      expect.anything(),
+      expect.anything(),
+    );
 
     // Now SyncDispatcher or manual retry triggers it again with existingLogId
     // Second attempt succeeds
@@ -146,11 +151,8 @@ describe('ERP Sync Integration (Nock)', () => {
       expect.objectContaining({ status: 'failed', attempts: 3 }),
     );
 
-    // Verify notification was sent
-    expect(notifySpy).toHaveBeenCalledWith(
-      'posting_failed',
-      expect.anything(),
-      expect.anything(),
-    );
+    // The initial failure already alerted administrators; retries must not
+    // send duplicate alerts for the same posting incident.
+    expect(notifySpy).not.toHaveBeenCalled();
   });
 });

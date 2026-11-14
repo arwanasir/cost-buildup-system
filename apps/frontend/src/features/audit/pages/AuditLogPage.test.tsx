@@ -58,9 +58,7 @@ describe('AuditLogPage', () => {
     fireEvent.click(viewDiffButtons[0]);
 
     // Modal opens
-    expect(
-      await screen.findByText('UPDATE - POLICY_SETTING'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Before State')).toBeInTheDocument();
 
     // Check JSON diffs are rendered
     const beforeStr = JSON.stringify({ valueNumeric: '1000' }, null, 2);
@@ -73,7 +71,7 @@ describe('AuditLogPage', () => {
     fireEvent.click(screen.getByText('Close Viewer'));
     await waitFor(() => {
       expect(
-        screen.queryByText('UPDATE - POLICY_SETTING'),
+        screen.queryByText('Before State'),
       ).not.toBeInTheDocument();
     });
   });

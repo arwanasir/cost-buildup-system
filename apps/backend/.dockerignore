@@ -1,5 +1,7 @@
 node_modules
 dist
+coverage
+*.log
 npm-debug.log
 pnpm-debug.log
 .git

@@ -9,7 +9,6 @@ import {
   useDeactivateUser,
   type User,
 } from '../api';
-import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -33,6 +32,10 @@ const userSchema = z.object({
   role: z.string().min(1),
   department: z.string().optional(),
   preferredLanguage: z.string().optional(),
+  telegramChatId: z
+    .string()
+    .regex(/^$|^-?\d{1,20}$/, 'Enter a numeric Telegram chat ID')
+    .optional(),
   temporaryPassword: z.string().optional(),
 });
 
@@ -42,6 +45,7 @@ type UserFormData = z.infer<typeof userSchema>;
 const ROLES = [
   { label: 'System Admin', value: 'system_admin' },
   { label: 'General Manager', value: 'general_manager' },
+  { label: 'Internal Auditor', value: 'auditor' },
   { label: 'Procurement Manager', value: 'procurement_manager' },
   { label: 'Procurement Officer', value: 'procurement_officer' },
   { label: 'Finance Manager', value: 'finance_manager' },
@@ -58,8 +62,6 @@ const LANGUAGES = [
 // --- Main Component ---
 export function UsersPage() {
   const localize = useUiText();
-  const queryClient = useQueryClient();
-
   // Modals state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -94,6 +96,7 @@ export function UsersPage() {
       role: '',
       department: '',
       preferredLanguage: 'en',
+      telegramChatId: '',
       temporaryPassword: '',
     });
     setIsFormOpen(true);
@@ -107,6 +110,7 @@ export function UsersPage() {
       role: user.role,
       department: user.department || '',
       preferredLanguage: user.preferredLanguage || 'en',
+      telegramChatId: user.telegramChatId || '',
       temporaryPassword: '', // Don't prefill passwords
     });
     setIsFormOpen(true);
@@ -229,7 +233,10 @@ export function UsersPage() {
           />
           <Select
             label={localize('Role')}
-            options={ROLES}
+            options={ROLES.map((role) => ({
+              ...role,
+              label: localize(role.label),
+            }))}
             {...register('role')}
             error={errors.role?.message}
           />
@@ -244,6 +251,19 @@ export function UsersPage() {
             {...register('preferredLanguage')}
             error={errors.preferredLanguage?.message}
           />
+          <Input
+            label={localize('Telegram Chat ID (optional)')}
+            {...register('telegramChatId')}
+            error={errors.telegramChatId?.message}
+            placeholder="e.g. 123456789 or -1001234567890"
+          />
+          <p className="-mt-2 text-xs text-gray-500">
+            <LocalizedText
+              text={
+                'Users must start the configured Telegram bot first. Leave blank to disable Telegram delivery for this user.'
+              }
+            />
+          </p>
 
           {!editingUser && (
             <Input

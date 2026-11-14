@@ -46,13 +46,13 @@ export function Modal({
           aria-hidden="true"
           onClick={onClose}
         >
-          <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+          <div className="absolute inset-0 bg-slate-950/65 backdrop-blur-[3px]"></div>
         </div>
         <div
-          className={`relative z-10 my-4 w-full ${sizeClass} overflow-hidden rounded-lg bg-white text-left shadow-xl`}
+          className={`app-modal-panel relative z-10 my-4 w-full ${sizeClass} overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-2xl`}
         >
-          <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white px-4 py-5 sm:max-h-[calc(100dvh-3rem)] sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
+          <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white px-5 py-5 sm:max-h-[calc(100dvh-3rem)] sm:px-7 sm:py-6">
+            <h3 className="app-modal-heading border-b border-slate-200 pb-4 text-lg font-bold tracking-tight text-slate-900">
               {localize(title)}
             </h3>
             <div className="mt-4">{children}</div>

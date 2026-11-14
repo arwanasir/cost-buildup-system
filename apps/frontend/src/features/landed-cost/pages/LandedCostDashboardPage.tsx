@@ -9,12 +9,15 @@ import { CompositionPieChart } from '../components/CompositionPieChart';
 import { StackedBarChart } from '../components/StackedBarChart';
 import { LandedCostResultsTable } from '../components/LandedCostResultsTable';
 import { FinalisationPanel } from '../components/FinalisationPanel';
+import { useSearchParams } from 'react-router-dom';
 
 export function LandedCostDashboardPage() {
   const localize = useUiText();
-  const { data: shipmentsResponse, isLoading: loadingShipments } =
-    useShipments();
-  const [selectedShipmentId, setSelectedShipmentId] = useState<string>('');
+  const [searchParams] = useSearchParams();
+  const { data: shipmentsResponse } = useShipments();
+  const [selectedShipmentId, setSelectedShipmentId] = useState<string>(
+    () => searchParams.get('shipmentId') || '',
+  );
 
   // FIX: Replaced browser-native alert() with a state-driven <Toast> component.
   // alert() is a blocking synchronous call that:
@@ -30,8 +33,7 @@ export function LandedCostDashboardPage() {
     ? shipmentsResponse
     : (shipmentsResponse as any)?.data || [];
 
-  const { data: results, isLoading: loadingResults } =
-    useLandedCostResults(selectedShipmentId);
+  const { data: results } = useLandedCostResults(selectedShipmentId);
   const computeMutation = useComputeLandedCost();
 
   const selectedShipment = shipments.find(
@@ -71,7 +73,7 @@ export function LandedCostDashboardPage() {
     if (!selectedShipmentId) return;
     try {
       await computeMutation.mutateAsync(selectedShipmentId);
-    } catch (e) {
+    } catch {
       // FIX: replaced alert() with a non-blocking Toast notification
       setToast({
         message:
@@ -111,8 +113,9 @@ export function LandedCostDashboardPage() {
               options={[
                 { label: '-- Select a Shipment --', value: '' },
                 ...shipments.map((s: any) => ({
-                  label: `${s.shipmentNumber} (PO: ${s.po?.poNumber || 'N/A'}) - ${s.status}`,
+                  label: `${s.shipmentNumber} (PO: ${s.po?.poNumber || 'N/A'}) - ${localize(s.status.replaceAll('_', ' '))}`,
                   value: s.id,
+                  translate: false,
                 })),
               ]}
             />

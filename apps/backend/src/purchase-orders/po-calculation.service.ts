@@ -9,6 +9,7 @@ export interface PoCalculationLine {
 
 export interface PoCalculationParams {
   fxRate: number | string;
+  incoterm?: string;
   estimatedFreightEtb?: number | string;
   estimatedInsuranceEtb?: number | string;
   estimatedOtherChargesEtb?: number | string;
@@ -21,7 +22,6 @@ export class PoCalculationService {
     const fxRate = new Decimal(params.fxRate);
     const freight = new Decimal(params.estimatedFreightEtb || 0);
     const insurance = new Decimal(params.estimatedInsuranceEtb || 0);
-    const otherCharges = new Decimal(params.estimatedOtherChargesEtb || 0);
 
     // 1. Line foreign values
     const parsedLines = params.lines.map((line) => {
@@ -46,14 +46,18 @@ export class PoCalculationService {
     // 3. Total ETB Value
     const totalValueEtb = totalValueForeign.times(fxRate).toDecimalPlaces(4);
 
-    // 4. Estimated CIF (ETB) = total_etb + estimated_freight + estimated_insurance
+    // Customs duty uses the same CIF base as customs assessment. Under CIF,
+    // the supplier invoice already includes freight and insurance, so do not
+    // add the separate estimates to the duty base a second time.
     const estimatedCIF = totalValueEtb
       .plus(freight)
       .plus(insurance)
       .toDecimalPlaces(4);
+    const customsCif =
+      params.incoterm?.toUpperCase() === 'CIF' ? totalValueEtb : estimatedCIF;
 
     // Tariff duty rates are percentages, so convert each rate before applying it.
-    // 5. Estimated Duty ETB = sum(line CIF share * (duty rate / 100))
+    // 5. Estimated Duty ETB = sum(line customs CIF share * (duty rate / 100))
     let estimatedDutyEtb = new Decimal(0);
 
     const calculatedLines = parsedLines.map((line) => {
@@ -61,7 +65,7 @@ export class PoCalculationService {
         ? new Decimal(0)
         : line.totalLineValue.dividedBy(totalValueForeign);
 
-      const lineCifShare = share.times(estimatedCIF);
+      const lineCifShare = share.times(customsCif);
       const lineDutyEtb = lineCifShare
         .times(line.dutyRate)
         .dividedBy(100)

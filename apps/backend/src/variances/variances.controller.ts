@@ -11,13 +11,17 @@ import {
   Req,
 } from '@nestjs/common';
 import { VariancesService } from './variances.service';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '@/auth/guards/permissions.guards';
+import { RequiredPermission } from '@/auth/decorators/permissions.decorator';
+import { Permission } from '@/auth/permissions';
 
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @Audited('costVariances')
 @ApiTags('Variances')
 @ApiBearerAuth()
 @Controller('variances')
+@RequiredPermission(Permission.VARIANCE_READ)
 export class VariancesController {
   constructor(private readonly variancesService: VariancesService) {}
 
@@ -30,6 +34,7 @@ export class VariancesController {
   }
 
   @Post(':id/approve')
+  @RequiredPermission(Permission.VARIANCE_APPROVE)
   async approveVariance(
     @Param('id') id: string,
     @Body('comment') comment: string,
@@ -39,6 +44,7 @@ export class VariancesController {
   }
 
   @Post(':id/reject')
+  @RequiredPermission(Permission.VARIANCE_APPROVE)
   async rejectVariance(
     @Param('id') id: string,
     @Body('comment') comment: string,
@@ -48,9 +54,10 @@ export class VariancesController {
   }
 }
 
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @Audited('costVariances')
 @Controller('shipments/:id/variances')
+@RequiredPermission(Permission.VARIANCE_READ)
 export class ShipmentVariancesController {
   constructor(private readonly variancesService: VariancesService) {}
 
@@ -60,6 +67,7 @@ export class ShipmentVariancesController {
   }
 
   @Post('evaluate')
+  @RequiredPermission(Permission.COST_WRITE)
   async evaluateShipmentVariances(@Param('id') shipmentId: string) {
     return this.variancesService.evaluate(shipmentId);
   }

@@ -113,7 +113,7 @@ export function CustomsCreatePage() {
                     {shipment.id.substring(0, 8)}
                     <LocalizedText text={') - Status:'} />
                     <LocalizedText text={' '} />
-                    {shipment.status.replace('_', ' ').toUpperCase()}
+                    {localize(shipment.status.replaceAll('_', ' '))}
                   </option>
                 ))}
               </select>

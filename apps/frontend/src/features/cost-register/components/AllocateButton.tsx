@@ -1,7 +1,7 @@
 import { useUiText } from '@/lib/ui-text';
 import { LocalizedText } from '@/components/ui/LocalizedText';
 import React, { useState } from 'react';
-import { Button, Modal } from '@/components/ui';
+import { Button, Modal, Toast } from '@/components/ui';
 import {
   useAllocateShipmentCosts,
   useShipmentCostEntries,
@@ -23,6 +23,7 @@ export function AllocateButton({
 
   const [showDrawer, setShowDrawer] = useState(false);
   const [showBR12Warning, setShowBR12Warning] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleAllocate = async () => {
     try {
@@ -34,7 +35,9 @@ export function AllocateButton({
       if (typeof msg === 'string' && msg.includes('BR12')) {
         setShowBR12Warning(true);
       } else {
-        alert(`Allocation failed: ${msg}`);
+        setErrorMessage(
+          `Allocation failed: ${Array.isArray(msg) ? msg.join(', ') : msg}`,
+        );
       }
     }
   };
@@ -63,13 +66,20 @@ export function AllocateButton({
       setShowBR12Warning(false);
       // Retry allocation automatically
       handleAllocate();
-    } catch (e) {
-      alert('Failed to update cost entries.');
+    } catch {
+      setErrorMessage('Failed to update cost entries.');
     }
   };
 
   return (
     <>
+      {errorMessage && (
+        <Toast
+          message={errorMessage}
+          type="error"
+          onClose={() => setErrorMessage(null)}
+        />
+      )}
       <Button
         variant="primary"
         onClick={handleAllocate}

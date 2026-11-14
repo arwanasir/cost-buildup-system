@@ -60,6 +60,16 @@ apps/frontend/generate_ui_components.cjs
 /apps/backend/update-report2.js
 /apps/backend/update-report3.js
 
+# Local-only presentation notes, generated locks, and one-off smoke scripts
+/DEMO_PRESENTATION_GUIDE.md
+/complete_api_walkthrough.md
+/xample.md
+/pnpm-lock.yaml
+/apps/backend/pnpm-lock.yaml
+/scripts/
+/apps/backend/scripts/test-*.ts
+/apps/backend/scripts/verify-document-upload.ts
+
 # OS/editor files
 .DS_Store
 Thumbs.db

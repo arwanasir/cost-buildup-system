@@ -11,7 +11,7 @@ export interface CostEntry {
   providerName: string;
   invoiceNumber: string;
   invoiceDate: string;
-  amountForeign: string;
+  amountForeign: string | null;
   currency: string;
   fxRate: string;
   amountEtb: string;

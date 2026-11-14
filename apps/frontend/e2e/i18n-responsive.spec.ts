@@ -24,20 +24,23 @@ test.describe('I18n and Responsive Layout', () => {
   });
 
   test('GRN list page at 768px viewport has no horizontal overflow', async ({ page }) => {
-    // Set viewport to exactly 768px (iPad portrait)
-    await page.setViewportSize({ width: 768, height: 1024 });
+    // Use a tablet width below the md breakpoint to exercise the card layout.
+    await page.setViewportSize({ width: 767, height: 1024 });
 
     // 1. Admin logs in
     await page.goto('/login');
     await page.fill('input[type="email"]', 'admin@company.com');
     await page.fill('input[type="password"]', 'Password123!');
     await page.click('button[type="submit"]');
+    await expect(page).toHaveURL(/\/$/);
 
     // 2. Go to GRN Page
     await page.goto('/goods-receipts');
 
-    // Wait for the table/content to load
-    await page.waitForSelector('table');
+    await expect(
+      page.getByRole('heading', { name: /Goods Receipts \(GRN\)/i }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /New GRN/i })).toBeVisible();
 
     // 3. Assert no horizontal overflow
     const hasHorizontalOverflow = await page.evaluate(() => {
@@ -50,6 +53,9 @@ test.describe('I18n and Responsive Layout', () => {
 
     // Also check the form page just in case
     await page.goto('/goods-receipts/new');
+    await expect(
+      page.getByRole('heading', { name: /Goods Receipt/i }).first(),
+    ).toBeVisible();
 
     // We expect some UI to render even if an error about missing shipmentId shows up
     const hasHorizontalOverflowForm = await page.evaluate(() => {

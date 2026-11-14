@@ -7,6 +7,8 @@ import { FinancePostingService } from '@/erp-sync/finance-posting.service';
 import { DRIZZLE } from '@/db/db.token';
 import { BadRequestException } from '@nestjs/common';
 import { NumberingService } from '@/core/numbering/numbering.service';
+import * as schema from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 describe('Goods Receipts & Discrepancies (BR01A, FR-09.1, FR-09.2)', () => {
   let grnService: GoodsReceiptsService;
@@ -73,11 +75,32 @@ describe('Goods Receipts & Discrepancies (BR01A, FR-09.1, FR-09.2)', () => {
     );
   });
 
+  it('filters GRNs by the requested status for dashboard counts', async () => {
+    const failedGrns = [{ id: 'grn-1', status: 'posting_failed' }];
+    whereMock.mockResolvedValueOnce(failedGrns);
+
+    await expect(grnService.getGrns('posting_failed')).resolves.toEqual(
+      failedGrns,
+    );
+    expect(whereMock).toHaveBeenCalledWith(
+      eq(schema.goodsReceipts.status, 'posting_failed'),
+    );
+  });
+
+  it('rejects unsupported GRN status filters', async () => {
+    await expect(grnService.getGrns('failed')).rejects.toThrow(
+      new BadRequestException(
+        "Invalid GRN status 'failed'. Valid statuses: draft, confirmed, posting_failed, posted, flagged_for_adjustment",
+      ),
+    );
+    expect(whereMock).not.toHaveBeenCalled();
+  });
+
   it('should block if accepted + rejected !== received quantity (FR-09.2)', async () => {
     whereMock
       .mockResolvedValueOnce([{ status: 'cleared', poId: 'po-123' }]) // Shipment
       .mockResolvedValueOnce([]) // Policy settings
-      .mockResolvedValueOnce([]); // Shipment Items (No unacknowledged variance)
+      .mockResolvedValueOnce([]); // Commercial invoices (No unacknowledged variance)
 
     const dto = {
       shipmentId: 'ship-123',
@@ -98,6 +121,33 @@ describe('Goods Receipts & Discrepancies (BR01A, FR-09.1, FR-09.2)', () => {
       new BadRequestException(
         'FR-09.2: For item item-1, accepted_quantity (90) + rejected_quantity (5) must equal received_quantity (100).',
       ),
+    );
+  });
+
+  it('blocks GRN creation for an unacknowledged commercial-invoice price variance (BR11)', async () => {
+    whereMock
+      .mockResolvedValueOnce([{ status: 'cleared', poId: 'po-123' }])
+      .mockResolvedValueOnce([{ valueNumeric: '5' }])
+      .mockResolvedValueOnce([
+        {
+          id: 'ci-1',
+          priceVariancePct: '8.0000',
+          varianceAcknowledgedBy: null,
+        },
+      ]);
+
+    await expect(
+      grnService.createGrn(
+        {
+          shipmentId: 'ship-123',
+          receiptDate: '2026-10-01',
+          warehouseLocation: 'Main',
+          items: [],
+        } as any,
+        'user-1',
+      ),
+    ).rejects.toThrow(
+      'BR11: Cannot receive goods. Shipment has 1 unacknowledged price variance(s) exceeding 5%.',
     );
   });
 

@@ -4,7 +4,10 @@ const uuidv4 = () => Math.random().toString(36).substring(7);
 
 // This is an integration test designed to run against a live local MinIO container.
 // Ensure MinIO is running on http://localhost:9000 with minioadmin:minioadmin
-describe.skip('StorageService (Integration)', () => {
+const describeStorageIntegration =
+  process.env.MINIO_INTEGRATION_TEST === 'true' ? describe : describe.skip;
+
+describeStorageIntegration('StorageService (Integration)', () => {
   let service: StorageService;
 
   beforeAll(async () => {

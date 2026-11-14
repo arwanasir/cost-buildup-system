@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsOptional, IsString, Matches } from 'class-validator';
 
 export class UpdateUserDto {
   @IsEmail()
@@ -26,6 +26,12 @@ export class UpdateUserDto {
   @IsOptional()
   @ApiProperty()
   preferredLanguage?: string;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^$|^-?\d{1,20}$/)
+  @ApiProperty({ required: false, description: 'Telegram numeric chat ID' })
+  telegramChatId?: string;
 
   @IsString()
   @IsOptional()

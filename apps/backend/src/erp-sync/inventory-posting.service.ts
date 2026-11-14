@@ -16,7 +16,7 @@ export class InventoryPostingService {
     private readonly inventoryClient: InventoryClient,
   ) {}
 
-  async getPayloadForGrn(grnIdentifier: string) {
+  async getPayloadForGrn(grnIdentifier: string, useFinalCosts = false) {
     let grn;
     if (
       grnIdentifier.match(
@@ -57,15 +57,29 @@ export class InventoryPostingService {
       .select()
       .from(schema.importLandedCostResults)
       .where(eq(schema.importLandedCostResults.shipmentId, grn.shipmentId));
-    const lcMap = new Map(lcResults.map((lc: any) => [lc.shipmentItemId, lc]));
+    const lcMap = new Map<string, any>(
+      lcResults.map((lc: any) => [lc.shipmentItemId, lc]),
+    );
 
     const payloads = [];
     for (const item of grnItems) {
       const acceptedQty = new Decimal(String(item.acceptedQuantity));
       if (acceptedQty.isZero()) continue;
       const si: any = shipmentItemMap.get(item.shipmentItemId);
-      if (!si) continue;
+      if (!si) {
+        if (useFinalCosts) {
+          throw new Error(
+            `Shipment item ${item.shipmentItemId} is missing for final inventory posting`,
+          );
+        }
+        continue;
+      }
       const lc: any = lcMap.get(item.shipmentItemId);
+      if (useFinalCosts && !lc?.perUnitLandedCostEtb) {
+        throw new Error(
+          `Final landed cost is missing for shipment item ${item.shipmentItemId}`,
+        );
+      }
       const costBreakdown = lc
         ? {
             ci_value_etb: lc.ciValueEtb,
@@ -86,15 +100,164 @@ export class InventoryPostingService {
         item_id: si.itemId,
         shipment_item_id: si.id,
         quantity_received: acceptedQty.toString(),
-        per_unit_landed_cost_etb: item.perUnitLandedCostEtb,
+        per_unit_landed_cost_etb:
+          useFinalCosts && lc?.perUnitLandedCostEtb
+            ? lc.perUnitLandedCostEtb
+            : item.perUnitLandedCostEtb,
         cost_breakdown_json: costBreakdown,
       });
     }
     return { items: payloads, grn };
   }
 
-  async post(grnId: string, existingLogId?: string) {
-    const { items: payloads, grn } = await this.getPayloadForGrn(grnId);
+  /**
+   * Corrects inventory unit costs after an estimated-cost GRN is finalized
+   * and its adjustment journal is approved by Finance. The adjustment ID is
+   * stable so the ERP can safely de-duplicate retries.
+   */
+  async postFinalCostAdjustment(grnId: string, adjustmentId: string) {
+    const [grn] = await this.db
+      .select()
+      .from(schema.goodsReceipts)
+      .where(eq(schema.goodsReceipts.id, grnId));
+    if (!grn) throw new Error(`GRN ${grnId} not found`);
+
+    const grnItems = await this.db
+      .select()
+      .from(schema.goodsReceiptItems)
+      .where(eq(schema.goodsReceiptItems.grnId, grnId));
+    const acceptedItems = grnItems.filter((item: any) =>
+      new Decimal(String(item.acceptedQuantity)).greaterThan(0),
+    );
+    if (acceptedItems.length === 0) {
+      throw new Error(
+        `GRN ${grn.grnNumber} has no accepted quantity to adjust`,
+      );
+    }
+
+    const shipmentItemIds = acceptedItems.map(
+      (item: any) => item.shipmentItemId,
+    );
+    const [shipmentItems, landedCostRows] = await Promise.all([
+      this.db
+        .select()
+        .from(schema.shipmentItems)
+        .where(inArray(schema.shipmentItems.id, shipmentItemIds)),
+      this.db
+        .select()
+        .from(schema.importLandedCostResults)
+        .where(eq(schema.importLandedCostResults.shipmentId, grn.shipmentId)),
+    ]);
+    const shipmentItemById = new Map<string, any>(
+      shipmentItems.map((item: any) => [item.id, item]),
+    );
+    const landedCostByShipmentItem = new Map<string, any>(
+      landedCostRows.map((row: any) => [row.shipmentItemId, row]),
+    );
+    const missingLandedCostItem = acceptedItems.find(
+      (item: any) =>
+        !landedCostByShipmentItem.get(item.shipmentItemId)
+          ?.perUnitLandedCostEtb,
+    );
+    if (missingLandedCostItem) {
+      throw new Error(
+        `Final landed cost is missing for GRN item ${missingLandedCostItem.id}`,
+      );
+    }
+
+    const postedCount = acceptedItems.filter((item: any) => {
+      const landedCost: any = landedCostByShipmentItem.get(item.shipmentItemId);
+      return landedCost?.postedToInventory;
+    }).length;
+    if (postedCount === 0) {
+      // The original GRN posting never reached Inventory. Send the finalized
+      // receipt once, at its final unit cost, rather than sending an adjustment
+      // for stock that does not exist in the ERP yet.
+      return this.post(grnId, undefined, true);
+    }
+    if (postedCount !== acceptedItems.length) {
+      throw new Error(
+        `Inventory posting is incomplete for GRN ${grn.grnNumber}; retry its original posting before applying a cost adjustment`,
+      );
+    }
+
+    const adjustmentItems = acceptedItems.map((grnItem: any) => {
+      const shipmentItem: any = shipmentItemById.get(grnItem.shipmentItemId);
+      const landedCost: any = landedCostByShipmentItem.get(
+        grnItem.shipmentItemId,
+      );
+      if (!shipmentItem || !landedCost) {
+        throw new Error(
+          `Final landed cost data is missing for GRN item ${grnItem.id}`,
+        );
+      }
+
+      const acceptedQuantity = new Decimal(String(grnItem.acceptedQuantity));
+      const finalUnitCost = new Decimal(
+        String(landedCost.perUnitLandedCostEtb),
+      );
+      return {
+        shipment_item_id: grnItem.shipmentItemId,
+        item_id: shipmentItem.itemId,
+        quantity_received: acceptedQuantity.toFixed(4),
+        previous_per_unit_landed_cost_etb: new Decimal(
+          String(grnItem.perUnitLandedCostEtb),
+        ).toFixed(4),
+        per_unit_landed_cost_etb: finalUnitCost.toFixed(4),
+        line_value_etb: acceptedQuantity.times(finalUnitCost).toFixed(4),
+        cost_breakdown_json: {
+          ci_value_etb: landedCost.ciValueEtb,
+          customs_duty_etb: landedCost.customsDutyEtb,
+          import_vat_etb: landedCost.importVatEtb,
+          freight_allocated_etb: landedCost.freightAllocatedEtb,
+          insurance_allocated_etb: landedCost.insuranceAllocatedEtb,
+          bank_charges_allocated_etb: landedCost.bankChargesAllocatedEtb,
+          port_charges_allocated_etb: landedCost.portChargesAllocatedEtb,
+          clearing_fee_allocated_etb: landedCost.clearingFeeAllocatedEtb,
+          other_charges_allocated_etb: landedCost.otherChargesAllocatedEtb,
+          total_landed_cost_etb: landedCost.totalLandedCostEtb,
+        },
+      };
+    });
+
+    const response = await this.inventoryClient.postCostAdjustment(
+      adjustmentId,
+      grn.grnNumber,
+      grn.shipmentId,
+      adjustmentItems,
+    );
+    const transactionId =
+      response?.inventory_transaction_id ||
+      response?.transaction_id ||
+      response?.postingId;
+    if (!transactionId || response?.status === 'error') {
+      throw new Error(
+        response?.message ||
+          'Inventory ERP did not confirm the final cost adjustment',
+      );
+    }
+
+    await this.db
+      .update(schema.importLandedCostResults)
+      .set({ inventoryAdjustmentTransactionId: transactionId })
+      .where(
+        and(
+          eq(schema.importLandedCostResults.shipmentId, grn.shipmentId),
+          inArray(
+            schema.importLandedCostResults.shipmentItemId,
+            shipmentItemIds,
+          ),
+        ),
+      );
+
+    return response;
+  }
+
+  async post(grnId: string, existingLogId?: string, useFinalCosts = false) {
+    const { items: payloads, grn } = await this.getPayloadForGrn(
+      grnId,
+      useFinalCosts,
+    );
     if (payloads.length === 0) return;
 
     let log: any;
@@ -136,7 +299,11 @@ export class InventoryPostingService {
         })
         .where(eq(schema.erpSyncLog.id, log.id));
 
-      const invTxId = responseJson.transaction_id || 'INV-' + Date.now();
+      const invTxId =
+        responseJson.inventory_transaction_id ||
+        responseJson.transaction_id ||
+        responseJson.postingId ||
+        'INV-' + Date.now();
 
       await this.db
         .update(schema.goodsReceipts)
@@ -187,12 +354,17 @@ export class InventoryPostingService {
         })
         .where(eq(schema.erpSyncLog.id, log.id));
 
-      if (exhausted) {
-        await this.db
-          .update(schema.goodsReceipts)
-          .set({ status: 'posting_failed' })
-          .where(eq(schema.goodsReceipts.id, grnId));
+      // The SRS requires the GRN to expose a posting failure as soon as the
+      // inventory interface rejects it. The sync log remains pending for
+      // automatic retry, and a successful retry restores the posted status.
+      await this.db
+        .update(schema.goodsReceipts)
+        .set({ status: 'posting_failed' })
+        .where(eq(schema.goodsReceipts.id, grnId));
 
+      // Alert once on the initial failure; subsequent retry failures update
+      // the same visible failure state without flooding administrators.
+      if (nextAttempts === 1) {
         await this.notificationsService.notifyRoles(
           'posting_failed',
           { type: 'goods_receipt', id: grnId },
@@ -200,6 +372,12 @@ export class InventoryPostingService {
             entityName: 'GRN ' + grn.grnNumber,
             reason: error.message.substring(0, 100),
           },
+        );
+      }
+
+      if (exhausted) {
+        this.logger.error(
+          `Inventory posting retries exhausted for GRN ${grn.grnNumber}`,
         );
       }
 

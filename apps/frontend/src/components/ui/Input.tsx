@@ -17,7 +17,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={id}
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="mb-1.5 block text-sm font-semibold text-slate-700"
           >
             {localize(label)}
           </label>
@@ -25,7 +25,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           id={id}
           ref={ref}
-          className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${error ? 'border-red-300' : 'border-gray-300'} ${className}`}
+          className={`block min-h-11 w-full rounded-xl border px-3.5 py-2.5 text-sm shadow-sm shadow-slate-950/[.02] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 ${error ? 'border-red-300' : 'border-slate-200'} ${className}`}
           {...props}
           placeholder={localize(props.placeholder)}
         />

@@ -31,7 +31,7 @@ export function LanguageSwitcher() {
     <select
       value={selectedLanguage}
       onChange={handleLanguageChange}
-      className="bg-white border border-gray-300 rounded px-2 py-1 text-sm outline-none focus:border-blue-500"
+      className="max-w-[96px] rounded-lg border border-gray-300 bg-white px-1.5 py-1.5 text-xs outline-none focus:border-sky-500 sm:max-w-none sm:px-2 sm:text-sm"
     >
       <option value="en">
         <LocalizedText text={'English'} />

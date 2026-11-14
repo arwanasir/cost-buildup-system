@@ -3,11 +3,13 @@ import { DRIZZLE } from '@/db/db.token';
 import { NotificationsService } from '../notifications/notifications.service';
 import { FinanceClient } from './clients/finance.client';
 import { FinancePostingService } from './finance-posting.service';
+import { InventoryPostingService } from './inventory-posting.service';
 
 describe('FinancePostingService GRN cost adjustments', () => {
   let service: FinancePostingService;
   let db: any;
   let financeClient: { postJournalEntry: jest.Mock };
+  let inventoryPostingService: { postFinalCostAdjustment: jest.Mock };
   let selectWhere: jest.Mock;
   let updateSet: jest.Mock;
 
@@ -20,7 +22,14 @@ describe('FinancePostingService GRN cost adjustments', () => {
       })),
       update: jest.fn(() => ({ set: updateSet })),
     };
-    financeClient = { postJournalEntry: jest.fn().mockResolvedValue({ status: 'posted' }) };
+    financeClient = {
+      postJournalEntry: jest.fn().mockResolvedValue({ status: 'posted' }),
+    };
+    inventoryPostingService = {
+      postFinalCostAdjustment: jest
+        .fn()
+        .mockResolvedValue({ inventory_transaction_id: 'INV-ADJ-1' }),
+    };
 
     const module = await Test.createTestingModule({
       providers: [
@@ -28,6 +37,10 @@ describe('FinancePostingService GRN cost adjustments', () => {
         { provide: DRIZZLE, useValue: db },
         { provide: NotificationsService, useValue: { notifyRoles: jest.fn() } },
         { provide: FinanceClient, useValue: financeClient },
+        {
+          provide: InventoryPostingService,
+          useValue: inventoryPostingService,
+        },
       ],
     }).compile();
     service = module.get(FinancePostingService);
@@ -74,6 +87,15 @@ describe('FinancePostingService GRN cost adjustments', () => {
       'journal-1',
       'grn-1',
       journal.lines,
+    );
+    expect(
+      inventoryPostingService.postFinalCostAdjustment,
+    ).toHaveBeenCalledWith('grn-1', 'journal-1');
+    expect(
+      financeClient.postJournalEntry.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      inventoryPostingService.postFinalCostAdjustment.mock
+        .invocationCallOrder[0],
     );
     expect(db.update).toHaveBeenCalledTimes(3);
     expect(updateSet).toHaveBeenNthCalledWith(1, {
@@ -131,6 +153,44 @@ describe('FinancePostingService GRN cost adjustments', () => {
         role: 'finance_manager',
       }),
     ).rejects.toThrow('ERP unavailable');
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
+  it('leaves the adjustment retryable if the inventory ERP rejects the correction', async () => {
+    const grn = {
+      id: 'grn-1',
+      usesEstimatedCost: true,
+      postedAt: '2026-11-01T10:00:00.000Z',
+    };
+    const journal = {
+      id: 'journal-1',
+      sourceType: 'grn',
+      sourceId: 'grn-1',
+      lines: [],
+      posted: false,
+    };
+    selectWhere
+      .mockResolvedValueOnce([grn])
+      .mockResolvedValueOnce([journal])
+      .mockResolvedValueOnce([grn])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    inventoryPostingService.postFinalCostAdjustment.mockRejectedValueOnce(
+      new Error('Inventory ERP unavailable'),
+    );
+
+    await expect(
+      service.approveGrnAdjustment('grn-1', {
+        id: 'finance-manager-1',
+        role: 'finance_manager',
+      }),
+    ).rejects.toThrow('Inventory ERP unavailable');
+
+    expect(financeClient.postJournalEntry).toHaveBeenCalledWith(
+      'journal-1',
+      'grn-1',
+      journal.lines,
+    );
     expect(db.update).not.toHaveBeenCalled();
   });
 });

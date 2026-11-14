@@ -1,0 +1,6 @@
+allowBuilds:
+  '@parcel/watcher': true
+  '@scarf/scarf': false
+  '@tailwindcss/oxide': true
+  esbuild: true
+  lightningcss: true

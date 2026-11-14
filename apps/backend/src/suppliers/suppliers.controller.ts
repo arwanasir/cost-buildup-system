@@ -8,6 +8,7 @@ import {
   Patch,
   Param,
   Delete,
+  ParseUUIDPipe,
   UseGuards,
   Req,
   Query,
@@ -63,14 +64,14 @@ export class SuppliersController {
 
   @Get(':id')
   @RequiredPermission(Permission.SUPPLIER_READ)
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.suppliersService.findOne(id);
   }
 
   @Patch(':id')
   @RequiredPermission(Permission.SUPPLIER_WRITE)
   update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateSupplierDto: UpdateSupplierDto,
     @Req() req: Request & { user: { userId: string } },
   ) {
@@ -79,21 +80,24 @@ export class SuppliersController {
 
   @Delete(':id/deactivate')
   @RequiredPermission(Permission.SUPPLIER_WRITE)
-  deactivate(@Param('id') id: string) {
+  deactivate(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.suppliersService.deactivate(id);
   }
 
   @Post(':id/bank-accounts')
   @RequiredPermission(Permission.SUPPLIER_WRITE)
-  addBankAccount(@Param('id') id: string, @Body() dto: CreateBankAccountDto) {
+  addBankAccount(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: CreateBankAccountDto,
+  ) {
     return this.suppliersService.addBankAccount(id, dto);
   }
 
   @Patch(':id/bank-accounts/:accountId')
   @RequiredPermission(Permission.SUPPLIER_WRITE)
   updateBankAccount(
-    @Param('id') id: string,
-    @Param('accountId') accountId: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('accountId', new ParseUUIDPipe()) accountId: string,
     @Body() dto: UpdateBankAccountDto,
   ) {
     return this.suppliersService.updateBankAccount(id, accountId, dto);
@@ -102,8 +106,8 @@ export class SuppliersController {
   @Delete(':id/bank-accounts/:accountId')
   @RequiredPermission(Permission.SUPPLIER_WRITE)
   removeBankAccount(
-    @Param('id') id: string,
-    @Param('accountId') accountId: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('accountId', new ParseUUIDPipe()) accountId: string,
   ) {
     return this.suppliersService.removeBankAccount(id, accountId);
   }
@@ -111,7 +115,7 @@ export class SuppliersController {
   @Get(':id/purchase-orders')
   @RequiredPermission(Permission.PO_READ)
   findSupplierPurchaseOrders(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {

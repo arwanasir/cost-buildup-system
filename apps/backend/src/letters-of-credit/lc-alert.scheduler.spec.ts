@@ -107,6 +107,20 @@ describe('LcAlertScheduler', () => {
     expect(mockNotifyRoles).not.toHaveBeenCalled();
   });
 
+  it('uses the Ethiopian business date even when UTC is on the previous day', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-09-20T22:30:00Z'));
+
+    await scheduler.checkLcAlerts();
+
+    const expiryCall = mockWhereLC.mock.calls[0][0];
+    expect(expiryCall.args[0].val).toBe('2026-10-21');
+    expect(expiryCall.args[1].val).toBe('2026-09-28');
+    const shipmentCall = mockWhereLC.mock.calls[1][0];
+    expect(shipmentCall.args[0].val).toBe('2026-10-05');
+    expect(shipmentCall.args[1].val).toBe('2026-09-24');
+  });
+
   it('should create notifications for LCs matching the boundaries and unshipped POs', async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2026-09-20T08:00:00Z'));

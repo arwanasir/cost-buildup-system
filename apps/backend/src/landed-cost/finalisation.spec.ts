@@ -86,7 +86,7 @@ describe('Finalisation Workflow (AC07, BR02, BR05, BR07)', () => {
 
     const blockers = await guardService.check('ship-1');
     expect(blockers.length).toBeGreaterThan(0);
-    expect(blockers[0]).toContain('BR07: Found 1 pending cost variance');
+    expect(blockers[0]).toContain('BR07: Found 1 unresolved cost variance');
   });
 
   it('blocks finalisation if there is no confirmed GRN', async () => {

@@ -22,6 +22,9 @@ export interface LandedCostResult {
   isEstimated: boolean;
   isFinalised: boolean;
   computedAt: string | null;
+  postedToInventory?: boolean;
+  inventoryTransactionId?: string | null;
+  inventoryAdjustmentTransactionId?: string | null;
 }
 
 export interface FinalisationCheck {

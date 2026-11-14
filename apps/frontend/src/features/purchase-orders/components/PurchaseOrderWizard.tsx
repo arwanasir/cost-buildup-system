@@ -140,8 +140,8 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
   const threshold2Setting = settings?.find(
     (s: any) => s.key === 'po_approval_threshold_2',
   )?.valueNumeric;
-  const threshold1 = threshold1Setting ? parseFloat(threshold1Setting) : 50000;
-  const threshold2 = threshold2Setting ? parseFloat(threshold2Setting) : 100000;
+  const threshold1 = threshold1Setting ? parseFloat(threshold1Setting) : 10000;
+  const threshold2 = threshold2Setting ? parseFloat(threshold2Setting) : 50000;
 
   const createMutation = useCreatePurchaseOrder();
   const submitMutation = useSubmitPo();
@@ -163,6 +163,7 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' });
 
   const watchSupplierId = watch('supplierId');
+  const watchIncoterm = watch('incoterm');
   const watchCurrency = watch('currency');
   const watchFxRate = watch('fxRate');
   const lines = watch('lines') || [];
@@ -171,7 +172,6 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
   const watchInsurance = watch('estimatedInsuranceEtb');
 
   const { data: latestRate } = useLatestExchangeRate(watchCurrency);
-  const { data: latestUsdRate } = useLatestExchangeRate('USD');
 
   useEffect(() => {
     if (isOpen) {
@@ -318,6 +318,7 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
   const supplierOptions = (activeSuppliers?.data || []).map((s: any) => ({
     label: `${s.name} (${s.country || 'Unknown'})`,
     value: s.id,
+    translate: false,
   }));
 
   let fxWarning = null;
@@ -340,7 +341,10 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
   const freightEtb = watchFreight || 0;
   const insuranceEtb = watchInsurance || 0;
 
-  const totalCifEtb = totalFobEtb.plus(freightEtb).plus(insuranceEtb);
+  const totalCifEtb =
+    watchIncoterm === 'CIF'
+      ? totalFobEtb
+      : totalFobEtb.plus(freightEtb).plus(insuranceEtb);
 
   let totalDutyPreview = new Decimal(0);
   lines.forEach((line) => {
@@ -353,24 +357,22 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
     const lineFreightEtb = new Decimal(freightEtb).mul(ratio);
     const lineInsuranceEtb = new Decimal(insuranceEtb).mul(ratio);
 
-    const lineCifEtb = lineFobEtb.plus(lineFreightEtb).plus(lineInsuranceEtb);
+    const lineCifEtb =
+      watchIncoterm === 'CIF'
+        ? lineFobEtb
+        : lineFobEtb.plus(lineFreightEtb).plus(lineInsuranceEtb);
     const dutyRate = new Decimal(line.estimatedDutyRate || 0).div(100);
 
     totalDutyPreview = totalDutyPreview.plus(lineCifEtb.mul(dutyRate));
   });
 
   // Approver Determination
-  let usdEquivalent = new Decimal(0);
-  if (watchCurrency === 'USD') {
-    usdEquivalent = totalFobFcx;
-  } else if (latestUsdRate?.rate) {
-    usdEquivalent = totalFobEtb.div(parseFloat(latestUsdRate.rate));
-  }
+  const approvalValueEtb = totalFobEtb;
 
   let requiredRole = 'Finance Officer';
-  if (usdEquivalent.gte(threshold1) && usdEquivalent.lt(threshold2)) {
+  if (approvalValueEtb.gte(threshold1) && approvalValueEtb.lte(threshold2)) {
     requiredRole = 'Finance Manager';
-  } else if (usdEquivalent.gte(threshold2)) {
+  } else if (approvalValueEtb.gte(threshold2)) {
     requiredRole = 'General Manager';
   }
 
@@ -795,12 +797,12 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
                 </h4>
                 <p className="text-blue-600 text-xs mt-1">
                   <LocalizedText
-                    text={
-                      '\n                  Based on the equivalent USD value of'
-                    }
+                    text={'\n                  Based on the PO value of'}
                   />
                   <LocalizedText text={' '} />
-                  <span className="font-mono">${usdEquivalent.toFixed(4)}</span>
+                  <span className="font-mono">
+                    ETB {approvalValueEtb.toFixed(4)}
+                  </span>
                   <LocalizedText
                     text={
                       '\n                  , this PO will route to:\n                '
@@ -890,9 +892,7 @@ export function PurchaseOrderWizard({ isOpen, onClose }: Props) {
         <ConfirmDialog
           isOpen={true}
           title={localize('Submit Purchase Order')}
-          message={localize(
-            'Are you sure you want to route this Purchase Order to the ? You will no longer be able to edit the items once submitted.',
-          )}
+          message={`${localize('Are you sure you want to route this Purchase Order to')} ${localize(requiredRole)}? ${localize('You will no longer be able to edit the items once submitted.')}`}
           confirmText={localize('Submit for Approval')}
           isLoading={isSubmitting}
           onConfirm={() => onFinalSubmit(confirmSubmit, 'submit')}

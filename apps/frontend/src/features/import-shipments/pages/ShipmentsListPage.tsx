@@ -55,12 +55,16 @@ export function ShipmentsListPage() {
 
   const supplierOptions = [
     { label: 'All Suppliers', value: '' },
-    ...suppliers.map((s) => ({ label: s.name, value: s.id })),
+    ...suppliers.map((s) => ({ label: s.name, value: s.id, translate: false })),
   ];
 
   const poOptions = [
     { label: 'All Purchase Orders', value: '' },
-    ...pos.map((po) => ({ label: po.poNumber, value: po.id })),
+    ...pos.map((po) => ({
+      label: po.poNumber,
+      value: po.id,
+      translate: false,
+    })),
   ];
 
   return (
@@ -113,7 +117,7 @@ export function ShipmentsListPage() {
                   }
                 `}
               >
-                {tab.name}
+                {localize(tab.name)}
               </button>
             ))}
           </nav>
@@ -206,11 +210,11 @@ export function ShipmentsListPage() {
                       text={'\n                    Status\n                  '}
                     />
                   </th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">
-                      <LocalizedText text={'View'} />
-                    </span>
-                  </th>
+                  <th
+                    scope="col"
+                    className="relative px-6 py-3"
+                    aria-label={localize('View shipment')}
+                  />
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -272,12 +276,13 @@ export function ShipmentsListPage() {
                                 : 'info'
                           }
                         >
-                          {shipment.status.replace('_', ' ').toUpperCase()}
+                          {localize(shipment.status.replaceAll('_', ' '))}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <Link
                           to={`/shipments/${shipment.id}`}
+                          aria-label={`${localize('View Details')}, ${shipment.shipmentNumber}`}
                           className="text-blue-600 hover:text-blue-900"
                         >
                           <LocalizedText
@@ -285,9 +290,6 @@ export function ShipmentsListPage() {
                               '\n                          View Details\n                          '
                             }
                           />
-                          <span className="sr-only">
-                            , {shipment.shipmentNumber}
-                          </span>
                         </Link>
                       </td>
                     </tr>

@@ -112,9 +112,16 @@ export class NotificationsService implements OnModuleInit {
 
       await this.db.insert(schema.notifications).values(records);
 
-      // Fan out to external channels
+      // Fan out to external channels using each user's configured destination.
       await this.emailChannel.send(userIds, type, params);
-      await this.telegramChannel.send(userIds, type, params);
+      const telegramRecipients = await this.db
+        .select({
+          chatId: schema.users.telegramChatId,
+          language: schema.users.preferredLanguage,
+        })
+        .from(schema.users)
+        .where(inArray(schema.users.id, userIds));
+      await this.telegramChannel.send(telegramRecipients, type, params);
     } catch (error) {
       this.logger.error(
         `Failed to create notifications for type ${type}`,

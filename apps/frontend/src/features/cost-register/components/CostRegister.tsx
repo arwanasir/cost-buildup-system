@@ -75,7 +75,7 @@ export function CostRegister({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">
-          <LocalizedText text={'Cost Register (AC04)'} />
+          <LocalizedText text={'Cost Register'} />
         </h2>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setActiveForm('clearing')}>
