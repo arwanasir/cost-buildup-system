@@ -107,6 +107,11 @@ docker exec cost_buildup_backend npm run db:migrate
 docker exec cost_buildup_backend npm run db:seed:demo
 ```
 
+The local ERP mock health check is at `http://localhost:3001/health`. Approved
+inventory adjustments can be inspected at
+`http://localhost:3001/inventory/adjustments/{journal-id}`. The mock stores
+records in memory, so its data is cleared when the container restarts.
+
 ## Verify and Test
 
 Backend, from `apps\backend`:
@@ -168,31 +173,3 @@ reset confirmation and the `costbuildup_e2e_` database-name prefix, then seeds
 demo records using `E2E_DATABASE_URL`. To start with a clean database on a later
 run, stop the API and rerun `npx ts-node test/prepare-e2e-database.ts` from the
 backend terminal. It recreates only the guarded e2e database.
-
-## Deployment and Operations
-
-Deploy the frontend and API as separate services, with PostgreSQL and MinIO
-provided by persistent managed services or protected persistent volumes. Set
-production values for database and JWT credentials, ERP credentials, MinIO,
-SMTP, CORS/frontend URL, and the public API URL through the host's secret and
-environment configuration. Never deploy the example credentials or demo seed
-users. Restrict PostgreSQL and MinIO to the application network, and terminate
-browser/API traffic with HTTPS at the hosting provider or reverse proxy.
-Run the API with `NODE_ENV=production`: database connections and production
-SMTP delivery require certificate-validated TLS 1.3. Set `SMTP_SECURE=true` for
-implicit TLS (usually port 465); otherwise production SMTP uses required
-STARTTLS. The development Mailpit connection remains plain SMTP.
-
-For each release, back up PostgreSQL and document storage, deploy the API, run
-`npm run db:migrate` once against the production database, seed only required
-reference data when needed, and then deploy the frontend. Do not run
-`db:reset`, `db:push`, or unreviewed migration generation against production.
-After deployment, verify API health, login, a read-only report, document upload
-and view, and ERP connector health. Monitor API logs, database capacity,
-document storage, notification delivery, and ERP posting failures. Test backup
-restoration and retain a rollback build before accepting production traffic.
-
-The local ERP mock provides `GET http://localhost:3001/health`. Approved final
-inventory adjustments are available at
-`GET http://localhost:3001/inventory/adjustments/{journal-id}` for local
-verification; this in-memory mock state is cleared when its container restarts.
